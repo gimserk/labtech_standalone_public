@@ -17,7 +17,7 @@ from zipfile import ZipFile
 PLUGIN_ROOT = Path('/var/lib/labtech/plugins')
 SECRET_ROOT = Path('/etc/labtech/plugins')
 PUBLISHER_KEY = Path('/etc/labtech/plugin-marketplace-publisher.pem')
-PYTHON = os.getenv('LABTECH_VENV_PYTHON', '/usr/bin/python3.12')
+PYTHON = os.getenv('LABTECH_VENV_PYTHON', '/usr/bin/python3.13')
 
 
 class ActivationError(ValueError):
