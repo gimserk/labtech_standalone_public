@@ -23,11 +23,14 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
       - name: Install native build dependencies
-        run: sudo apt-get update && sudo apt-get install -y python3-venv python3-dev build-essential pkg-config default-libmysqlclient-dev libldap2-dev libsasl2-dev libssl-dev libxml2-dev libxslt1-dev libjpeg-dev zlib1g-dev libffi-dev
+        run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config default-libmysqlclient-dev libldap2-dev libsasl2-dev libssl-dev libxml2-dev libxslt1-dev libjpeg-dev zlib1g-dev libffi-dev
       - name: Install standalone requirements
         run: |
-          python3 -m venv /tmp/labtech-installer-ci
+          python -m venv /tmp/labtech-installer-ci
           /tmp/labtech-installer-ci/bin/python -m pip install -r requirements.txt
           /tmp/labtech-installer-ci/bin/python -m pip check
       - name: Validate deployment settings and Django imports
