@@ -12,6 +12,8 @@ export LABTECH_INSTALL_TESTING=1
 # shellcheck source=../install.sh
 source "$INSTALLER"
 assert_contains() { [[ "$1" == *"$2"* ]] || fail "missing <$2>"; }
+[[ "$REPOSITORY_URL" == 'https://github.com/gimserk/labtech_standalone_public.git' ]] || fail 'public installer must track public HTTPS repository'
+assert_contains "$(usage)" 'public GitHub repository'
 
 # A pre-cloned checkout is the documented first-install path; its presence
 # must not make identity setup fail under set -e.
@@ -81,7 +83,7 @@ for key in MAINTENANCE_MODE ACCOUNT_ALLOW_REGISTRATION ENABLE_LDAP ENABLE_GOOGLE
   [[ " ${ENV_KEYS[*]} " == *" $key "* ]] || fail "unmanaged environment field $key"
 done
 
-REPOSITORY_SSH="file://$TMP/origin.git"
+REPOSITORY_URL="file://$TMP/origin.git"
 TARGET_BRANCH=main
 git -c init.defaultBranch=main init --bare "$TMP/origin.git" >/dev/null
 git -c init.defaultBranch=main init "$TMP/source" >/dev/null
@@ -91,9 +93,10 @@ git -C "$TMP/source" commit --allow-empty -qm initial
 printf baseline > "$TMP/source/readme"
 git -C "$TMP/source" add readme
 git -C "$TMP/source" commit -qm 'tracked fixture'
-git -C "$TMP/source" remote add origin "$REPOSITORY_SSH"
+git -C "$TMP/source" remote add origin "$REPOSITORY_URL"
 git -C "$TMP/source" push -q -u origin main
-git clone -q --branch main "$REPOSITORY_SSH" "$TMP/permissions"
+verify_git_access || fail 'could not read fixture repository'
+git clone -q --branch main "$REPOSITORY_URL" "$TMP/permissions"
 printf modified > "$TMP/permissions/readme"
 (
   INSTALL_DIR="$TMP/permissions"
