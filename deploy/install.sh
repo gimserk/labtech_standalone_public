@@ -6,7 +6,7 @@ REPOSITORY_URL='https://github.com/gimserk/labtech_standalone_public.git'
 TARGET_BRANCH="${LABTECH_TARGET_BRANCH:-main}"
 OS_RELEASE_FILE="${LABTECH_OS_RELEASE:-/etc/os-release}"
 EFFECTIVE_UID="${LABTECH_INSTALL_EUID:-$EUID}"
-VENV_PYTHON="${LABTECH_VENV_PYTHON:-python3}"
+VENV_PYTHON="${LABTECH_VENV_PYTHON:-python3.13}"
 INSTALL_DIR=/opt/labtech
 ENV_FILE=/etc/labtech/labtech.env
 SETTINGS_FILE=/etc/labtech/deployment_settings.py
@@ -34,7 +34,7 @@ PLUGIN_HELPER_ROOT="${LABTECH_PLUGIN_HELPER_ROOT:-/usr/local/lib/labtech}"
 
 usage() { cat <<'HELP'
 Usage: sudo ./deploy/install.sh [--help]
-Install LabTech on Ubuntu 24.04 or newer from the public GitHub repository.
+Install LabTech on Ubuntu 24.04 or newer (x86_64, Python 3.13) from the public GitHub repository.
 A safe rerun preserves the database, media, and stable secrets.
 HELP
 }
@@ -49,8 +49,11 @@ require_ubuntu_2404() {
   [[ "$id" == ubuntu && "$version" =~ ^([0-9]{2,4})\.(04|10)$ && ${BASH_REMATCH[1]} -ge 24 ]] || die 'Ubuntu 24.04 or newer is required.'
 }
 validate_python_runtime() {
-  command -v "$VENV_PYTHON" >/dev/null 2>&1 || { die 'Python 3.12 or 3.13 required; install one and set LABTECH_VENV_PYTHON.'; return 1; }
-  "$VENV_PYTHON" -c 'import sys; raise SystemExit(not ((3, 12) <= sys.version_info[:2] <= (3, 13)))' || { die 'Python 3.12 or 3.13 required for pinned dependencies; set LABTECH_VENV_PYTHON.'; return 1; }
+  command -v "$VENV_PYTHON" >/dev/null 2>&1 || { die 'Python 3.13 with venv and development headers is required; install it before running this installer.'; return 1; }
+  "$VENV_PYTHON" -c 'import sys; raise SystemExit(not (sys.implementation.name == "cpython" and sys.version_info[:2] == (3, 13) and sys.maxsize > 2**32))' || { die 'The public application requires 64-bit CPython 3.13; set LABTECH_VENV_PYTHON to that interpreter.'; return 1; }
+}
+validate_public_platform() {
+  [[ "$(uname -m)" == x86_64 ]] || die 'The public application currently ships Linux x86_64 modules only.'
 }
 validate_install_dir() {
   local path="${1:-}" part
@@ -105,7 +108,7 @@ validate_origin_csv() {
   for origin in "${origins[@]}"; do validate_http_url "$origin" || return 1; done
 }
 preflight() {
-  require_root; require_ubuntu_2404; validate_python_runtime
+  require_root; require_ubuntu_2404; validate_public_platform; validate_python_runtime
   [[ "$TARGET_BRANCH" =~ ^[A-Za-z0-9][A-Za-z0-9_./-]*$ && "$TARGET_BRANCH" != *..* ]] || die 'Invalid branch.'
   for binary in flock git python3 curl openssl realpath runuser; do command -v "$binary" >/dev/null || die "Missing $binary"; done
   exec 9>/run/lock/labtech-install.lock
@@ -382,7 +385,7 @@ sync_repository() {
 install_packages() {
   export DEBIAN_FRONTEND=noninteractive
   apt-get update
-  apt-get install -y git openssh-client python3 python3-venv python3-dev build-essential pkg-config \
+  apt-get install -y git openssh-client python3 python3.13 python3.13-venv python3.13-dev build-essential pkg-config \
     default-libmysqlclient-dev libldap2-dev libsasl2-dev libssl-dev libxml2-dev libxslt1-dev \
     libjpeg-dev zlib1g-dev libffi-dev mariadb-server mariadb-client redis-server nginx \
     certbot python3-certbot-nginx curl ca-certificates acl rsync
@@ -449,6 +452,7 @@ setup_python() {
   as_service_user "$INSTALL_DIR/venv/bin/python" -m pip install -r "$INSTALL_DIR/requirements.txt"
   "$INSTALL_DIR/venv/bin/python" -m pip check
   "$INSTALL_DIR/venv/bin/python" -c 'import django, ldap, celery, MySQLdb, allauth, whitenoise; assert django.VERSION[:2] == (5,2)'
+  as_service_user env PYTHONPATH="$INSTALL_DIR" "$INSTALL_DIR/venv/bin/python" -c 'import app.validators'
 }
 setup_env_link() {
   local link="$INSTALL_DIR/.env" current
