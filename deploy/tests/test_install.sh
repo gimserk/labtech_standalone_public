@@ -28,16 +28,22 @@ assert_contains "$(usage)" 'public GitHub repository'
 )
 
 (
+  [[ "$VENV_PYTHON" == python3.13 ]] || fail 'public release must default to Python 3.13'
   VENV_PYTHON=python3
-  validate_python_runtime || fail 'supported Python interpreter refused'
+  if validate_python_runtime >/dev/null 2>&1; then fail 'Python 3.12 accepted for CPython 3.13 extensions'; fi
   VENV_PYTHON="$TMP/missing-python"
   if validate_python_runtime >/dev/null 2>&1; then fail 'missing Python interpreter accepted'; fi
   printf '#!/bin/sh\nexit 1\n' > "$TMP/unsupported-python"
   chmod +x "$TMP/unsupported-python"
   VENV_PYTHON="$TMP/unsupported-python"
   failure="$(validate_python_runtime 2>&1)" && fail 'unsupported Python interpreter accepted'
-  assert_contains "$failure" 'Python 3.12 or 3.13'
+  assert_contains "$failure" 'Python 3.13'
 )
+(
+  uname() { printf 'aarch64\n'; }
+  if validate_public_platform >/dev/null 2>&1; then fail 'ARM64 accepted for x86_64 extensions'; fi
+)
+validate_public_platform || fail 'x86_64 host refused'
 
 for path in '' / /opt /srv /etc /home relative /opt/../etc /opt/foo/../../etc /opt/foo/./bar; do
   if validate_install_dir "$path"; then fail "accepted dangerous path <$path>"; fi
