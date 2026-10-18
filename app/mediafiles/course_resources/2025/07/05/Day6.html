@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 6: The Blue Team</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts for a clean look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Custom styles for the presentation */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* bg-gray-900 */
+        }
+        .slide-container {
+            background-color: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(4px);
+            border: 1px solid #374151; /* border-gray-700 */
+            transition: opacity 0.5s ease-in-out;
+        }
+        /* Simple fade transition for slide content */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        /* Enhanced fullscreen experience */
+        body:fullscreen #slide-content {
+            width: 100vw;
+            height: 100vh;
+            max-width: 100vw;
+            border-radius: 0;
+            border: none;
+        }
+        body:fullscreen #navigation-controls {
+            position: fixed;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 95%;
+            max-width: 1280px; /* max-w-7xl */
+            z-index: 50;
+        }
+    </style>
+</head>
+<body class="text-white min-h-screen flex flex-col items-center justify-center p-4">
+
+    <!-- Main Slide Container - Increased size for a better view -->
+    <div id="slide-content" class="w-full max-w-7xl h-[80vh] rounded-2xl shadow-2xl flex items-center justify-center p-8 slide-container">
+        <!-- Slide content will be injected here by JavaScript -->
+    </div>
+
+    <!-- Navigation and Progress Bar -->
+    <div id="navigation-controls" class="w-full max-w-7xl mt-8">
+        <!-- Progress Bar -->
+        <div class="w-full bg-gray-700 rounded-full h-2.5 mb-4">
+            <div id="progress-bar" class="bg-cyan-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+        
+        <div class="flex justify-between items-center">
+            <!-- Previous Button -->
+            <button id="prev-btn" class="flex items-center gap-2 px-6 py-3 bg-gray-800 rounded-lg shadow-md hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                Previous
+            </button>
+
+            <!-- Controls -->
+            <div class="flex items-center gap-4">
+                <span id="slide-counter" class="text-gray-400 text-lg">
+                    1 / 30
+                </span>
+                <button id="fullscreen-btn" title="Toggle Fullscreen (F key)" class="p-2 text-gray-400 hover:text-white transition-colors bg-gray-800 rounded-lg shadow-md hover:bg-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                </button>
+            </div>
+
+            <!-- Next Button -->
+            <button id="next-btn" class="flex items-center gap-2 px-6 py-3 bg-cyan-600 rounded-lg shadow-md hover:bg-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                Next
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- Slide Data ---
+        const slides = [
+          { type: 'title', title: 'Day 6: The Blue Team', subtitle: 'Defensive Security' },
+          { type: 'list', title: 'Agenda', items: ['Introduction to Firewalls', 'Intro to pfSense', 'Intrusion Detection Systems (IDS/IPS)', 'Intro to Snort', 'The Importance of Logging & SIEM', 'Intro to Wazuh', 'Hands-On Labs'] },
+          { type: 'list', title: 'Day 6 Introduction', items: ['Yesterday, you were the attacker as the **Red Team**.', 'Today, you switch sides. Welcome to the **Blue Team**.', 'Your job is no longer to break in, but to **defend, detect, and respond**.', 'We will learn about firewalls, intrusion detection, and log analysis.'] },
+          { type: 'title', title: 'Firewalls', subtitle: 'The Digital Gatekeeper' },
+          { type: 'list', title: 'What is a Firewall?', items: ['The most fundamental component of network security.', 'A security device that stands between your internal network and the internet.', 'It inspects all traffic and decides whether to **allow** or **block** it based on a set of rules.'] },
+          { type: 'list', title: 'How Firewalls Work: The Rulebook', items: ['Firewalls use an **Access Control List (ACL)** to make decisions.', 'Rules are based on: Source/Destination IP, Destination Port, and Protocol.', 'If traffic doesn\'t match an "allow" rule, it is blocked by default (**implicit deny**).'] },
+          { type: 'list', title: 'Firewall Rule Example', items: ['`ALLOW traffic FROM any source TO my_server_ip ON TCP port 443`', 'This rule allows anyone to connect to a secure web server.', 'All other traffic (like SSH or remote desktop) would be blocked by the implicit deny rule.'] },
+          { type: 'comparison', title: 'Types of Firewalls', subtitle: '', columns: [{ title: 'Host-Based Firewall', items: ['Software running on a single computer.', 'Protects only that machine.', 'Examples: Windows Defender, `iptables` in Linux.'] }, { title: 'Network Firewall', items: ['A hardware appliance at the edge of a network.', 'Protects all devices behind it.', 'Example: Your home Wi-Fi router.'] }] },
+          { type: 'comparison', title: 'Stateless vs. Stateful', subtitle: '', columns: [{ title: 'Stateless Firewall', items: ['Inspects each packet individually.', 'Has no memory of past connections.', 'Simple and fast, but less secure.'] }, { title: 'Stateful Firewall', items: ['Keeps track of active connections (a "state table").', 'Automatically allows return traffic for established connections.', 'The modern standard for security.'] }] },
+          { type: 'title', title: 'Introduction to pfSense', subtitle: 'An Open-Source Firewall Powerhouse' },
+          { type: 'list', title: 'What is pfSense?', items: ['A free, open-source firewall and router software.', 'Turns almost any computer into an enterprise-grade security appliance.', 'Managed through a user-friendly web interface.'] },
+          { type: 'list', title: 'pfSense Core Capabilities', items: ['**Stateful Firewall:** Granular rule creation.', '**Router:** Connect and route multiple internal networks.', '**VPN Server:** Built-in support for OpenVPN and IPsec.', '**Traffic Shaping (QoS):** Prioritize important traffic like VoIP.', '**Extensible:** Add more features with a package manager.'] },
+          { type: 'title', title: 'Intrusion Detection & Prevention', subtitle: 'The Network Burglar Alarm' },
+          { type: 'list', title: 'What is an IDS?', items: ['**I**ntrusion **D**etection **S**ystem.', 'A passive monitoring device that watches network traffic.', 'Its job is to **detect** suspicious activity and **alert** an administrator.', 'It does NOT block attacks on its own.'] },
+          { type: 'comparison', title: 'IDS vs. IPS: The Critical Difference', subtitle: '', columns: [{ title: 'IDS (Detection)', items: ['Sits **off to the side** of traffic.', 'Analyzes a copy of the data.', '**Detects & Alerts** only.', 'Like a security camera operator.'] }, { title: 'IPS (Prevention)', items: ['Sits **in-line** with traffic.', 'Analyzes traffic as it passes through.', '**Detects & Prevents** (blocks).', 'Like a security guard at the door.'] }] },
+          { type: 'comparison', title: 'NIDS vs. HIDS', subtitle: '', columns: [{ title: 'Network-Based (NIDS)', items: ['A dedicated appliance.', 'Monitors all traffic for an entire network segment.', 'Broad visibility.'] }, { title: 'Host-Based (HIDS)', items: ['Software agent on a single computer.', 'Monitors only that machine\'s activity (files, logs, processes).', 'Granular visibility.'] }] },
+          { type: 'comparison', title: 'Detection Methods', subtitle: '', columns: [{ title: 'Signature-Based', items: ['Works like antivirus.', 'Compares traffic to a database of known attack patterns.', 'Very accurate for known threats.', 'Blind to new, "zero-day" attacks.'] }, { title: 'Anomaly-Based', items: ['Builds a baseline of "normal" behavior.', 'Alerts on any deviation from that baseline.', 'Can detect new attacks.', 'More prone to false positives.'] }] },
+          { type: 'title', title: 'Introduction to Snort', subtitle: 'The Original Network Watchdog' },
+          { type: 'list', title: 'What is Snort?', items: ['The most widely deployed open-source **IPS** in the world.', 'Can operate as a packet sniffer, logger, or a full NIDS/NIPS.', 'Its power comes from its flexible **rules**.'] },
+          { type: 'list', title: 'The Heart of Snort: Rules', items: ['A rule tells Snort what to look for in a packet.', '**Rule Header:** Defines the action, protocol, source/destination IPs and ports.', '**Rule Options:** Defines the specific suspicious content to inspect.', 'Example: `alert tcp any any -> any 21 (msg:"FTP Command";)`'] },
+          { type: 'title', title: 'Logging & SIEM', subtitle: 'The Digital Detective\'s Toolkit' },
+          { type: 'list', title: 'The Importance of Logging', items: ['Logs are the security camera recordings of your network.', 'A log is a time-stamped record of an event.', 'Without logs, a security team is blind during an investigation.', 'They tell you who, what, when, and where.'] },
+          { type: 'list', title: 'Common Log Types', items: ['**Firewall Logs:** Shows allowed and denied connections.', '**OS Logs:** User logins, system errors, service changes (Windows Event Viewer, Linux `/var/log`).', '**Application Logs:** Web server requests, database queries.', '**IDS/IPS Logs:** Alerts for suspicious activity.'] },
+          { type: 'list', title: 'What is a SIEM?', items: ['**S**ecurity **I**nformation and **E**vent **M**anagement.', 'A system that **centralizes** logs from all devices across a network.', 'It can **correlate** events from different sources to identify complex attacks.'] },
+          { type: 'title', title: 'Introduction to Wazuh', subtitle: 'The Open-Source Security Platform' },
+          { type: 'list', title: 'What is Wazuh?', items: ['The leading open-source platform for security monitoring.', 'Combines SIEM, Host-based IDS (HIDS), and XDR capabilities.', 'Uses agents on endpoints to collect data and a central server for analysis.'] },
+          { type: 'list', title: 'Wazuh Key Capabilities', items: ['**Log Analysis:** Collects and analyzes logs from any source.', '**File Integrity Monitoring (FIM):** Alerts on changes to critical files.', '**Vulnerability Detection:** Scans for software with known CVEs.', '**Configuration Assessment:** Checks for compliance with security best practices.', '**Regulatory Compliance:** Helps meet standards like PCI DSS and HIPAA.'] },
+          { type: 'list', title: 'Lab 1: Firewall Fortress', items: ['**Objective:** Configure a basic host-based firewall.', '**Tasks:**', 'Use `iptables` or Windows Defender Firewall.', 'Create rules to allow specific traffic (like web) and block all other traffic.'] },
+          { type: 'list', title: 'Lab 2: Log Lurker', items: ['**Objective:** Get an introduction to log analysis.', '**Tasks:**', 'Examine sample web server and authentication logs.', 'Find evidence of a simulated attack, such as failed logins or scanning activity.'] },
+          { type: 'list', title: 'Day 6 Wrap-Up', items: ['**Review:** Firewalls, IDS/IPS, Logging, SIEM.', '**Q&A**', '**Preview Day 7:** Incident Response & Digital Forensics.'] },
+        ];
+
+        let currentSlide = 0;
+
+        // --- DOM Elements ---
+        const slideContentEl = document.getElementById('slide-content');
+        const progressBarEl = document.getElementById('progress-bar');
+        const slideCounterEl = document.getElementById('slide-counter');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        
+        // --- Helper function to parse markdown-like formatting ---
+        function formatText(text) {
+            return text
+                .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-cyan-300">$1</strong>')
+                .replace(/`(.*?)`/g, '<code class="bg-gray-700 text-yellow-300 rounded px-1.5 py-0.5 font-mono text-sm">$1</code>');
+        }
+
+        // --- Function to render the current slide ---
+        function renderSlide() {
+            const slide = slides[currentSlide];
+            let html = '';
+
+            switch (slide.type) {
+                case 'title':
+                    html = `<div class="text-center fade-in"><h1 class="text-5xl md:text-6xl font-bold text-white mb-4">${slide.title}</h1><p class="text-2xl md:text-3xl text-cyan-400">${slide.subtitle}</p></div>`;
+                    break;
+                case 'list':
+                    html = `<div class="w-full fade-in"><h2 class="text-4xl font-bold text-white mb-8 text-center">${slide.title}</h2><ul class="space-y-4 text-xl text-gray-300 list-disc list-inside max-w-3xl mx-auto">${slide.items.map(item => `<li>${formatText(item)}</li>`).join('')}</ul></div>`;
+                    break;
+                case 'comparison':
+                    html = `<div class="w-full fade-in"><h2 class="text-4xl font-bold text-white mb-2 text-center">${slide.title}</h2><p class="text-xl text-gray-400 mb-8 text-center">${formatText(slide.subtitle)}</p><div class="grid md:grid-cols-2 gap-8 w-full">${slide.columns.map(col => `<div class="bg-gray-800 p-6 rounded-lg"><h3 class="text-2xl font-semibold text-cyan-400 mb-4">${col.title}</h3><ul class="space-y-3 text-lg text-gray-300 list-disc list-inside">${col.items.map(item => `<li>${formatText(item)}</li>`).join('')}</ul></div>`).join('')}</div></div>`;
+                    break;
+                default:
+                    html = `<div class="text-center fade-in"><h2 class="text-2xl text-red-400">Error: Unknown slide type.</h2></div>`;
+            }
+            slideContentEl.innerHTML = html;
+        }
+
+        // --- Function to update the entire UI state ---
+        function updateUI() {
+            renderSlide();
+            
+            const progress = ((currentSlide + 1) / slides.length) * 100;
+            progressBarEl.style.width = `${progress}%`;
+            slideCounterEl.textContent = `${currentSlide + 1} / ${slides.length}`;
+            prevBtn.disabled = currentSlide === 0;
+            nextBtn.disabled = currentSlide === slides.length - 1;
+        }
+        
+        // --- Fullscreen Toggle Function ---
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        // --- Event Listeners ---
+        prevBtn.addEventListener('click', () => {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateUI();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                updateUI();
+            }
+        });
+        
+        fullscreenBtn.addEventListener('click', toggleFullScreen);
+        
+        // --- Keyboard Navigation ---
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                e.preventDefault();
+                nextBtn.click();
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                prevBtn.click();
+            } else if (e.key.toLowerCase() === 'f') {
+                e.preventDefault();
+                toggleFullScreen();
+            }
+        });
+
+        // --- Initial Render ---
+        document.addEventListener('DOMContentLoaded', updateUI);
+
+    </script>
+</body>
+</html>

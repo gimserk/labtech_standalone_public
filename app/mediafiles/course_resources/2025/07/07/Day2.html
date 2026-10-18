@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 2: The Network in Action</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts for a clean look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Custom styles for the presentation */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* bg-gray-900 */
+        }
+        .slide-container {
+            background-color: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(4px);
+            border: 1px solid #374151; /* border-gray-700 */
+            transition: opacity 0.5s ease-in-out;
+        }
+        /* Simple fade transition for slide content */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        /* Enhanced fullscreen experience */
+        body:fullscreen #slide-content {
+            width: 100vw;
+            height: 100vh;
+            max-width: 100vw;
+            border-radius: 0;
+            border: none;
+        }
+        body:fullscreen #navigation-controls {
+            position: fixed;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 95%;
+            max-width: 1280px; /* max-w-7xl */
+            z-index: 50;
+        }
+    </style>
+</head>
+<body class="text-white min-h-screen flex flex-col items-center justify-center p-4">
+
+    <!-- Main Slide Container - Increased size for a better view -->
+    <div id="slide-content" class="w-full max-w-7xl h-[80vh] rounded-2xl shadow-2xl flex items-center justify-center p-8 slide-container">
+        <!-- Slide content will be injected here by JavaScript -->
+    </div>
+
+    <!-- Navigation and Progress Bar -->
+    <div id="navigation-controls" class="w-full max-w-7xl mt-8">
+        <!-- Progress Bar -->
+        <div class="w-full bg-gray-700 rounded-full h-2.5 mb-4">
+            <div id="progress-bar" class="bg-cyan-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+        
+        <div class="flex justify-between items-center">
+            <!-- Previous Button -->
+            <button id="prev-btn" class="flex items-center gap-2 px-6 py-3 bg-gray-800 rounded-lg shadow-md hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                Previous
+            </button>
+
+            <!-- Controls -->
+            <div class="flex items-center gap-4">
+                <span id="slide-counter" class="text-gray-400 text-lg">
+                    1 / 32
+                </span>
+                <button id="fullscreen-btn" title="Toggle Fullscreen (F key)" class="p-2 text-gray-400 hover:text-white transition-colors bg-gray-800 rounded-lg shadow-md hover:bg-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                </button>
+            </div>
+
+            <!-- Next Button -->
+            <button id="next-btn" class="flex items-center gap-2 px-6 py-3 bg-cyan-600 rounded-lg shadow-md hover:bg-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                Next
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- Slide Data ---
+        const slides = [
+          { type: 'title', title: 'Day 2: The Network in Action', subtitle: 'Cybersecurity Bootcamp' },
+          { type: 'list', title: 'Agenda', items: ['TCP/UDP Deep Dive', 'DNS Deep Dive', 'DHCP Review', 'Wi-Fi Concepts & Security', 'Lab 1: Wireshark Analysis', 'Lab 2: Packet Hunting', 'Group Activity: Network Design'] },
+          { type: 'list', title: 'Day 2 Introduction', items: ['Yesterday, we learned the **structure** of networks (the "what").', 'Today, we learn about the **protocols** that make them work (the "how").', 'We will explore the dynamic services that manage data flow and automate network configuration.', 'Get ready to see these concepts live with **Wireshark**!'] },
+          { type: 'title', title: 'TCP vs. UDP', subtitle: 'The Two Postal Services of the Internet' },
+          { type: 'list', title: 'TCP: The Reliable Workhorse', items: ['**TCP** stands for **T**ransmission **C**ontrol **P**rotocol.', 'It is **connection-oriented**.', 'Guarantees that all data arrives, in order, and without errors.', 'Think of it like a tracked package that requires a signature.'] },
+          { type: 'list', title: 'TCP: The Three-Way Handshake', items: ['TCP establishes a connection before sending data.', 'Step 1: Client sends a **SYN** (synchronize) packet.', 'Step 2: Server replies with a **SYN/ACK** (synchronize/acknowledge) packet.', 'Step 3: Client replies with an **ACK** (acknowledge) packet.', 'The connection is now established!'] },
+          { type: 'list', title: 'TCP: The Four-Way Handshake (Teardown)', items: ['TCP also has a formal process to close a connection gracefully.', 'Step 1: Client sends a **FIN** (finish) packet.', 'Step 2: Server sends an **ACK** to acknowledge the FIN.', 'Step 3: Server sends its own **FIN** when it\'s ready to close.', 'Step 4: Client sends a final **ACK**. The connection is now closed.'] },
+          { type: 'list', title: 'Other Important TCP Flags', items: ['**PSH (Push):** Tells the receiving device to push the data to the application immediately, without waiting for the buffer to fill.', '**URG (Urgent):** Indicates that the data is urgent and should be prioritized.', '**RST (Reset):** Abruptly terminates a connection. Often seen when a port is closed or an error occurs.'] },
+          { type: 'list', title: 'When is TCP Used?', items: ['Any application where **data integrity** is more important than raw speed.', 'Examples:', '**Web Browsing** (HTTP/HTTPS)', '**Email** (SMTP, IMAP)', '**File Transfers** (FTP, SFTP)'] },
+          { type: 'list', title: 'UDP: The Speedy Messenger', items: ['**UDP** stands for **U**ser **D**atagram **P**rotocol.', 'It is **connectionless**.', 'It\'s a "fire-and-forget" protocol with no guarantee of delivery.', 'Think of it like sending a postcard. It\'s fast, but might get lost.'] },
+          { type: 'list', title: 'When is UDP Used?', items: ['Any application where **speed** is more important than perfect reliability.', 'Examples:', '**Live Video/Audio Streaming**', '**Online Gaming**', '**Voice over IP (VoIP)**', '**DNS Lookups**'] },
+          { type: 'comparison', title: 'TCP vs. UDP at a Glance', subtitle: '', columns: [{ title: 'TCP (Transmission Control Protocol)', items: ['Reliable & Ordered', 'Connection-Oriented', 'Slower (more overhead)', 'Used for web, email, files'] }, { title: 'UDP (User Datagram Protocol)', items: ['Unreliable & Unordered', 'Connectionless', 'Faster (less overhead)', 'Used for streaming, gaming, DNS'] }] },
+          { type: 'title', title: 'DNS Deep Dive', subtitle: 'The Internet\'s Phonebook' },
+          { type: 'list', title: 'What is DNS?', items: ['Stands for **D**omain **N**ame **S**ystem.', 'Computers communicate using IP addresses, not names.', 'DNS translates human-friendly domain names (e.g., `google.com`) into machine-readable IP addresses (e.g., `142.250.190.78`).'] },
+          { type: 'list', title: 'The DNS Lookup Process', items: ['A multi-step process that happens in milliseconds.', 'Your computer asks a **DNS Recursor** (from your ISP).', 'The Recursor asks a **Root Server**.', 'The Root Server points to a **TLD Server** (e.g., for `.com`).', 'The TLD Server points to the domain\'s **Authoritative Nameserver**.', 'The Authoritative Nameserver gives the final IP address.'] },
+          { type: 'list', title: 'Common DNS Record Types', items: ['**A Record:** Maps a hostname to an IPv4 address.', '**AAAA Record:** Maps a hostname to an IPv6 address.', '**CNAME (Canonical Name):** An alias that points one name to another (e.g., `www.example.com` points to `example.com`).', '**MX (Mail Exchanger):** Specifies the mail servers for a domain.', '**TXT (Text):** Can hold arbitrary text, often used for security policies like SPF.'] },
+          { type: 'list', title: 'DNS Caching', items: ['To speed things up, the results of DNS lookups are **cached** (temporarily stored).', 'Your computer keeps a local cache.', 'Your router keeps a cache.', 'Your ISP\'s DNS Recursor keeps a cache.', 'This means the full lookup process doesn\'t have to happen every single time.'] },
+          { type: 'title', title: 'DHCP Review', subtitle: 'Automatic Network Configuration' },
+          { type: 'list', title: 'What is DHCP?', items: ['Stands for **D**ynamic **H**ost **C**onfiguration **P**rotocol.', 'The service that automatically assigns IP addresses to devices on a network.', 'Without it, you would have to manually configure every device that connects.'] },
+          { type: 'list', title: 'The DORA Process', items: ['DHCP works in four steps:', '**D**iscover: Your device shouts, "Is there a DHCP server here?"', '**O**ffer: The DHCP server replies, "I have an IP address for you!"', '**R**equest: Your device says, "I\'ll take that IP address!"', '**A**cknowledge: The server confirms, "It\'s yours! Welcome."'] },
+          { type: 'title', title: 'Wi-Fi Concepts & Security', subtitle: 'Networking Without Wires' },
+          { type: 'list', title: 'Wi-Fi: Basic Concepts', items: ['Wi-Fi uses **radio waves** to transmit data.', '**Wireless Access Point (WAP):** The device that broadcasts the signal (usually part of your router).', '**Wireless Client:** Any device that connects (laptop, phone, etc.).'] },
+          { type: 'list', title: 'Wi-Fi Frequencies', items: ['**2.4 GHz:** Slower, but has a longer range and better wall penetration.', '**5 GHz:** Much faster, but has a shorter range and is more easily blocked by obstacles.', 'Most modern routers broadcast on both frequencies.'] },
+          { type: 'list', title: 'Wi-Fi Security: Personal vs. Enterprise', items: ['**WPA2/WPA3-Personal:** What you use at home. Uses a single password (**Pre-Shared Key** or PSK) for all users.', '**WPA2/WPA3-Enterprise:** Used in businesses. Each user has a unique username and password, authenticated against a central **RADIUS server**. Much more secure.'] },
+          { type: 'list', title: 'Lab 1: Wireshark Analysis', items: ['**Objective:** Use Wireshark to capture and analyze live network traffic.', '**Tasks:**', 'Capture your own traffic while visiting a website.', 'Filter for and identify the TCP three-way handshake.', 'Find the DNS query and HTTP request.'] },
+          { type: 'list', title: 'Lab 2: Packet Hunting', items: ['**Objective:** Use Wireshark\'s display filters to find specific information in a pre-made packet capture file.', '**Tasks:**', 'Isolate traffic from a specific IP address.', 'Find all ARP traffic.', 'Locate a specific type of HTTP request.'] },
+          { type: 'list', title: 'Group Activity: Coffee Shop Network Design', items: ['**Objective:** Work in a team to design a secure network for a small business.', '**Scenario:** A new coffee shop needs two networks: one private for staff/payment, and one public for guests.', '**Task:** Whiteboard your design, considering IP ranges, DHCP, and Wi-Fi security for both networks.'] },
+          { type: 'list', title: 'Day 2 Wrap-Up', items: ['**Review:** TCP/UDP, DNS, DHCP, Wi-Fi Concepts and Security.', '**Q&A**', '**Preview Day 3:** Intro to Cybersecurity & The Hacker Mindset.'] },
+        ];
+
+        let currentSlide = 0;
+
+        // --- DOM Elements ---
+        const slideContentEl = document.getElementById('slide-content');
+        const progressBarEl = document.getElementById('progress-bar');
+        const slideCounterEl = document.getElementById('slide-counter');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        
+        // --- Helper function to parse markdown-like formatting ---
+        function formatText(text) {
+            return text
+                .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-cyan-300">$1</strong>')
+                .replace(/`(.*?)`/g, '<code class="bg-gray-700 text-yellow-300 rounded px-1.5 py-0.5 font-mono text-sm">$1</code>');
+        }
+
+        // --- Function to render the current slide ---
+        function renderSlide() {
+            const slide = slides[currentSlide];
+            let html = '';
+
+            switch (slide.type) {
+                case 'title':
+                    html = `<div class="text-center fade-in"><h1 class="text-5xl md:text-6xl font-bold text-white mb-4">${slide.title}</h1><p class="text-2xl md:text-3xl text-cyan-400">${slide.subtitle}</p></div>`;
+                    break;
+                case 'list':
+                    html = `<div class="w-full fade-in"><h2 class="text-4xl font-bold text-white mb-8 text-center">${slide.title}</h2><ul class="space-y-4 text-xl text-gray-300 list-disc list-inside max-w-3xl mx-auto">${slide.items.map(item => `<li>${formatText(item)}</li>`).join('')}</ul></div>`;
+                    break;
+                case 'comparison':
+                    html = `<div class="w-full fade-in"><h2 class="text-4xl font-bold text-white mb-2 text-center">${slide.title}</h2><p class="text-xl text-gray-400 mb-8 text-center">${formatText(slide.subtitle)}</p><div class="grid md:grid-cols-2 gap-8 w-full">${slide.columns.map(col => `<div class="bg-gray-800 p-6 rounded-lg"><h3 class="text-2xl font-semibold text-cyan-400 mb-4">${col.title}</h3><ul class="space-y-3 text-lg text-gray-300 list-disc list-inside">${col.items.map(item => `<li>${formatText(item)}</li>`).join('')}</ul></div>`).join('')}</div></div>`;
+                    break;
+                default:
+                    html = `<div class="text-center fade-in"><h2 class="text-2xl text-red-400">Error: Unknown slide type.</h2></div>`;
+            }
+            slideContentEl.innerHTML = html;
+        }
+
+        // --- Function to update the entire UI state ---
+        function updateUI() {
+            renderSlide();
+            
+            const progress = ((currentSlide + 1) / slides.length) * 100;
+            progressBarEl.style.width = `${progress}%`;
+            slideCounterEl.textContent = `${currentSlide + 1} / ${slides.length}`;
+            prevBtn.disabled = currentSlide === 0;
+            nextBtn.disabled = currentSlide === slides.length - 1;
+        }
+        
+        // --- Fullscreen Toggle Function ---
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        // --- Event Listeners ---
+        prevBtn.addEventListener('click', () => {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateUI();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                updateUI();
+            }
+        });
+        
+        fullscreenBtn.addEventListener('click', toggleFullScreen);
+        
+        // --- Keyboard Navigation ---
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                e.preventDefault();
+                nextBtn.click();
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                prevBtn.click();
+            } else if (e.key.toLowerCase() === 'f') {
+                e.preventDefault();
+                toggleFullScreen();
+            }
+        });
+
+        // --- Initial Render ---
+        document.addEventListener('DOMContentLoaded', updateUI);
+
+    </script>
+</body>
+</html>

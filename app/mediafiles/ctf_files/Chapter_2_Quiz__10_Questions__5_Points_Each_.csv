@@ -1,0 +1,11 @@
+Column A,Column B,Column C,Column D,Column E,Column F,Column G,Column H,Column I,Column J
+MC,,5,What is the binary system also called?,3,Base-8,Base-10,Base-2,Base-16,Base-4
+MC,,5,Which device converts human commands to computer commands?,2,Output device,Input device,Storage device,Network adapter,CPU
+MC,,5,What does the CPU primarily do in the computer?,3,Display results,Transmit data,Process data,Store backups,Connect to WiFi
+MC,,5,What is a common output device?,1,Monitor,Microphone,Scanner,Keyboard,Network port
+MC,,5,What file type is associated with saving a webpage in HTML?,4,.docx,.pdf,.csv,.html,.pptx
+MC,,5,Which of these units is smallest?,2,Byte,Bit,Kilobyte,Megabyte,Terabyte
+MC,,5,How many bits are in a byte?,1,8,10,16,4,32
+MC,,5,Which data type represents whole numbers?,3,String,Float,Integer,Character,Boolean
+MC,,5,What is hexadecimal also known as?,4,Base-10,Base-8,Base-2,Base-16,Base-4
+MC,,5,What data type represents text?,2,Integer,String,Boolean,Float,Byte

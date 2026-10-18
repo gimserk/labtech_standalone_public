@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 8: The Capstone Challenge</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts for a clean look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Custom styles for the presentation */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* bg-gray-900 */
+        }
+        .slide-container {
+            background-color: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(4px);
+            border: 1px solid #374151; /* border-gray-700 */
+            transition: opacity 0.5s ease-in-out;
+        }
+        /* Simple fade transition for slide content */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        /* Enhanced fullscreen experience */
+        body:fullscreen #slide-content {
+            width: 100vw;
+            height: 100vh;
+            max-width: 100vw;
+            border-radius: 0;
+            border: none;
+        }
+        body:fullscreen #navigation-controls {
+            position: fixed;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 95%;
+            max-width: 1280px; /* max-w-7xl */
+            z-index: 50;
+        }
+    </style>
+</head>
+<body class="text-white min-h-screen flex flex-col items-center justify-center p-4">
+
+    <!-- Main Slide Container - Increased size for a better view -->
+    <div id="slide-content" class="w-full max-w-7xl h-[80vh] rounded-2xl shadow-2xl flex items-center justify-center p-8 slide-container">
+        <!-- Slide content will be injected here by JavaScript -->
+    </div>
+
+    <!-- Navigation and Progress Bar -->
+    <div id="navigation-controls" class="w-full max-w-7xl mt-8">
+        <!-- Progress Bar -->
+        <div class="w-full bg-gray-700 rounded-full h-2.5 mb-4">
+            <div id="progress-bar" class="bg-cyan-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+        
+        <div class="flex justify-between items-center">
+            <!-- Previous Button -->
+            <button id="prev-btn" class="flex items-center gap-2 px-6 py-3 bg-gray-800 rounded-lg shadow-md hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                Previous
+            </button>
+
+            <!-- Controls -->
+            <div class="flex items-center gap-4">
+                <span id="slide-counter" class="text-gray-400 text-lg">
+                    1 / 10
+                </span>
+                <button id="fullscreen-btn" title="Toggle Fullscreen (F key)" class="p-2 text-gray-400 hover:text-white transition-colors bg-gray-800 rounded-lg shadow-md hover:bg-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                </button>
+            </div>
+
+            <!-- Next Button -->
+            <button id="next-btn" class="flex items-center gap-2 px-6 py-3 bg-cyan-600 rounded-lg shadow-md hover:bg-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                Next
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- Slide Data ---
+        const slides = [
+          { type: 'title', title: 'Day 8: The Capstone Challenge', subtitle: 'Final Exam & Capture the Flag' },
+          { type: 'list', title: 'Agenda', items: ['Final Exam', 'Capstone Project: Capture the Flag (CTF)', 'Competition Rules & Team Formation', 'Awards & Wrap-up'] },
+          { type: 'list', title: 'The Final Challenge', items: ['Congratulations on making it to the final day!', 'Today, you put all your knowledge and skills to the test.', 'The day is split into two parts:', '**Part 1:** A final exam to test your knowledge.', '**Part 2:** A hands-on, team-based capstone project.'] },
+          { type: 'list', title: 'Part 1: The Final Exam', items: ['**Format:** 50 multiple-choice questions.', '**Scope:** Covers all topics from Day 1 through Day 7.', '**Purpose:** To solidify your understanding of the core concepts of networking and cybersecurity.', 'This is an individual effort. Good luck!'] },
+          { type: 'title', title: 'Part 2: Capstone Project', subtitle: 'Capture the Flag (CTF)' },
+          { type: 'list', title: 'What is a CTF?', items: ['A **Capture the Flag** is a cybersecurity competition.', 'You will work in teams to hack into a series of vulnerable systems in a safe, controlled environment.', 'The goal is to find hidden pieces of text called **"flags"**.', 'Each flag submitted earns your team points. The team with the most points wins!'] },
+          { type: 'list', title: 'Rules of Engagement', items: ['**Scope:** You are only authorized to attack the target systems provided for the CTF.', '**Prohibited:** Attacking other teams, the classroom network, or any system outside the CTF environment is strictly forbidden.', '**Collaboration:** Work with your teammates, but do not share flags or solutions with other teams.', 'This is an ethical hacking challenge. Have fun and be professional.'] },
+          { type: 'list', title: 'Challenge Categories', items: ['The CTF will test everything you have learned:', '**Networking:** Scanning and enumeration with Nmap.', '**Web Exploitation:** Finding and exploiting flaws like SQL Injection.', '**Exploitation:** Using Metasploit to gain shells on target systems.', '**Forensics:** Analyzing logs and memory dumps to find hidden clues.'] },
+          { type: 'title', title: 'Let the Games Begin!', subtitle: 'Form your teams, strategize, and good luck!' },
+          { type: 'title', title: 'Congratulations!', subtitle: 'You have completed the Cybersecurity Bootcamp!' },
+        ];
+
+        let currentSlide = 0;
+
+        // --- DOM Elements ---
+        const slideContentEl = document.getElementById('slide-content');
+        const progressBarEl = document.getElementById('progress-bar');
+        const slideCounterEl = document.getElementById('slide-counter');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        
+        // --- Helper function to parse markdown-like formatting ---
+        function formatText(text) {
+            return text
+                .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-cyan-300">$1</strong>')
+                .replace(/`(.*?)`/g, '<code class="bg-gray-700 text-yellow-300 rounded px-1.5 py-0.5 font-mono text-sm">$1</code>');
+        }
+
+        // --- Function to render the current slide ---
+        function renderSlide() {
+            const slide = slides[currentSlide];
+            let html = '';
+
+            switch (slide.type) {
+                case 'title':
+                    html = `<div class="text-center fade-in"><h1 class="text-5xl md:text-6xl font-bold text-white mb-4">${slide.title}</h1><p class="text-2xl md:text-3xl text-cyan-400">${slide.subtitle}</p></div>`;
+                    break;
+                case 'list':
+                    html = `<div class="w-full fade-in"><h2 class="text-4xl font-bold text-white mb-8 text-center">${slide.title}</h2><ul class="space-y-4 text-xl text-gray-300 list-disc list-inside max-w-3xl mx-auto">${slide.items.map(item => `<li>${formatText(item)}</li>`).join('')}</ul></div>`;
+                    break;
+                case 'comparison':
+                    html = `<div class="w-full fade-in"><h2 class="text-4xl font-bold text-white mb-2 text-center">${slide.title}</h2><p class="text-xl text-gray-400 mb-8 text-center">${formatText(slide.subtitle)}</p><div class="grid md:grid-cols-2 gap-8 w-full">${slide.columns.map(col => `<div class="bg-gray-800 p-6 rounded-lg"><h3 class="text-2xl font-semibold text-cyan-400 mb-4">${col.title}</h3><ul class="space-y-3 text-lg text-gray-300 list-disc list-inside">${col.items.map(item => `<li>${formatText(item)}</li>`).join('')}</ul></div>`).join('')}</div></div>`;
+                    break;
+                default:
+                    html = `<div class="text-center fade-in"><h2 class="text-2xl text-red-400">Error: Unknown slide type.</h2></div>`;
+            }
+            slideContentEl.innerHTML = html;
+        }
+
+        // --- Function to update the entire UI state ---
+        function updateUI() {
+            renderSlide();
+            
+            const progress = ((currentSlide + 1) / slides.length) * 100;
+            progressBarEl.style.width = `${progress}%`;
+            slideCounterEl.textContent = `${currentSlide + 1} / ${slides.length}`;
+            prevBtn.disabled = currentSlide === 0;
+            nextBtn.disabled = currentSlide === slides.length - 1;
+        }
+        
+        // --- Fullscreen Toggle Function ---
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        // --- Event Listeners ---
+        prevBtn.addEventListener('click', () => {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateUI();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                updateUI();
+            }
+        });
+        
+        fullscreenBtn.addEventListener('click', toggleFullScreen);
+        
+        // --- Keyboard Navigation ---
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                e.preventDefault();
+                nextBtn.click();
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                prevBtn.click();
+            } else if (e.key.toLowerCase() === 'f') {
+                e.preventDefault();
+                toggleFullScreen();
+            }
+        });
+
+        // --- Initial Render ---
+        document.addEventListener('DOMContentLoaded', updateUI);
+
+    </script>
+</body>
+</html>

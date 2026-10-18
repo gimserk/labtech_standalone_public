@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 4: Active Recon & Scanning</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts for a clean look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Custom styles for the presentation */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* bg-gray-900 */
+        }
+        .slide-container {
+            background-color: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(4px);
+            border: 1px solid #374151; /* border-gray-700 */
+            transition: opacity 0.5s ease-in-out;
+        }
+        /* Simple fade transition for slide content */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        /* Enhanced fullscreen experience */
+        body:fullscreen #slide-content {
+            width: 100vw;
+            height: 100vh;
+            max-width: 100vw;
+            border-radius: 0;
+            border: none;
+        }
+        body:fullscreen #navigation-controls {
+            position: fixed;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 95%;
+            max-width: 1280px; /* max-w-7xl */
+            z-index: 50;
+        }
+    </style>
+</head>
+<body class="text-white min-h-screen flex flex-col items-center justify-center p-4">
+
+    <!-- Main Slide Container - Increased size for a better view -->
+    <div id="slide-content" class="w-full max-w-7xl h-[80vh] rounded-2xl shadow-2xl flex items-center justify-center p-8 slide-container">
+        <!-- Slide content will be injected here by JavaScript -->
+    </div>
+
+    <!-- Navigation and Progress Bar -->
+    <div id="navigation-controls" class="w-full max-w-7xl mt-8">
+        <!-- Progress Bar -->
+        <div class="w-full bg-gray-700 rounded-full h-2.5 mb-4">
+            <div id="progress-bar" class="bg-cyan-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+        
+        <div class="flex justify-between items-center">
+            <!-- Previous Button -->
+            <button id="prev-btn" class="flex items-center gap-2 px-6 py-3 bg-gray-800 rounded-lg shadow-md hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                Previous
+            </button>
+
+            <!-- Controls -->
+            <div class="flex items-center gap-4">
+                <span id="slide-counter" class="text-gray-400 text-lg">
+                    1 / 30
+                </span>
+                <button id="fullscreen-btn" title="Toggle Fullscreen (F key)" class="p-2 text-gray-400 hover:text-white transition-colors bg-gray-800 rounded-lg shadow-md hover:bg-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                </button>
+            </div>
+
+            <!-- Next Button -->
+            <button id="next-btn" class="flex items-center gap-2 px-6 py-3 bg-cyan-600 rounded-lg shadow-md hover:bg-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                Next
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- Slide Data ---
+        const slides = [
+          { type: 'title', title: 'Day 4: Active Recon & Scanning', subtitle: 'Rattling the Doorknobs' },
+          { type: 'list', title: 'Agenda', items: ['Network Scanning Principles', 'Enumeration Principles', 'Scanning Tools: Nmap', 'Vulnerability Scanning', 'Hands-On Labs'] },
+          { type: 'list', title: 'Day 4 Introduction', items: ['Yesterday, we learned the "why" of attacks.', 'Today, we learn the "how" of **active reconnaissance**.', 'We move from passively observing to actively probing the target.', 'This is where we build the map an attacker uses to find a way in.'] },
+          { type: 'title', title: 'Network Scanning', subtitle: 'Building the Map' },
+          { type: 'list', title: 'Scanning vs. Reconnaissance', items: ['**Passive Reconnaissance (Day 3):** Gathering info without touching the target (e.g., OSINT, Google searches). It\'s stealthy.', '**Active Scanning (Today):** Directly interacting with the target network. Sends packets, gets responses. It\'s noisy but provides accurate data.'] },
+          { type: 'list', title: 'The Goals of Scanning', items: ['**1. Host Discovery:** What devices are online?', '**2. Port Scanning:** What services are they running?', '**3. OS & Service Fingerprinting:** What specific software versions are they using?'] },
+          { type: 'list', title: 'Host Discovery: Is Anyone Home?', items: ['The first step: find live hosts in a network range.', '**Ping Sweep:** Sends ICMP "ping" packets to see who responds.', '**ARP Scan:** Used on a local network; highly reliable.', '**TCP/UDP Pings:** Can bypass firewalls that block ICMP.'] },
+          { type: 'list', title: 'Port Scanning: Are the Doors Unlocked?', items: ['Systematically checking for open ports on a live host.', 'An open port means a service is listening and is a potential entry point.'] },
+          { type: 'list', title: 'Understanding Port States', items: ['**Open:** The port is actively accepting connections. The primary goal for an attacker.', '**Closed:** The port is accessible, but no application is listening.', '**Filtered:** A firewall is blocking the scan, so the state cannot be determined.'] },
+          { type: 'list', title: 'Common Port Scanning Techniques', items: ['**TCP SYN Scan (-sS):** The "stealth" scan. Fast, efficient, and less likely to be logged because it doesn\'t complete the full TCP handshake.', '**TCP Connect Scan (-sT):** Reliable but noisy. Completes the full handshake, which is easily detected.', '**UDP Scan (-sU):** Scans for UDP ports. Slower and more difficult than TCP scanning.'] },
+          { type: 'list', title: 'OS & Service Fingerprinting', items: ['**Service Fingerprinting:** Determines the exact software and version running on a port (e.g., `Apache httpd 2.4.41`).', '**OS Fingerprinting:** Analyzes network responses to guess the operating system (e.g., `Windows Server 2019`, `Ubuntu Linux`).', 'This information is critical for finding a matching exploit.'] },
+          { type: 'title', title: 'Enumeration', subtitle: 'Getting the Details' },
+          { type: 'list', title: 'What is Enumeration?', items: ['If scanning builds the map, enumeration adds the labels.', 'It\'s the process of using active connections to extract specific details from services.', 'Examples: Usernames, machine names, network shares, password policies.'] },
+          { type: 'list', title: 'Common Enumeration Targets', items: ['**SMB (Windows Shares):** Look for shared folders, user lists.', '**DNS (Domain Name System):** Attempt a "zone transfer" to get all internal hostnames.', '**SMTP (Email):** Try to find valid email addresses.', '**SNMP (Network Management):** Query devices for detailed configuration info.'] },
+          { type: 'title', title: 'Scanning & Enumeration Tools', subtitle: 'The Ethical Hacker\'s Toolkit' },
+          { type: 'list', title: 'Nmap: The King of Scanners', items: ['**N**etwork **Map**per is the industry-standard tool.', 'It\'s a powerful and versatile command-line scanner.', 'Can perform host discovery, port scanning, version detection, OS fingerprinting, and more.'] },
+          { type: 'list', title: 'Nmap: Host Discovery', items: ['**Command:** `nmap -sn <target>`', 'The `-sn` flag tells Nmap to perform a "ping scan".', 'It discovers which hosts are online but does **not** perform a port scan.', 'Great for quickly mapping a network.'] },
+          { type: 'list', title: 'Nmap: Port Scanning', items: ['**Basic Scan:** `nmap <target>` (scans top 1000 TCP ports).', '**Scan All Ports:** `nmap -p- <target>`', '**Scan Specific Ports:** `nmap -p 22,80,443 <target>`', '**Fast Scan:** `nmap -F <target>` (scans top 100 ports).'] },
+          { type: 'list', title: 'Nmap: Service & OS Detection', items: ['**Service Version Detection:** `nmap -sV <target>`', 'Probes open ports to find out what software version is running.', '**OS Detection:** `nmap -O <target>`', 'Analyzes responses to guess the operating system. Requires root/admin privileges.'] },
+          { type: 'list', title: 'Nmap: The Aggressive Scan', items: ['**Command:** `nmap -A <target>`', 'A convenient shortcut for a comprehensive scan.', 'Enables OS detection (`-O`), version detection (`-sV`), script scanning (`-sC`), and traceroute.'] },
+          { type: 'list', title: 'Other Key Tools', items: ['**Nikto:** A specialized web server scanner that checks for thousands of vulnerabilities.', '**Enum4linux:** A tool specifically for enumerating information from Windows and Samba systems.', '**Masscan:** An incredibly fast scanner designed for scanning huge IP ranges (like the entire internet).'] },
+          { type: 'title', title: 'Vulnerability Scanning', subtitle: 'Finding the Flaws' },
+          { type: 'list', title: 'What is Vulnerability Scanning?', items: ['An automated process to identify known security weaknesses.', 'It takes the results of a network scan and compares them against a database of vulnerabilities.', '**CVE (Common Vulnerabilities and Exposures):** The industry standard for naming known flaws.'] },
+          { type: 'list', title: 'How it Works', items: ['The scanner identifies a service (e.g., `Apache 2.4.41`).', 'It checks its database for all known CVEs related to that version.', 'It runs safe checks to confirm if the vulnerability is present.', 'It generates a report, prioritizing flaws by severity (e.g., using CVSS scores).'] },
+          { type: 'comparison', title: 'Authenticated vs. Unauthenticated', subtitle: '', columns: [{ title: 'Unauthenticated Scan', items: ['"Black box" view.', 'Sees the network like an external attacker.', 'Quick but can miss local vulnerabilities.'] }, { title: 'Authenticated Scan', items: ['Scanner has login credentials.', 'Can inspect files and configurations directly.', 'Much more accurate and comprehensive.'] }] },
+          { type: 'list', title: 'Key Vulnerability Scanners', items: ['**Nessus:** The commercial industry leader, developed by Tenable. Known for its user-friendly interface and extensive plugin database.', '**OpenVAS:** The premier open-source vulnerability scanner. Powerful and free, maintained by Greenbone Networks.'] },
+          { type: 'list', title: 'Lab 1: Nmap Ninja', items: ['**Objective:** Use Nmap to perform a full reconnaissance workflow.', '**Tasks:**', 'Use Nmap to discover live hosts.', 'Perform various port scans on a target.', 'Use service and OS detection to identify running software.'] },
+          { type: 'list', title: 'Lab 2: Vulnerability Voyage', items: ['**Objective:** Use a vulnerability scanner to find flaws in a target system.', '**Tasks:**', 'Configure and launch a Nessus or OpenVAS scan.', 'Analyze the generated report.', 'Identify the most critical vulnerabilities found on the target.'] },
+          { type: 'list', title: 'Day 4 Wrap-Up', items: ['**Review:** Scanning, Enumeration, Nmap, Vulnerability Scanning.', '**Q&A**', '**Preview Day 5:** The Red Team - Exploitation with Metasploit.'] },
+        ];
+
+        let currentSlide = 0;
+
+        // --- DOM Elements ---
+        const slideContentEl = document.getElementById('slide-content');
+        const progressBarEl = document.getElementById('progress-bar');
+        const slideCounterEl = document.getElementById('slide-counter');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        
+        // --- Helper function to parse markdown-like formatting ---
+        function formatText(text) {
+            return text
+                .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-cyan-300">$1</strong>')
+                .replace(/`(.*?)`/g, '<code class="bg-gray-700 text-yellow-300 rounded px-1.5 py-0.5 font-mono text-sm">$1</code>');
+        }
+
+        // --- Function to render the current slide ---
+        function renderSlide() {
+            const slide = slides[currentSlide];
+            let html = '';
+
+            switch (slide.type) {
+                case 'title':
+                    html = `<div class="text-center fade-in"><h1 class="text-5xl md:text-6xl font-bold text-white mb-4">${slide.title}</h1><p class="text-2xl md:text-3xl text-cyan-400">${slide.subtitle}</p></div>`;
+                    break;
+                case 'list':
+                    html = `<div class="w-full fade-in"><h2 class="text-4xl font-bold text-white mb-8 text-center">${slide.title}</h2><ul class="space-y-4 text-xl text-gray-300 list-disc list-inside max-w-3xl mx-auto">${slide.items.map(item => `<li>${formatText(item)}</li>`).join('')}</ul></div>`;
+                    break;
+                case 'comparison':
+                    html = `<div class="w-full fade-in"><h2 class="text-4xl font-bold text-white mb-2 text-center">${slide.title}</h2><p class="text-xl text-gray-400 mb-8 text-center">${formatText(slide.subtitle)}</p><div class="grid md:grid-cols-2 gap-8 w-full">${slide.columns.map(col => `<div class="bg-gray-800 p-6 rounded-lg"><h3 class="text-2xl font-semibold text-cyan-400 mb-4">${col.title}</h3><ul class="space-y-3 text-lg text-gray-300 list-disc list-inside">${col.items.map(item => `<li>${formatText(item)}</li>`).join('')}</ul></div>`).join('')}</div></div>`;
+                    break;
+            }
+            slideContentEl.innerHTML = html;
+        }
+
+        // --- Function to update the entire UI state ---
+        function updateUI() {
+            renderSlide();
+            
+            const progress = ((currentSlide + 1) / slides.length) * 100;
+            progressBarEl.style.width = `${progress}%`;
+            slideCounterEl.textContent = `${currentSlide + 1} / ${slides.length}`;
+            prevBtn.disabled = currentSlide === 0;
+            nextBtn.disabled = currentSlide === slides.length - 1;
+        }
+        
+        // --- Fullscreen Toggle Function ---
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        // --- Event Listeners ---
+        prevBtn.addEventListener('click', () => {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateUI();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                updateUI();
+            }
+        });
+        
+        fullscreenBtn.addEventListener('click', toggleFullScreen);
+        
+        // --- Keyboard Navigation ---
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                e.preventDefault();
+                nextBtn.click();
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                prevBtn.click();
+            } else if (e.key.toLowerCase() === 'f') {
+                e.preventDefault();
+                toggleFullScreen();
+            }
+        });
+
+        // --- Initial Render ---
+        document.addEventListener('DOMContentLoaded', updateUI);
+
+    </script>
+</body>
+</html>

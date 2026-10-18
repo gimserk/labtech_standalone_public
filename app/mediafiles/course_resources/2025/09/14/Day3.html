@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 3: Intro to Cybersecurity</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts for a clean look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Custom styles for the presentation */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* bg-gray-900 */
+        }
+        .slide-container {
+            background-color: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(4px);
+            border: 1px solid #374151; /* border-gray-700 */
+            transition: opacity 0.5s ease-in-out;
+        }
+        /* Simple fade transition for slide content */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        /* Enhanced fullscreen experience */
+        body:fullscreen #slide-content {
+            width: 100vw;
+            height: 100vh;
+            max-width: 100vw;
+            border-radius: 0;
+            border: none;
+        }
+        body:fullscreen #navigation-controls {
+            position: fixed;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 95%;
+            max-width: 1280px; /* max-w-7xl */
+            z-index: 50;
+        }
+    </style>
+</head>
+<body class="text-white min-h-screen flex flex-col items-center justify-center p-4">
+
+    <!-- Main Slide Container - Increased size for a better view -->
+    <div id="slide-content" class="w-full max-w-7xl h-[80vh] rounded-2xl shadow-2xl flex items-center justify-center p-8 slide-container">
+        <!-- Slide content will be injected here by JavaScript -->
+    </div>
+
+    <!-- Navigation and Progress Bar -->
+    <div id="navigation-controls" class="w-full max-w-7xl mt-8">
+        <!-- Progress Bar -->
+        <div class="w-full bg-gray-700 rounded-full h-2.5 mb-4">
+            <div id="progress-bar" class="bg-cyan-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+        
+        <div class="flex justify-between items-center">
+            <!-- Previous Button -->
+            <button id="prev-btn" class="flex items-center gap-2 px-6 py-3 bg-gray-800 rounded-lg shadow-md hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                Previous
+            </button>
+
+            <!-- Controls -->
+            <div class="flex items-center gap-4">
+                <span id="slide-counter" class="text-gray-400 text-lg">
+                    1 / 30
+                </span>
+                <button id="fullscreen-btn" title="Toggle Fullscreen (F key)" class="p-2 text-gray-400 hover:text-white transition-colors bg-gray-800 rounded-lg shadow-md hover:bg-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                </button>
+            </div>
+
+            <!-- Next Button -->
+            <button id="next-btn" class="flex items-center gap-2 px-6 py-3 bg-cyan-600 rounded-lg shadow-md hover:bg-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                Next
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- Slide Data ---
+        const slides = [
+          { type: 'title', title: 'Day 3: Intro to Cybersecurity', subtitle: 'The Hacker Mindset' },
+          { type: 'list', title: 'Agenda', items: ['The CIA Triad', 'Common Threat Actors', 'The Cyber Kill Chain', 'Intro to Pentesting Operating Systems', 'Hands-On Labs'] },
+          { type: 'list', title: 'Day 3 Introduction', items: ['We now shift from **building** networks to **defending** them.', 'To defend, you must first learn to think like an attacker.', 'Today, we learn the "why" and "how" of cyber attacks.', 'We will get our hands on **Kali Linux**, the primary tool for ethical hacking.'] },
+          { type: 'title', title: 'The CIA Triad', subtitle: 'The Three Pillars of Information Security' },
+          { type: 'list', title: 'Confidentiality 🤫', items: ['**Principle:** Keeping secrets. Ensuring data is only accessed by authorized users.', '**Analogy:** A sealed envelope.', '**Protection:** Encryption, Access Control, Passwords.', '**Attack Example:** A data breach stealing customer credit card numbers.'] },
+          { type: 'list', title: 'Integrity 📝', items: ['**Principle:** Ensuring data is trustworthy and has not been tampered with.', '**Analogy:** A legal document that cannot be altered after signing.', '**Protection:** Hashing, Digital Signatures, File Permissions.', '**Attack Example:** A hacker changing the destination account number on a bank transfer.'] },
+          { type: 'list', title: 'Availability ⏰', items: ['**Principle:** Ensuring data and services are accessible when needed.', '**Analogy:** An ATM that is always in service.', '**Protection:** Redundancy (backups), DDoS Mitigation, Hardware Maintenance.', '**Attack Example:** A DDoS attack crashing a website.'] },
+          { type: 'title', title: 'Threat Actors', subtitle: 'Who are the attackers and what do they want?' },
+          { type: 'list', title: 'Script Kiddies 🧑‍💻', items: ['**Who:** Amateur, unskilled hackers using pre-made tools.', '**Motivation:** Bragging rights, curiosity, causing chaos.', '**Methods:** Using tools like Low Orbit Ion Cannon (LOIC) for DDoS, following online tutorials.'] },
+          { type: 'list', title: 'Hacktivists 🎭', items: ['**Who:** "Hacker-activists" promoting a political or social agenda.', '**Motivation:** Ideology. To disrupt or embarrass an organization they oppose.', '**Methods:** Website defacement, DDoS attacks, leaking sensitive information (doxing).'] },
+          { type: 'list', title: 'Cybercriminals 💰', items: ['**Who:** Professionals focused exclusively on financial gain.', '**Motivation:** Money. The most common threat to businesses and individuals.', '**Methods:** Ransomware, phishing campaigns, selling stolen data on the dark web.'] },
+          { type: 'list', title: 'Insider Threats 🕵️', items: ['**Who:** Anyone with legitimate access (employees, contractors).', '**Motivation:** Can be **malicious** (revenge, financial gain) or **unintentional** (negligence, phishing).', '**Methods:** Abusing permissions to steal data, or accidentally clicking a malicious link.'] },
+          { type: 'list', title: 'Nation-State Actors 🏛️', items: ['**Who:** Agents sponsored by a government.', '**Motivation:** Espionage (stealing secrets), Sabotage (disrupting critical infrastructure), Influence.', '**Methods:** Highly advanced, custom-built malware, zero-day exploits, Advanced Persistent Threats (APTs).'] },
+          { type: 'title', title: 'The Cyber Kill Chain', subtitle: 'The 7 Steps of a Typical Attack' },
+          { type: 'list', title: '1. Reconnaissance 🔭', items: ['The information gathering phase.', 'The attacker researches a target to identify potential vulnerabilities.', 'Methods: OSINT (social media), network scanning, dumpster diving.'] },
+          { type: 'list', title: '2. Weaponization 🛠️', items: ['Creating a malicious payload to exploit a vulnerability.', 'Example: Crafting a Word document with a malicious macro.', 'This happens on the attacker\'s system, so it\'s undetectable to the target.'] },
+          { type: 'list', title: '3. Delivery 📮', items: ['Transmitting the weapon to the target.', 'The most common method is a **phishing email**.', 'Other methods: infected USB drives, compromised websites.'] },
+          { type: 'list', title: '4. Exploitation 💥', items: ['The weapon is triggered, and the exploit code runs.', 'This takes advantage of a software or hardware vulnerability.', 'The goal is to execute the attacker\'s code on the victim\'s system.'] },
+          { type: 'list', title: '5. Installation 💻', items: ['The attacker installs malware on the target system.', 'This creates a **persistent backdoor**, allowing the attacker to maintain access even if the system reboots.'] },
+          { type: 'list', title: '6. Command & Control (C2) 📡', items: ['The installed malware "calls home" to a server controlled by the attacker.', 'This creates a two-way channel for remote control.', 'The attacker can now issue commands to the compromised system.'] },
+          { type: 'list', title: '7. Actions on Objectives 🎯', items: ['With control established, the attacker carries out their goal.', 'Examples:', '**Data Exfiltration** (stealing sensitive data)', '**Sabotage** (destroying systems)', '**Ransomware** (encrypting files)'] },
+          { type: 'title', title: 'Pentesting Operating Systems', subtitle: 'The Hacker\'s Toolkit' },
+          { type: 'list', title: 'Kali Linux', items: ['The industry-standard, Debian-based Linux distribution for penetration testing.', 'Comes pre-loaded with hundreds of security tools.', 'Maintained by Offensive Security.'] },
+          { type: 'list', title: 'Parrot Security OS', items: ['A popular alternative to Kali, also based on Debian.', 'Known for being lightweight and resource-efficient.', 'Has a strong focus on privacy and anonymity, with built-in tools like AnonSurf.'] },
+          { type: 'comparison', title: 'Kali vs. Parrot', subtitle: 'Which one is "better"?', columns: [{ title: 'Choose Kali if...', items: ['You want the largest community and most tutorials.', 'You are preparing for specific certifications (like OSCP).', 'You want the recognized industry standard.'] }, { title: 'Choose Parrot if...', items: ['You are working with older or less powerful hardware.', 'You value privacy and anonymity tools out-of-the-box.', 'You want a system for both security work and daily use.'] }] },
+          { type: 'list', title: 'Lab 1: Kali Kickstart', items: ['**Objective:** Get comfortable with the Kali Linux environment.', '**Tasks:**', 'Navigate the interface and application menu.', 'Practice basic Linux commands in the terminal (`ls`, `cd`, `pwd`).', 'Learn how to find and launch security tools.'] },
+          { type: 'list', title: 'Lab 2: Who Am I? (OSINT)', items: ['**Objective:** Use Open-Source Intelligence tools to gather information.', '**Tasks:**', 'Use public sources to find information about a target domain.', 'Simulate the first phase of the Cyber Kill Chain: Reconnaissance.'] },
+          { type: 'list', title: 'Day 3 Wrap-Up', items: ['**Review:** CIA Triad, Threat Actors, Cyber Kill Chain, Pentesting OS.', '**Q&A**', '**Preview Day 4:** Active Reconnaissance & Scanning with Nmap.'] },
+        ];
+
+        let currentSlide = 0;
+
+        // --- DOM Elements ---
+        const slideContentEl = document.getElementById('slide-content');
+        const progressBarEl = document.getElementById('progress-bar');
+        const slideCounterEl = document.getElementById('slide-counter');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        const navControlsEl = document.getElementById('navigation-controls');
+
+        // --- Helper function to parse markdown-like formatting ---
+        function formatText(text) {
+            return text
+                .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-cyan-300">$1</strong>')
+                .replace(/`(.*?)`/g, '<code class="bg-gray-700 text-yellow-300 rounded px-1.5 py-0.5 font-mono text-sm">$1</code>');
+        }
+
+        // --- Function to render the current slide ---
+        function renderSlide() {
+            const slide = slides[currentSlide];
+            let html = '';
+
+            switch (slide.type) {
+                case 'title':
+                    html = `<div class="text-center fade-in"><h1 class="text-5xl md:text-6xl font-bold text-white mb-4">${slide.title}</h1><p class="text-2xl md:text-3xl text-cyan-400">${slide.subtitle}</p></div>`;
+                    break;
+                case 'list':
+                    html = `<div class="w-full fade-in"><h2 class="text-4xl font-bold text-white mb-8 text-center">${slide.title}</h2><ul class="space-y-4 text-xl text-gray-300 list-disc list-inside max-w-3xl mx-auto">${slide.items.map(item => `<li>${formatText(item)}</li>`).join('')}</ul></div>`;
+                    break;
+                case 'comparison':
+                    html = `<div class="w-full fade-in"><h2 class="text-4xl font-bold text-white mb-2 text-center">${slide.title}</h2><p class="text-xl text-gray-400 mb-8 text-center">${formatText(slide.subtitle)}</p><div class="grid md:grid-cols-2 gap-8 w-full">${slide.columns.map(col => `<div class="bg-gray-800 p-6 rounded-lg"><h3 class="text-2xl font-semibold text-cyan-400 mb-4">${col.title}</h3><ul class="space-y-3 text-lg text-gray-300 list-disc list-inside">${col.items.map(item => `<li>${formatText(item)}</li>`).join('')}</ul></div>`).join('')}</div></div>`;
+                    break;
+            }
+            slideContentEl.innerHTML = html;
+        }
+
+        // --- Function to update the entire UI state ---
+        function updateUI() {
+            renderSlide();
+            
+            const progress = ((currentSlide + 1) / slides.length) * 100;
+            progressBarEl.style.width = `${progress}%`;
+            slideCounterEl.textContent = `${currentSlide + 1} / ${slides.length}`;
+            prevBtn.disabled = currentSlide === 0;
+            nextBtn.disabled = currentSlide === slides.length - 1;
+        }
+        
+        // --- Fullscreen Toggle Function ---
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        // --- Event Listeners ---
+        prevBtn.addEventListener('click', () => {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateUI();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                updateUI();
+            }
+        });
+        
+        fullscreenBtn.addEventListener('click', toggleFullScreen);
+        
+        // --- Keyboard Navigation ---
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                e.preventDefault();
+                nextBtn.click();
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                prevBtn.click();
+            } else if (e.key.toLowerCase() === 'f') {
+                e.preventDefault();
+                toggleFullScreen();
+            }
+        });
+
+        // --- Initial Render ---
+        document.addEventListener('DOMContentLoaded', updateUI);
+
+    </script>
+</body>
+</html>

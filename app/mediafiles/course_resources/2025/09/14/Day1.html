@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 1: Networking Fundamentals</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts for a clean look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Custom styles for the presentation */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* bg-gray-900 */
+        }
+        .slide-container {
+            background-color: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(4px);
+            border: 1px solid #374151; /* border-gray-700 */
+            transition: opacity 0.5s ease-in-out;
+        }
+        /* Simple fade transition for slide content */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        /* Enhanced fullscreen experience */
+        body:fullscreen #slide-content {
+            width: 100vw;
+            height: 100vh;
+            max-width: 100vw;
+            border-radius: 0;
+            border: none;
+        }
+        body:fullscreen #navigation-controls {
+            position: fixed;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 95%;
+            max-width: 1280px; /* max-w-7xl */
+            z-index: 50;
+        }
+    </style>
+</head>
+<body class="text-white min-h-screen flex flex-col items-center justify-center p-4">
+
+    <!-- Main Slide Container - Increased size for a better view -->
+    <div id="slide-content" class="w-full max-w-7xl h-[80vh] rounded-2xl shadow-2xl flex items-center justify-center p-8 slide-container">
+        <!-- Slide content will be injected here by JavaScript -->
+    </div>
+
+    <!-- Navigation and Progress Bar -->
+    <div id="navigation-controls" class="w-full max-w-7xl mt-8">
+        <!-- Progress Bar -->
+        <div class="w-full bg-gray-700 rounded-full h-2.5 mb-4">
+            <div id="progress-bar" class="bg-cyan-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+        
+        <div class="flex justify-between items-center">
+            <!-- Previous Button -->
+            <button id="prev-btn" class="flex items-center gap-2 px-6 py-3 bg-gray-800 rounded-lg shadow-md hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                Previous
+            </button>
+
+            <!-- Controls -->
+            <div class="flex items-center gap-4">
+                <span id="slide-counter" class="text-gray-400 text-lg">
+                    1 / 28
+                </span>
+                <button id="fullscreen-btn" title="Toggle Fullscreen (F key)" class="p-2 text-gray-400 hover:text-white transition-colors bg-gray-800 rounded-lg shadow-md hover:bg-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                </button>
+            </div>
+
+            <!-- Next Button -->
+            <button id="next-btn" class="flex items-center gap-2 px-6 py-3 bg-cyan-600 rounded-lg shadow-md hover:bg-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                Next
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- Slide Data ---
+        const slides = [
+          { type: 'title', title: 'Day 1: Networking Fundamentals', subtitle: 'Cybersecurity Bootcamp' },
+          { type: 'list', title: 'Agenda', items: ['Introduction to the Bootcamp', 'The OSI & TCP/IP Models', 'MAC & IP Addressing', 'Subnetting', 'Ports & Protocols', 'Hands-On Labs'] },
+          { type: 'list', title: 'Welcome to the Bootcamp', items: ['**Goal:** From novice to defender in 8 days.', '**Philosophy:** Learn by doing. Theory followed by immediate practice.', '**The Journey:** Red Team (Offense) & Blue Team (Defense)', '**Capstone:** Final CTF Competition'] },
+          { type: 'list', title: 'The OSI Model', items: ['Stands for **O**pen **S**ystems **I**nterconnection.', 'A 7-layer **conceptual framework** to standardize network functions.', 'Helps us understand and troubleshoot, but isn\'t strictly implemented.'] },
+          { type: 'list', title: 'Layer 7: Application', items: ['The layer closest to the user.', 'Provides network services directly to user applications.', 'Examples: Your web browser (HTTP/S), email client (SMTP), file transfer (FTP).'] },
+          { type: 'list', title: 'Layer 6: Presentation', items: ['The "translator" of the network.', 'Formats and encrypts data for the application layer.', 'Ensures data is readable by the receiving system (e.g., character encoding, data compression).'] },
+          { type: 'list', title: 'Layer 5: Session', items: ['Manages the "conversation" between two devices.', 'Establishes, maintains, and terminates connections (sessions).', 'Handles authentication and authorization.'] },
+          { type: 'list', title: 'Layer 4: Transport', items: ['Provides reliable or unreliable data delivery.', 'Segments data into smaller chunks and reassembles it.', 'Key Protocols: **TCP** (Reliable) and **UDP** (Unreliable).'] },
+          { type: 'list', title: 'Layer 3: Network', items: ['Responsible for **logical addressing** and **routing**.', 'Determines the best path for data to travel across networks.', 'Key Protocol: **IP** (Internet Protocol). Routers operate at this layer.'] },
+          { type: 'list', title: 'Layer 2: Data Link', items: ['Manages **physical addressing** (MAC addresses).', 'Controls how data is placed onto the physical medium.', 'Switches operate at this layer.'] },
+          { type: 'list', title: 'Layer 1: Physical', items: ['The actual hardware that transmits the signal.', 'Defines the physical characteristics of the network.', 'Examples: Cables (Ethernet), connectors, Wi-Fi radios, hubs.'] },
+          { type: 'comparison', title: 'OSI vs. TCP/IP', subtitle: '**Key takeaway:** OSI is a reference model; TCP/IP is what we use.', columns: [{ title: 'OSI Model (7 Layers)', items: ['Application', 'Presentation', 'Session', 'Transport', 'Network', 'Data Link', 'Physical'] }, { title: 'TCP/IP Model (4 Layers)', items: ['Application', 'Transport', 'Internet', 'Network Access'] }] },
+          { type: 'list', title: 'MAC Address: The Fingerprint', items: ['**What:** A permanent, globally unique hardware ID.', '**Structure:** 48-bit hexadecimal number. e.g., `3C:FD:FE:08:EC:D8`', '**Purpose:** Communication on the **local** network (Layer 2).'] },
+          { type: 'list', title: 'MAC Address: Anatomy', items: ['A MAC address is split into two halves:', '**OUI (Organizationally Unique Identifier):** The first 24 bits. Assigned to a manufacturer (e.g., Dell, Apple, Intel).', '**Device ID:** The last 24 bits. A unique serial number assigned by the manufacturer.'] },
+          { type: 'list', title: 'IP Address: The Mailing Address', items: ['**What:** A logical, routable address for communicating across networks.', '**Structure (IPv4):** 32-bit (e.g., `192.168.1.100`) - The present.', '**Structure (IPv6):** 128-bit (e.g., `2001:db8::1`) - The future.'] },
+          { type: 'list', title: 'IP Address: Network vs. Host', items: ['Every IP address has two parts:', '**Network ID:** Identifies the network (the "street").', '**Host ID:** Identifies the specific device on that network (the "house number").', 'The **Subnet Mask** is what separates the two parts.'] },
+          { type: 'list', title: 'Public vs. Private IPs', items: ['**Public IP:** Your single, unique address on the global internet. Provided by your ISP.', '**Private IP:** An address used only on your internal, local network. Not routable on the internet.', '**NAT (Network Address Translation):** The service (usually on your router) that translates between your one public IP and all your private IPs.'] },
+          { type: 'list', title: 'Private IP Address Ranges', items: ['Class A: `10.0.0.0` to `10.255.255.255`', 'Class B: `172.16.0.0` to `172.31.255.255`', 'Class C: `192.168.0.0` to `192.168.255.255`', 'If you see an IP in these ranges, you know it\'s on a private network.'] },
+          { type: 'list', title: 'Subnetting: Slicing the Pie', items: ['**What:** Dividing one large network into smaller, manageable sub-networks.', '**Why?** Security, Performance, and Organization.', '**How?** By "borrowing" bits from the Host portion to extend the Network portion.'] },
+          { type: 'list', title: 'Understanding CIDR Notation', items: ['**CIDR (Classless Inter-Domain Routing)** is the modern way to show a subnet mask.', 'It uses a forward slash followed by a number (e.g., `/24`).', 'The number represents how many bits are in the **Network** portion of the address.', '`192.168.1.0/24` is the same as `192.168.1.0` with a subnet mask of `255.255.255.0`'] },
+          { type: 'list', title: 'Ports & Protocols: Doors & Languages', items: ['**Port:** The specific "door" for an application on a server.', '**Protocol:** The "language" spoken by that application.', 'You need the right port AND the right protocol to communicate.'] },
+          { type: 'list', title: 'Port Ranges', items: ['**Well-Known Ports (0-1023):** Reserved for common services (HTTP, FTP, SSH).', '**Registered Ports (1024-49151):** For applications and less common services.', '**Dynamic/Private Ports (49152-65535):** Used for temporary, outgoing connections.'] },
+          { type: 'list', title: 'Key Protocols: HTTP/HTTPS', items: ['**HTTP (Port 80):** Hypertext Transfer Protocol. The foundation of the web. **Transmits data in plain text.**', '**HTTPS (Port 443):** HTTP Secure. Encrypts web traffic. The modern standard.'] },
+          { type: 'list', title: 'Key Protocols: SSH & FTP', items: ['**SSH (Port 22):** Secure Shell. Used for secure remote command-line administration.', '**FTP (Port 21):** File Transfer Protocol. Used for transferring files. **Largely insecure as it sends credentials in plain text.**'] },
+          { type: 'list', title: 'Key Protocols: DNS', items: ['**DNS (Port 53):** Domain Name System.', 'The internet\'s phonebook.', 'Translates human-readable domain names (e.g., `google.com`) into machine-readable IP addresses.'] },
+          { type: 'list', title: 'Lab 1: Command-Line Recon (30 min)', items: ['**Objective:** Use basic tools to find your network identity.', '**Tools:** `ipconfig` / `ifconfig`, `ping`, `tracert` / `traceroute`', '**Outcome:** Find your IP, MAC, Gateway, and trace a path across the internet.'] },
+          { type: 'list', title: 'Lab 2: Network Architect (1.5 hr)', items: ['**Objective:** Apply theory to design a network and see it in action.', '**Part 1 (The Puzzle):** Design a network for a new office using VLSM.', '**Part 2 (Wireshark):** Capture live traffic to find the DNS query, HTTP request, and TCP 3-way handshake.'] },
+          { type: 'list', title: 'Day 1 Wrap-Up', items: ['**Review:** OSI Model, IP/MAC, Subnetting, Ports.', '**Q&A**', '**Preview Day 2:** The Network in Action - TCP/UDP, DNS, DHCP, and Wi-Fi.'] },
+        ];
+
+        let currentSlide = 0;
+
+        // --- DOM Elements ---
+        const slideContentEl = document.getElementById('slide-content');
+        const progressBarEl = document.getElementById('progress-bar');
+        const slideCounterEl = document.getElementById('slide-counter');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        const navControlsEl = document.getElementById('navigation-controls');
+
+        // --- Helper function to parse markdown-like formatting ---
+        function formatText(text) {
+            return text
+                .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-cyan-300">$1</strong>')
+                .replace(/`(.*?)`/g, '<code class="bg-gray-700 text-yellow-300 rounded px-1.5 py-0.5 font-mono text-sm">$1</code>');
+        }
+
+        // --- Function to render the current slide ---
+        function renderSlide() {
+            const slide = slides[currentSlide];
+            let html = '';
+
+            switch (slide.type) {
+                case 'title':
+                    html = `<div class="text-center fade-in"><h1 class="text-6xl font-bold text-white mb-4">${slide.title}</h1><p class="text-3xl text-cyan-400">${slide.subtitle}</p></div>`;
+                    break;
+                case 'list':
+                    html = `<div class="w-full fade-in"><h2 class="text-4xl font-bold text-white mb-8 text-center">${slide.title}</h2><ul class="space-y-4 text-xl text-gray-300 list-disc list-inside max-w-3xl mx-auto">${slide.items.map(item => `<li>${formatText(item)}</li>`).join('')}</ul></div>`;
+                    break;
+                case 'comparison':
+                    html = `<div class="w-full fade-in"><h2 class="text-4xl font-bold text-white mb-2 text-center">${slide.title}</h2><p class="text-xl text-gray-400 mb-8 text-center">${formatText(slide.subtitle)}</p><div class="grid md:grid-cols-2 gap-8 w-full">${slide.columns.map(col => `<div class="bg-gray-800 p-6 rounded-lg"><h3 class="text-2xl font-semibold text-cyan-400 mb-4">${col.title}</h3><ul class="space-y-3 text-lg text-gray-300 list-disc list-inside">${col.items.map(item => `<li>${formatText(item)}</li>`).join('')}</ul></div>`).join('')}</div></div>`;
+                    break;
+                case 'table':
+                    html = `<div class="w-full fade-in"><h2 class="text-4xl font-bold text-white mb-4 text-center">${slide.title}</h2>${slide.subtitle ? `<p class="text-lg text-gray-400 mb-6 text-center">${formatText(slide.subtitle)}</p>` : ''}<div class="w-full max-w-2xl mx-auto overflow-hidden rounded-lg shadow-lg"><table class="w-full text-left text-lg text-gray-300"><thead class="bg-gray-700 text-cyan-300 uppercase"><tr>${slide.headers.map(header => `<th scope="col" class="px-6 py-3">${header}</th>`).join('')}</tr></thead><tbody>${slide.rows.map((row, rowIndex) => `<tr class="border-b border-gray-700 ${rowIndex % 2 === 0 ? 'bg-gray-800' : 'bg-gray-800/50'}">${row.map((cell, cellIndex) => `<td class="px-6 py-4 ${cellIndex === 0 ? 'font-medium text-white' : ''} ${!row[1] && cellIndex === 0 ? 'bg-gray-700/50' : ''}">${cell}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>`;
+                    break;
+            }
+            slideContentEl.innerHTML = html;
+        }
+
+        // --- Function to update the entire UI state ---
+        function updateUI() {
+            renderSlide();
+            
+            const progress = ((currentSlide + 1) / slides.length) * 100;
+            progressBarEl.style.width = `${progress}%`;
+            slideCounterEl.textContent = `${currentSlide + 1} / ${slides.length}`;
+            prevBtn.disabled = currentSlide === 0;
+            nextBtn.disabled = currentSlide === slides.length - 1;
+        }
+        
+        // --- Fullscreen Toggle Function ---
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        // --- Event Listeners ---
+        prevBtn.addEventListener('click', () => {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateUI();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                updateUI();
+            }
+        });
+        
+        fullscreenBtn.addEventListener('click', toggleFullScreen);
+        
+        // --- Keyboard Navigation ---
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                e.preventDefault();
+                nextBtn.click();
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                prevBtn.click();
+            } else if (e.key.toLowerCase() === 'f') {
+                e.preventDefault();
+                toggleFullScreen();
+            }
+        });
+
+        // --- Initial Render ---
+        document.addEventListener('DOMContentLoaded', updateUI);
+
+    </script>
+</body>
+</html>

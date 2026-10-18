@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 7: Incident Response & Forensics</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts for a clean look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Custom styles for the presentation */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* bg-gray-900 */
+        }
+        .slide-container {
+            background-color: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(4px);
+            border: 1px solid #374151; /* border-gray-700 */
+            transition: opacity 0.5s ease-in-out;
+        }
+        /* Simple fade transition for slide content */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        /* Enhanced fullscreen experience */
+        body:fullscreen #slide-content {
+            width: 100vw;
+            height: 100vh;
+            max-width: 100vw;
+            border-radius: 0;
+            border: none;
+        }
+        body:fullscreen #navigation-controls {
+            position: fixed;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 95%;
+            max-width: 1280px; /* max-w-7xl */
+            z-index: 50;
+        }
+    </style>
+</head>
+<body class="text-white min-h-screen flex flex-col items-center justify-center p-4">
+
+    <!-- Main Slide Container - Increased size for a better view -->
+    <div id="slide-content" class="w-full max-w-7xl h-[80vh] rounded-2xl shadow-2xl flex items-center justify-center p-8 slide-container">
+        <!-- Slide content will be injected here by JavaScript -->
+    </div>
+
+    <!-- Navigation and Progress Bar -->
+    <div id="navigation-controls" class="w-full max-w-7xl mt-8">
+        <!-- Progress Bar -->
+        <div class="w-full bg-gray-700 rounded-full h-2.5 mb-4">
+            <div id="progress-bar" class="bg-cyan-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+        
+        <div class="flex justify-between items-center">
+            <!-- Previous Button -->
+            <button id="prev-btn" class="flex items-center gap-2 px-6 py-3 bg-gray-800 rounded-lg shadow-md hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                Previous
+            </button>
+
+            <!-- Controls -->
+            <div class="flex items-center gap-4">
+                <span id="slide-counter" class="text-gray-400 text-lg">
+                    1 / 30
+                </span>
+                <button id="fullscreen-btn" title="Toggle Fullscreen (F key)" class="p-2 text-gray-400 hover:text-white transition-colors bg-gray-800 rounded-lg shadow-md hover:bg-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                </button>
+            </div>
+
+            <!-- Next Button -->
+            <button id="next-btn" class="flex items-center gap-2 px-6 py-3 bg-cyan-600 rounded-lg shadow-md hover:bg-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                Next
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- Slide Data ---
+        const slides = [
+          { type: 'title', title: 'Day 7: Incident Response & Forensics', subtitle: 'When the Alarm Goes Off' },
+          { type: 'list', title: 'Agenda', items: ['The Six Phases of Incident Response (PICERL)', 'Introduction to Digital Forensics', 'Digital Evidence, Custody, & Volatility', 'Introduction to Memory Forensics', 'Hands-On Labs'] },
+          { type: 'list', title: 'Day 7 Introduction', items: ['We\'ve learned to attack and defend.', 'But what happens when an attacker gets through anyway?', 'Today is about managing the crisis.', 'We will learn the professional process for **Incident Response** and the science of **Digital Forensics**.'] },
+          { type: 'title', title: 'Incident Response', subtitle: 'The PICERL Framework' },
+          { type: 'list', title: 'What is Incident Response?', items: ['A structured methodology for handling a security breach.', 'The goal is to manage the situation, minimize damage, and recover quickly.', 'The industry-standard framework is **PICERL**.'] },
+          { type: 'list', title: 'Phase 1: Preparation', items: ['This phase happens **before** an incident.', 'It is the most critical phase.', 'Involves creating an Incident Response Plan, training a response team (CSIRT), and deploying security tools (firewalls, IDS, SIEMs).'] },
+          { type: 'list', title: 'Phase 2: Identification', items: ['This phase begins when an alert is triggered.', 'The goal is to verify if a genuine incident has occurred.', 'Responders analyze data from logs and alerts to determine the scope and severity.', 'Is it a real attack or a false positive?'] },
+          { type: 'list', title: 'Phase 3: Containment', items: ['The immediate priority: stop the attack from spreading.', 'Involves isolating affected systems to limit further damage.', '**Short-term:** Disconnecting a single laptop from the network.', '**Long-term:** Segmenting an entire part of the network.'] },
+          { type: 'list', title: 'Phase 4: Eradication', items: ['Once contained, the threat must be completely removed.', 'This means eliminating all traces of the attacker.', 'Includes removing malware, disabling backdoors, and fixing the root cause (e.g., patching the vulnerability).'] },
+          { type: 'list', title: 'Phase 5: Recovery', items: ['Safely restoring affected systems to normal operation.', 'This can involve rebuilding systems from clean backups.', 'All user credentials that were compromised must be reset.', 'Systems are monitored closely after being brought back online.'] },
+          { type: 'list', title: 'Phase 6: Lessons Learned', items: ['A "post-mortem" meeting to review the entire incident.', 'What went well? What went wrong? What can we improve?', 'The goal is to feed this information back into the **Preparation** phase.', 'This strengthens security policies, tools, and training for the future.'] },
+          { type: 'title', title: 'Digital Forensics', subtitle: 'The Science of Digital Investigation' },
+          { type: 'list', title: 'What is Digital Forensics?', items: ['The science of identifying, preserving, analyzing, and presenting digital evidence.', 'It is the "crime scene investigation" of a security breach.', 'The goal is to piece together exactly what an attacker did.'] },
+          { type: 'list', title: 'Goals of a Forensic Investigation', items: ['Identify the scope of the breach.', 'Determine the root cause of the attack.', 'Attribute the attack (if possible).', 'Recover lost or deleted data.', 'Provide legally admissible evidence for court.'] },
+          { type: 'list', title: 'The Forensics Process', items: ['**1. Identification:** Find potential sources of evidence (laptops, servers, phones).', '**2. Preservation:** Collect evidence without altering it. Create a forensically sound image (copy).', '**3. Analysis:** Use specialized tools to examine the data image for artifacts.', '**4. Documentation:** Meticulously document every step taken.'] },
+          { type: 'title', title: 'Digital Evidence', subtitle: 'From Bits to the Courtroom' },
+          { type: 'list', title: 'What is Digital Evidence?', items: ['Any probative information stored or transmitted in a digital format.', 'Examples: Emails, system logs, browser history, files on a hard drive.', 'For evidence to be used in court, it must be **admissible**.'] },
+          { type: 'list', title: 'Hurdles to Admissibility', items: ['**Authenticity:** Is the evidence genuine and not tampered with? (Proven with hashing).', '**Reliability:** Are the tools and methods used sound?', '**Integrity:** Has the evidence been protected at all times? (Proven with Chain of Custody).', '**Relevance:** Is the evidence material to the case?'] },
+          { type: 'list', title: 'The Chain of Custody', items: ['The single most important process for proving evidence integrity.', 'A detailed, chronological log of the evidence\'s lifecycle.', 'It tracks **who** had the evidence, **when** they had it, and **what** they did with it.', 'A single gap in the chain can make the evidence legally worthless.'] },
+          { type: 'list', title: 'The Order of Volatility', items: ['A guiding principle for evidence collection: **most volatile to least volatile**.', '**Volatility** refers to how long data exists before it is lost.', 'This ensures time-sensitive evidence is captured before it disappears.'] },
+          { type: 'list', title: 'The Hierarchy of Volatility', items: ['1. CPU Registers & Caches (Most Volatile)', '2. RAM (Memory)', '3. Network State & Running Processes', '4. Disk Files (Hard Drive / SSD)', '5. Archival Media (Backups, USBs) (Least Volatile)'] },
+          { type: 'title', title: 'Memory Forensics', subtitle: 'A Snapshot of an Active Crime' },
+          { type: 'list', title: 'What is Memory Forensics?', items: ['The analysis of a computer\'s volatile memory (RAM).', 'Provides a snapshot of the system\'s runtime state.', 'Crucial for detecting "fileless" malware that only runs in memory.', 'The evidence in RAM is **lost** when the computer is shut down.'] },
+          { type: 'list', title: 'Artifacts Found in Memory', items: ['**Running Processes:** Including hidden or malicious ones.', '**Active Network Connections:** Who the system was talking to.', '**Command History:** Commands typed by the attacker.', '**User Credentials & Encryption Keys:** Sometimes recoverable.', '**The Malware Code Itself**'] },
+          { type: 'list', title: 'The Volatility Framework', items: ['The industry-standard open-source tool for memory forensics.', 'A powerful command-line tool with plugins to parse memory dumps.', 'Can automatically extract processes, network connections, and more.'] },
+          { type: 'list', title: 'Lab 1: The Phishing Frenzy', items: ['**Objective:** Learn to identify the signs of a phishing attack.', '**Tasks:**', 'Analyze a series of sample emails.', 'Identify suspicious links, urgent language, and spoofed sender addresses.'] },
+          { type: 'list', title: 'Lab 2: Memory Mysteries', items: ['**Objective:** Use forensic tools to analyze a memory dump.', '**Tasks:**', 'Use the Volatility Framework on a pre-captured memory image.', 'Find evidence of malicious processes and network connections.'] },
+          { type: 'list', title: 'Day 7 Wrap-Up', items: ['**Review:** Incident Response, Digital Forensics, Evidence Handling.', '**Q&A**', '**Preview Day 8:** The Capstone Challenge - Final Exam & CTF!'] },
+        ];
+
+        let currentSlide = 0;
+
+        // --- DOM Elements ---
+        const slideContentEl = document.getElementById('slide-content');
+        const progressBarEl = document.getElementById('progress-bar');
+        const slideCounterEl = document.getElementById('slide-counter');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        
+        // --- Helper function to parse markdown-like formatting ---
+        function formatText(text) {
+            return text
+                .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-cyan-300">$1</strong>')
+                .replace(/`(.*?)`/g, '<code class="bg-gray-700 text-yellow-300 rounded px-1.5 py-0.5 font-mono text-sm">$1</code>');
+        }
+
+        // --- Function to render the current slide ---
+        function renderSlide() {
+            const slide = slides[currentSlide];
+            let html = '';
+
+            switch (slide.type) {
+                case 'title':
+                    html = `<div class="text-center fade-in"><h1 class="text-5xl md:text-6xl font-bold text-white mb-4">${slide.title}</h1><p class="text-2xl md:text-3xl text-cyan-400">${slide.subtitle}</p></div>`;
+                    break;
+                case 'list':
+                    html = `<div class="w-full fade-in"><h2 class="text-4xl font-bold text-white mb-8 text-center">${slide.title}</h2><ul class="space-y-4 text-xl text-gray-300 list-disc list-inside max-w-3xl mx-auto">${slide.items.map(item => `<li>${formatText(item)}</li>`).join('')}</ul></div>`;
+                    break;
+                case 'comparison':
+                    html = `<div class="w-full fade-in"><h2 class="text-4xl font-bold text-white mb-2 text-center">${slide.title}</h2><p class="text-xl text-gray-400 mb-8 text-center">${formatText(slide.subtitle)}</p><div class="grid md:grid-cols-2 gap-8 w-full">${slide.columns.map(col => `<div class="bg-gray-800 p-6 rounded-lg"><h3 class="text-2xl font-semibold text-cyan-400 mb-4">${col.title}</h3><ul class="space-y-3 text-lg text-gray-300 list-disc list-inside">${col.items.map(item => `<li>${formatText(item)}</li>`).join('')}</ul></div>`).join('')}</div></div>`;
+                    break;
+                default:
+                    html = `<div class="text-center fade-in"><h2 class="text-2xl text-red-400">Error: Unknown slide type.</h2></div>`;
+            }
+            slideContentEl.innerHTML = html;
+        }
+
+        // --- Function to update the entire UI state ---
+        function updateUI() {
+            renderSlide();
+            
+            const progress = ((currentSlide + 1) / slides.length) * 100;
+            progressBarEl.style.width = `${progress}%`;
+            slideCounterEl.textContent = `${currentSlide + 1} / ${slides.length}`;
+            prevBtn.disabled = currentSlide === 0;
+            nextBtn.disabled = currentSlide === slides.length - 1;
+        }
+        
+        // --- Fullscreen Toggle Function ---
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        // --- Event Listeners ---
+        prevBtn.addEventListener('click', () => {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateUI();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                updateUI();
+            }
+        });
+        
+        fullscreenBtn.addEventListener('click', toggleFullScreen);
+        
+        // --- Keyboard Navigation ---
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                e.preventDefault();
+                nextBtn.click();
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                prevBtn.click();
+            } else if (e.key.toLowerCase() === 'f') {
+                e.preventDefault();
+                toggleFullScreen();
+            }
+        });
+
+        // --- Initial Render ---
+        document.addEventListener('DOMContentLoaded', updateUI);
+
+    </script>
+</body>
+</html>

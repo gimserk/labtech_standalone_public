@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 1: Networking Fundamentals</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts for a clean look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Custom styles for the presentation */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* bg-gray-900 */
+        }
+        .slide-container {
+            background-color: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(4px);
+            border: 1px solid #374151; /* border-gray-700 */
+            transition: opacity 0.5s ease-in-out;
+        }
+        /* Simple fade transition for slide content */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="text-white min-h-screen flex flex-col items-center justify-center p-4">
+
+    <!-- Main Slide Container -->
+    <div id="slide-content" class="w-full max-w-5xl h-[600px] rounded-2xl shadow-2xl flex items-center justify-center p-8 slide-container">
+        <!-- Slide content will be injected here by JavaScript -->
+    </div>
+
+    <!-- Navigation and Progress Bar -->
+    <div class="w-full max-w-5xl mt-8">
+        <!-- Progress Bar -->
+        <div class="w-full bg-gray-700 rounded-full h-2.5 mb-4">
+            <div id="progress-bar" class="bg-cyan-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+        
+        <div class="flex justify-between items-center">
+            <!-- Previous Button -->
+            <button id="prev-btn" class="flex items-center gap-2 px-6 py-3 bg-gray-800 rounded-lg shadow-md hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                Previous
+            </button>
+
+            <!-- Slide Counter -->
+            <span id="slide-counter" class="text-gray-400 text-lg">
+                1 / 13
+            </span>
+
+            <!-- Next Button -->
+            <button id="next-btn" class="flex items-center gap-2 px-6 py-3 bg-cyan-600 rounded-lg shadow-md hover:bg-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                Next
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- Slide Data ---
+        // All the content from the PowerPoint is stored here in a structured format.
+        const slides = [
+          {
+            type: 'title',
+            title: 'Day 1: Networking Fundamentals',
+            subtitle: 'Cybersecurity Bootcamp'
+          },
+          {
+            type: 'list',
+            title: 'Agenda',
+            items: [
+              'Introduction to the Bootcamp',
+              'The OSI & TCP/IP Models',
+              'MAC & IP Addressing',
+              'Subnetting',
+              'Ports & Protocols',
+              'Hands-On Labs',
+            ],
+          },
+          {
+            type: 'list',
+            title: 'Welcome to the Bootcamp',
+            items: [
+              '**Goal:** From novice to defender in 8 days.',
+              '**Philosophy:** Learn by doing. Theory followed by immediate practice.',
+              '**The Journey:** Red Team (Offense) & Blue Team (Defense)',
+              '**Capstone:** Final CTF Competition',
+            ],
+          },
+          {
+            type: 'comparison',
+            title: 'OSI & TCP/IP Models',
+            subtitle: 'The "blueprints" for how devices communicate.',
+            columns: [
+              {
+                title: 'OSI Model (The Theory)',
+                items: ['7 Layers: Application, Presentation, Session, Transport, Network, Data Link, Physical', 'A way to conceptualize the process.'],
+              },
+              {
+                title: 'TCP/IP Model (The Reality)',
+                items: ['4 Layers: Application, Transport, Internet, Network Access', 'The model the modern internet actually runs on.'],
+              },
+            ],
+          },
+          {
+            type: 'table',
+            title: 'OSI vs. TCP/IP',
+            subtitle: '**Key takeaway:** OSI is a reference model; TCP/IP is what we use.',
+            headers: ['OSI Model', 'TCP/IP Model'],
+            rows: [
+              ['7. Application', '4. Application'],
+              ['6. Presentation', ''],
+              ['5. Session', ''],
+              ['4. Transport', '3. Transport'],
+              ['3. Network', '2. Internet'],
+              ['2. Data Link', '1. Network Access'],
+              ['1. Physical', ''],
+            ],
+          },
+          {
+            type: 'list',
+            title: 'MAC Address: The Fingerprint',
+            items: [
+              '**What:** A permanent, globally unique hardware ID.',
+              '**Structure:** 48-bit hexadecimal number. e.g., `3C:FD:FE:08:EC:D8`',
+              '**Parts:** OUI (Manufacturer ID) & Device ID (Unique serial number)',
+              '**Purpose:** Communication on the **local** network (Layer 2).',
+            ],
+          },
+          {
+            type: 'list',
+            title: 'IP Address: The Mailing Address',
+            items: [
+              '**What:** A logical, routable address for communicating across networks.',
+              '**Structure (IPv4):** 32-bit (e.g., `192.168.1.100`) - The present.',
+              '**Structure (IPv6):** 128-bit (e.g., `2001:db8::1`) - The future.',
+              '**Parts:** Network ID (The Street) & Host ID (The House Number)',
+            ],
+          },
+          {
+            type: 'list',
+            title: 'Public vs. Private IPs',
+            items: [
+              '**Public IP:** Your single, unique address on the global internet. Provided by your ISP.',
+              '**Private IP:** An address used only on your internal, local network. Not routable on the internet.',
+              '**NAT (Network Address Translation):** The service (usually on your router) that translates between your one public IP and all your private IPs.',
+              '**Private Ranges:** `10.x.x.x`, `172.16.x.x - 172.31.x.x`, `192.168.x.x`',
+            ],
+          },
+          {
+            type: 'list',
+            title: 'Subnetting: Slicing the Pie',
+            items: [
+              '**What:** Dividing one large network into smaller, manageable sub-networks.',
+              '**Why?** Security, Performance, and Organization.',
+              '**How?** The **Subnet Mask** draws the line between the Network and Host portions.',
+            ],
+          },
+          {
+            type: 'list',
+            title: 'Ports & Protocols: Doors & Languages',
+            items: [
+              '**Port:** The specific "door" for an application on a server.',
+              '**Protocol:** The "language" spoken by that application.',
+              '**Key Examples:** Port **80/443** (Web), Port **22** (SSH), Port **53** (DNS), Port **21** (FTP)',
+            ],
+          },
+          {
+            type: 'list',
+            title: 'Lab 1: Command-Line Recon (30 min)',
+            items: [
+              '**Objective:** Use basic tools to find your network identity.',
+              '**Tools:** `ipconfig` / `ifconfig`, `ping`, `tracert` / `traceroute`',
+              '**Outcome:** Find your IP, MAC, Gateway, and trace a path across the internet.',
+            ],
+          },
+          {
+            type: 'list',
+            title: 'Lab 2: Network Architect (1.5 hr)',
+            items: [
+              '**Objective:** Apply theory to design a network and see it in action.',
+              '**Part 1 (The Puzzle):** Design a network for a new office using VLSM.',
+              '**Part 2 (Wireshark):** Capture live traffic to find the DNS query, HTTP request, and TCP 3-way handshake.',
+            ],
+          },
+          {
+            type: 'list',
+            title: 'Day 1 Wrap-Up',
+            items: [
+              '**Review:** OSI Model, IP/MAC, Subnetting, Ports.',
+              '**Q&A**',
+              '**Preview Day 2:** The Network in Action - TCP/UDP, DNS, DHCP, and Wi-Fi.',
+            ],
+          },
+        ];
+
+        let currentSlide = 0;
+
+        // --- DOM Elements ---
+        const slideContentEl = document.getElementById('slide-content');
+        const progressBarEl = document.getElementById('progress-bar');
+        const slideCounterEl = document.getElementById('slide-counter');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+
+        // --- Helper function to parse markdown-like formatting ---
+        function formatText(text) {
+            return text
+                .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-cyan-300">$1</strong>')
+                .replace(/`(.*?)`/g, '<code class="bg-gray-700 text-yellow-300 rounded px-1.5 py-0.5 font-mono text-sm">$1</code>');
+        }
+
+        // --- Function to render the current slide ---
+        function renderSlide() {
+            const slide = slides[currentSlide];
+            let html = '';
+
+            switch (slide.type) {
+                case 'title':
+                    html = `
+                        <div class="text-center fade-in">
+                            <h1 class="text-6xl font-bold text-white mb-4">${slide.title}</h1>
+                            <p class="text-3xl text-cyan-400">${slide.subtitle}</p>
+                        </div>`;
+                    break;
+                case 'list':
+                    html = `
+                        <div class="w-full fade-in">
+                            <h2 class="text-4xl font-bold text-white mb-8 text-center">${slide.title}</h2>
+                            <ul class="space-y-4 text-xl text-gray-300 list-disc list-inside max-w-3xl mx-auto">
+                                ${slide.items.map(item => `<li>${formatText(item)}</li>`).join('')}
+                            </ul>
+                        </div>`;
+                    break;
+                case 'comparison':
+                    html = `
+                        <div class="w-full fade-in">
+                            <h2 class="text-4xl font-bold text-white mb-2 text-center">${slide.title}</h2>
+                            <p class="text-xl text-gray-400 mb-8 text-center">${slide.subtitle}</p>
+                            <div class="grid md:grid-cols-2 gap-8 w-full">
+                                ${slide.columns.map(col => `
+                                    <div class="bg-gray-800 p-6 rounded-lg">
+                                        <h3 class="text-2xl font-semibold text-cyan-400 mb-4">${col.title}</h3>
+                                        <ul class="space-y-3 text-lg text-gray-300 list-disc list-inside">
+                                            ${col.items.map(item => `<li>${formatText(item)}</li>`).join('')}
+                                        </ul>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>`;
+                    break;
+                case 'table':
+                    html = `
+                        <div class="w-full fade-in">
+                            <h2 class="text-4xl font-bold text-white mb-4 text-center">${slide.title}</h2>
+                            ${slide.subtitle ? `<p class="text-lg text-gray-400 mb-6 text-center">${formatText(slide.subtitle)}</p>` : ''}
+                            <div class="w-full max-w-2xl mx-auto overflow-hidden rounded-lg shadow-lg">
+                                <table class="w-full text-left text-lg text-gray-300">
+                                    <thead class="bg-gray-700 text-cyan-300 uppercase">
+                                        <tr>
+                                            ${slide.headers.map(header => `<th scope="col" class="px-6 py-3">${header}</th>`).join('')}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${slide.rows.map((row, rowIndex) => `
+                                            <tr class="border-b border-gray-700 ${rowIndex % 2 === 0 ? 'bg-gray-800' : 'bg-gray-800/50'}">
+                                                ${row.map((cell, cellIndex) => `
+                                                    <td class="px-6 py-4 ${cellIndex === 0 ? 'font-medium text-white' : ''} ${!row[1] && cellIndex === 0 ? 'bg-gray-700/50' : ''}">
+                                                        ${cell}
+                                                    </td>
+                                                `).join('')}
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>`;
+                    break;
+            }
+            slideContentEl.innerHTML = html;
+        }
+
+        // --- Function to update the entire UI state ---
+        function updateUI() {
+            renderSlide();
+            
+            // Update progress bar
+            const progress = ((currentSlide + 1) / slides.length) * 100;
+            progressBarEl.style.width = `${progress}%`;
+
+            // Update slide counter
+            slideCounterEl.textContent = `${currentSlide + 1} / ${slides.length}`;
+
+            // Update button states
+            prevBtn.disabled = currentSlide === 0;
+            nextBtn.disabled = currentSlide === slides.length - 1;
+        }
+
+        // --- Event Listeners ---
+        prevBtn.addEventListener('click', () => {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateUI();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                updateUI();
+            }
+        });
+        
+        // --- Keyboard Navigation ---
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') {
+                nextBtn.click();
+            } else if (e.key === 'ArrowLeft') {
+                prevBtn.click();
+            }
+        });
+
+        // --- Initial Render ---
+        document.addEventListener('DOMContentLoaded', updateUI);
+
+    </script>
+</body>
+</html>
