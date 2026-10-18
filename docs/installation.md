@@ -10,7 +10,7 @@ Prepare:
 - A DNS name for the server. An address record must point to the server before requesting Let's Encrypt TLS.
 - Outbound access to Ubuntu package mirrors, GitHub, Python package indexes, and Let's Encrypt when TLS is selected.
 - Inbound SSH (22/tcp) and HTTP (80/tcp). Allow HTTPS (443/tcp) when using TLS.
-- A read-only SSH deploy key for the private `gimserk/labtech_standalone` repository.
+- Read access to the public `gimserk/labtech_standalone_public` repository over HTTPS. No GitHub account or deploy key is required.
 
 The installer does not change UFW, a cloud firewall, or upstream network policy. Open only the ports your deployment requires.
 
@@ -35,7 +35,7 @@ The default managed locations are:
 | `/var/log/labtech/install.log` | Installer and test output |
 | `/var/backups/labtech` | Configuration and pre-migration database backups |
 
-## Configure a read-only SSH deploy key
+## Create the service account and check repository access
 
 Git operations run as the `labtech` service account. Create that account before the first clone if it does not exist:
 
@@ -43,22 +43,11 @@ Git operations run as the `labtech` service account. Create that account before 
 id labtech >/dev/null 2>&1 || \
   sudo useradd --system --create-home --home-dir /home/labtech \
     --shell /bin/bash --user-group labtech
-sudo install -d -m 0700 -o labtech -g labtech /home/labtech/.ssh
-sudo -u labtech ssh-keygen -t ed25519 \
-  -f /home/labtech/.ssh/id_ed25519 -N '' -C 'labtech-deploy'
-sudo cat /home/labtech/.ssh/id_ed25519.pub
+sudo -u labtech env GIT_TERMINAL_PROMPT=0 \
+  git ls-remote https://github.com/gimserk/labtech_standalone_public.git refs/heads/main
 ```
 
-In GitHub, open the `gimserk/labtech_standalone` repository, select **Settings → Deploy keys → Add deploy key**, paste the public key, and leave **Allow write access** disabled. Never copy the private key into the repository or an environment file.
-
-Verify GitHub's published SSH host-key fingerprints through a trusted channel before accepting the host key. Then test repository access as the service account:
-
-```bash
-sudo -u labtech ssh -o StrictHostKeyChecking=accept-new -T git@github.com || true
-sudo -u labtech git ls-remote git@github.com:gimserk/labtech_standalone.git refs/heads/main
-```
-
-The second command must print the `main` reference. A GitHub message saying shell access is unavailable is normal for the first command.
+The command must print the `main` reference. It uses GitHub's public HTTPS endpoint without storing credentials.
 
 ## Run a clean installation
 
@@ -66,11 +55,11 @@ Clone the repository as the service account, then run the installer from the che
 
 ```bash
 sudo install -d -m 0750 -o labtech -g labtech /opt/labtech
-sudo -u labtech git clone git@github.com:gimserk/labtech_standalone.git /opt/labtech
+sudo -u labtech git clone https://github.com/gimserk/labtech_standalone_public.git /opt/labtech
 sudo /opt/labtech/deploy/install.sh
 ```
 
-Alternatively, copy the reviewed repository—including `deploy/install.sh`—to a temporary location and run `sudo ./deploy/install.sh`; the installer will create and synchronize `/opt/labtech` itself. Do not copy a private deploy key with the installer.
+Alternatively, copy the reviewed public repository—including `deploy/install.sh`—to a temporary location and run `sudo ./deploy/install.sh`; the installer will create and synchronize `/opt/labtech` itself.
 
 The production installer tracks `main`. A maintainer testing an implementation branch on a disposable host may explicitly override it:
 
@@ -131,7 +120,7 @@ sudo /opt/labtech/deploy/install.sh
 The installer preserves the database, uploaded media, stable secrets, and untracked files. It collects static assets under `/var/lib/labtech/staticfiles`, outside the Git checkout. It reinstalls required packages, reconciles the virtual environment, and updates the expected branch with a fast-forward-only merge. It stops without changing the checkout when it finds:
 
 - modified or staged tracked files;
-- a Git remote other than `git@github.com:gimserk/labtech_standalone.git`;
+- a Git remote other than `https://github.com/gimserk/labtech_standalone_public.git`;
 - a branch that has diverged from its remote;
 - a non-Git, nonempty installation directory.
 
