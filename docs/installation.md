@@ -1,12 +1,13 @@
 # Installing LabTech on Ubuntu 24.04 or Newer
 
-This guide installs LabTech directly on a dedicated server running Ubuntu 24.04 or a newer official Ubuntu release. The installer accepts canonical Ubuntu release identifiers (`YEAR.04` and `YEAR.10`, with release years from 24 through 9999) and rejects missing or malformed platform metadata before changing the host. It uses Python 3.12 or 3.13 for the application virtual environment. By default it selects `python3`; set `LABTECH_VENV_PYTHON` when the system default is newer than the pinned dependencies support. It manages MariaDB, Redis, Gunicorn, Celery, Nginx, and optional Let's Encrypt TLS, and it is also the supported safe-rerun and update path.
+This guide installs LabTech directly on a dedicated x86_64 server running Ubuntu 24.04 or a newer official Ubuntu release. The public package contains Linux x86_64 modules built for CPython 3.13; Python 3.12, Python 3.14, PyPy, and ARM64 cannot run this build. The installer rejects unsupported platforms and interpreters before changing the host. It manages MariaDB, Redis, Gunicorn, Celery, Nginx, and optional Let's Encrypt TLS, and it is also the supported safe-rerun and update path.
 
 ## Before you begin
 
 Prepare:
 
-- A dedicated server running Ubuntu 24.04 or any newer Ubuntu release, with root or `sudo` access and at least 2 GiB of free disk space.
+- A dedicated x86_64 server running Ubuntu 24.04 or a newer Ubuntu release, with root or `sudo` access and at least 2 GiB of free disk space.
+- CPython 3.13, including its `venv` and development packages. Keep the system's default `python3` unchanged.
 - A DNS name for the server. An address record must point to the server before requesting Let's Encrypt TLS.
 - Outbound access to Ubuntu package mirrors, GitHub, Python package indexes, and Let's Encrypt when TLS is selected.
 - Inbound SSH (22/tcp) and HTTP (80/tcp). Allow HTTPS (443/tcp) when using TLS.
@@ -14,14 +15,19 @@ Prepare:
 
 The installer does not change UFW, a cloud firewall, or upstream network policy. Open only the ports your deployment requires.
 
-On Ubuntu 26.04, the default `python3` can be Python 3.14, which the pinned `pydantic-core` build cannot install with. If your configured package sources provide Python 3.12, install it before running the LabTech installer:
+## Install Python 3.13 before running the installer
+
+Check whether your configured package sources provide Python 3.13. On Ubuntu 24.04 it may require an additional package source; the [deadsnakes PPA](https://launchpad.net/~deadsnakes/+archive/ubuntu/ppa) publishes Python 3.13 for that release. Review the source before adding it to a production server. For example, on Ubuntu 24.04:
 
 ```bash
-sudo apt-get install -y python3.12 python3.12-venv python3.12-dev
-python3.12 --version
+sudo apt-get install -y software-properties-common
+sudo add-apt-repository ppa:deadsnakes/ppa
+sudo apt-get update
+sudo apt-get install -y python3.13 python3.13-venv python3.13-dev
+python3.13 --version
 ```
 
-After cloning, run the installer (and future reruns) with `sudo env LABTECH_VENV_PYTHON=python3.12 /opt/labtech/deploy/install.sh`. Keep the system `python3` unchanged. If a previous run created an incomplete virtual environment under another Python version, remove only `/opt/labtech/venv` before rerunning.
+On a release whose configured sources already provide these packages, install the three `python3.13` packages without adding the PPA. The installer selects `python3.13` by default. If it is installed under another path, set `LABTECH_VENV_PYTHON` to that CPython 3.13 executable for installation and future reruns. If a previous run created an incomplete virtual environment under another Python version, remove only `/opt/labtech/venv` before rerunning.
 
 The default managed locations are:
 
