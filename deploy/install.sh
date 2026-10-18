@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 umask 027
 
-REPOSITORY_SSH='git@github.com:gimserk/labtech_standalone.git'
+REPOSITORY_URL='https://github.com/gimserk/labtech_standalone_public.git'
 TARGET_BRANCH="${LABTECH_TARGET_BRANCH:-main}"
 OS_RELEASE_FILE="${LABTECH_OS_RELEASE:-/etc/os-release}"
 EFFECTIVE_UID="${LABTECH_INSTALL_EUID:-$EUID}"
@@ -34,7 +34,7 @@ PLUGIN_HELPER_ROOT="${LABTECH_PLUGIN_HELPER_ROOT:-/usr/local/lib/labtech}"
 
 usage() { cat <<'HELP'
 Usage: sudo ./deploy/install.sh [--help]
-Install LabTech on Ubuntu 24.04 or newer with a read-only SSH deploy key.
+Install LabTech on Ubuntu 24.04 or newer from the public GitHub repository.
 A safe rerun preserves the database, media, and stable secrets.
 HELP
 }
@@ -340,14 +340,14 @@ as_service_user() {
   if [[ "${LABTECH_INSTALL_TESTING:-}" == 1 ]]; then "$@"; else runuser -u labtech -- "$@"; fi
 }
 verify_git_access() {
-  as_service_user env GIT_SSH_COMMAND='ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=yes' \
-    git ls-remote --exit-code "$REPOSITORY_SSH" "refs/heads/$TARGET_BRANCH" >/dev/null || die 'Read-only deploy key or GitHub host verification failed.'
+  as_service_user env GIT_TERMINAL_PROMPT=0 \
+    git ls-remote --exit-code "$REPOSITORY_URL" "refs/heads/$TARGET_BRANCH" >/dev/null || die 'Cannot read the public GitHub repository. Check network access and the target branch.'
 }
 check_existing_checkout() {
   local checkout_status
   [[ ! -e "$INSTALL_DIR" ]] && return 0
   if [[ -d "$INSTALL_DIR/.git" ]]; then
-    [[ "$(git -C "$INSTALL_DIR" remote get-url origin)" == "$REPOSITORY_SSH" ]] || die 'Unexpected checkout origin.'
+    [[ "$(git -C "$INSTALL_DIR" remote get-url origin)" == "$REPOSITORY_URL" ]] || die 'Unexpected checkout origin.'
     [[ "$(git -C "$INSTALL_DIR" branch --show-current)" == "$TARGET_BRANCH" ]] || die 'Checkout is on another branch.'
     checkout_status="$(as_service_user git -C "$INSTALL_DIR" status --porcelain --untracked-files=no)" || { die 'Cannot inspect checkout status.'; return 1; }
     [[ -z "$checkout_status" ]] || die 'Tracked checkout changes must be resolved.'
@@ -360,7 +360,7 @@ sync_repository() {
   validate_install_dir "$path" || [[ "${LABTECH_INSTALL_TESTING:-}" == 1 ]] || die 'Unsafe checkout path.'
   if [[ -d "$path/.git" ]]; then
     origin="$(git -C "$path" remote get-url origin)"
-    [[ "$origin" == "$REPOSITORY_SSH" ]] || { die 'Unexpected Git origin.'; return 1; }
+    [[ "$origin" == "$REPOSITORY_URL" ]] || { die 'Unexpected Git origin.'; return 1; }
     branch="$(git -C "$path" branch --show-current)"
     [[ "$branch" == "$TARGET_BRANCH" ]] || { die 'Checkout must be on the configured branch.'; return 1; }
     status="$(as_service_user git -C "$path" status --porcelain --untracked-files=no)" || return 1
@@ -375,7 +375,7 @@ sync_repository() {
     if [[ -e "$path" ]]; then
       [[ -d "$path" && -z "$(find "$path" -mindepth 1 -maxdepth 1 -print -quit)" ]] || { die 'Non-Git installation directory is not empty.'; return 1; }
     fi
-    as_service_user git clone --branch "$TARGET_BRANCH" --single-branch "$REPOSITORY_SSH" "$path"
+    as_service_user git clone --branch "$TARGET_BRANCH" --single-branch "$REPOSITORY_URL" "$path"
   fi
 }
 
