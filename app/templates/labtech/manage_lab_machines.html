@@ -1,0 +1,135 @@
+{% extends "labtech/generic_base.html" %}
+
+{% block labtech_title %}Manage Machines for {{ lab.title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .management-container { max-width: 1100px; margin: auto; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--lt-border); }
+    .page-header h2 { margin: 0; color: var(--lt-text); }
+    .btn { padding: 8px 15px; text-decoration: none; border-radius: 5px; font-size: 0.9em; cursor: pointer; border: none; display: inline-block; margin-left: 10px; text-align: center; }
+    .btn-primary { background-color: var(--lt-primary); color: var(--lt-on-accent); }
+    .btn-secondary { background-color: var(--lt-secondary); color: var(--lt-on-accent); }
+    .btn-info { background-color: var(--lt-info); color: var(--lt-on-accent); }
+    .formset-row { background-color: var(--lt-surface); border: 1px solid var(--lt-border); border-radius: 8px; margin-bottom: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .formset-row .card-header { background-color: var(--lt-surface-muted); font-weight: 600; padding: 0.75rem 1.25rem; border-bottom: 1px solid var(--lt-border); }
+    .formset-row .card-body { padding: 1.5rem; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--lt-text); }
+    .form-group input[type="text"], .form-group input[type="number"], .form-group select { width: 100%; padding: 0.5rem 0.75rem; font-size: 1rem; line-height: 1.5; color: var(--lt-text); background-color: var(--lt-surface); border: 1px solid var(--lt-border); border-radius: 0.25rem; }
+    .form-group input:focus, .form-group select:focus { border-color: var(--lt-primary); outline: 0; box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25); }
+    .form-check { display: flex; align-items: center; padding-top: 2rem; }
+    .form-check input[type="checkbox"] { margin-right: 8px; }
+    .networking-options { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px dashed var(--lt-border); }
+    .networking-options h6 { font-size: 1rem; color: var(--lt-text); margin-bottom: 1rem; }
+    .form-actions { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--lt-border); display: flex; justify-content: space-between; align-items: center; }
+    .form-actions .right-buttons .btn { margin-left: 0.5rem; }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="management-container">
+    <div class="page-header">
+        <h2>Manage Machines for Lab: <em>{{ lab.title }}</em></h2>
+        <a href="{% url 'labtech_manage_course_content' course.id %}" class="btn btn-secondary">Back to Course Content</a>
+    </div>
+
+    <p>Define the virtual machines that will be created when a student starts this lab. Each machine is based on a Proxmox template and will get its own web console.</p>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ formset.management_form }}
+
+        <div id="machine-formset">
+            {% for form in formset %}
+            <div class="formset-row">
+                <div class="card-header">
+                    Machine Definition #{{ forloop.counter }}
+                </div>
+                <div class="card-body">
+                    {{ form.id }}
+                    <div class="row align-items-end">
+                        <div class="col-md-3"><div class="form-group">{{ form.name.label_tag }}{{ form.name }}</div></div>
+                        <div class="col-md-4"><div class="form-group">{{ form.proxmox_vm_template.label_tag }}{{ form.proxmox_vm_template }}</div></div>
+                        <div class="col-md-3"><div class="form-group">{{ form.guest_os.label_tag }}{{ form.guest_os }}</div></div>
+                        <div class="col-md-1"><div class="form-group">{{ form.order.label_tag }}{{ form.order }}</div></div>
+                        <div class="col-md-1">
+                            {% if form.instance.pk and formset.can_delete %}
+                            <div class="form-check pb-3">{{ form.DELETE }} <label for="{{ form.DELETE.id_for_label }}">Delete</label></div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6"><div class="form-group">{{ form.username.label_tag }}{{ form.username }}</div></div>
+                        <div class="col-md-6"><div class="form-group">{{ form.password.label_tag }}{{ form.password }}</div></div>
+                    </div>
+
+                    <div class="networking-options">
+                        <h6>Networking Capabilities</h6>
+                        <div class="row">
+                            <div class="col-md-3"><div class="form-check">{{ form.is_isolated }} {{ form.is_isolated.label_tag }}</div></div>
+                            <div class="col-md-3"><div class="form-check">{{ form.can_access_lab_resources }} {{ form.can_access_lab_resources.label_tag }}</div></div>
+                            <div class="col-md-3"><div class="form-check">{{ form.can_access_internet }} {{ form.can_access_internet.label_tag }}</div></div>
+                            <div class="col-md-3"><div class="form-check">{{ form.can_access_cybercity }} {{ form.can_access_cybercity.label_tag }}</div></div>
+                        </div>
+                    </div>
+                    {% if form.errors %}
+                        <div class="alert alert-danger mt-3">{{ form.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+      
+        <div id="empty-form" style="display: none;">
+            <div class="formset-row">
+                <div class="card-header">New Machine Definition</div>
+                <div class="card-body">
+                    {{ formset.empty_form.id }}
+                    <div class="row align-items-end">
+                        <div class="col-md-3"><div class="form-group">{{ formset.empty_form.name.label_tag }}{{ formset.empty_form.name }}</div></div>
+                        <div class="col-md-4"><div class="form-group">{{ formset.empty_form.proxmox_vm_template.label_tag }}{{ formset.empty_form.proxmox_vm_template }}</div></div>
+                        <div class="col-md-3"><div class="form-group">{{ formset.empty_form.guest_os.label_tag }}{{ formset.empty_form.guest_os }}</div></div>
+                        <div class="col-md-1"><div class="form-group">{{ formset.empty_form.order.label_tag }}{{ formset.empty_form.order }}</div></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6"><div class="form-group">{{ formset.empty_form.username.label_tag }}{{ formset.empty_form.username }}</div></div>
+                        <div class="col-md-6"><div class="form-group">{{ formset.empty_form.password.label_tag }}{{ formset.empty_form.password }}</div></div>
+                    </div>
+                    <div class="networking-options">
+                        <h6>Networking Capabilities</h6>
+                        <div class="row">
+                            <div class="col-md-3"><div class="form-check">{{ formset.empty_form.is_isolated }} {{ formset.empty_form.is_isolated.label_tag }}</div></div>
+                            <div class="col-md-3"><div class="form-check">{{ formset.empty_form.can_access_lab_resources }} {{ formset.empty_form.can_access_lab_resources.label_tag }}</div></div>
+                            <div class="col-md-3"><div class="form-check">{{ formset.empty_form.can_access_internet }} {{ formset.empty_form.can_access_internet.label_tag }}</div></div>
+                            <div class="col-md-3"><div class="form-check">{{ formset.empty_form.can_access_cybercity }} {{ formset.empty_form.can_access_cybercity.label_tag }}</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="button" id="add-form" class="btn btn-info">Add Another Machine</button>
+            <div class="right-buttons">
+                <a href="{% url 'labtech_manage_course_content' course.id %}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">Save Machines</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.getElementById('add-form').addEventListener('click', function() {
+        var formsetDiv = document.getElementById('machine-formset');
+        var totalForms = document.getElementById('id_{{ formset.prefix }}-TOTAL_FORMS');
+        var formIdx = parseInt(totalForms.value);
+        var newFormHtml = document.getElementById('empty-form').innerHTML.replace(/__prefix__/g, formIdx);
+        var newFormContainer = document.createElement('div');
+        newFormContainer.innerHTML = newFormHtml;
+        formsetDiv.appendChild(newFormContainer.firstElementChild);
+        totalForms.value = formIdx + 1;
+    });
+</script>
+{% endblock %}

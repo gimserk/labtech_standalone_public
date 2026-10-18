@@ -1,0 +1,10 @@
+{% extends 'labtech/generic_base.html' %}
+{% block labtech_content %}<h2>Grade {{ activity.title }} — {{ attempt.user.username }}</h2>
+{% if error %}<div role="alert" class="alert alert-danger">{{ error }}</div>{% endif %}
+<form method="post">{% csrf_token %}<input type="hidden" name="revision" value="{{ attempt.revision }}">{% for response in responses %}<section class="card p-3 my-3"><h3>{{ response.answer_field.label }}</h3><p style="white-space:pre-wrap">{% if response.selected_choice %}{{ response.selected_choice.text }}{% else %}{{ response.text }}{% endif %}</p>
+{% if response.answer_field.answer_type == 'short_answer' %}<p>Private marking guidance: {{ response.answer_field.marking_guidance }}</p>
+<label for="score_{{ response.id }}">Score (maximum {{ response.answer_field.points }})</label><input id="score_{{ response.id }}" name="score_{{ response.id }}" type="number" min="0" max="{{ response.answer_field.points }}" step="0.01" value="{{ response.awarded_points|default_if_none:'' }}">
+<label for="feedback_{{ response.id }}">Feedback visible to the student after finalization</label><textarea id="feedback_{{ response.id }}" name="feedback_{{ response.id }}">{{ response.feedback }}</textarea>
+{% else %}<p>Automatically scored: {{ response.automatic_score }} / {{ response.answer_field.points }}</p>{% endif %}</section>{% endfor %}
+<label for="reason">Reason for correcting a finalized grade</label><textarea name="reason" id="reason"></textarea>
+<p><button name="action" value="save" class="btn btn-secondary">Save grading draft</button> <button name="action" value="finalize" class="btn btn-primary">Finalize grades</button></p></form>{% endblock %}

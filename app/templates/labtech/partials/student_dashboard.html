@@ -1,0 +1,78 @@
+{% load course_extras %}
+
+<style>
+    .dashboard-header { margin-bottom: 2rem; }
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+    .stat-card { background-color: var(--lt-surface); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--lt-border); }
+    .stat-card .stat-label { font-size: 1rem; color: var(--lt-muted); margin-bottom: 0.5rem; display: block; }
+    .stat-card .stat-value { font-size: 2.5rem; font-weight: 700; color: var(--lt-text); line-height: 1; }
+    
+    .course-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
+    .course-card .progress { height: 8px; }
+    .course-card .card-footer { background-color: transparent; }
+
+    .quick-access-list a { display: block; padding: .5rem 0; text-decoration: none; }
+</style>
+
+<div class="dashboard-header">
+    <h2 class="h3">Welcome back, {{ user.first_name|default:user.username }}!</h2>
+</div>
+
+<div class="stat-grid">
+    <div class="stat-card">
+        <div class="stat-label">Courses Enrolled</div>
+        <div class="stat-value">{{ student_stats.enrolled_courses }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Active Labs</div>
+        <div class="stat-value">{{ student_stats.active_labs }}</div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-9">
+        <h3>My Courses</h3>
+        <div class="course-grid">
+        {% for enrollment in student_enrollments %}
+            <div class="card course-card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ enrollment.course.title }}</h5>
+                    <div class="progress-info mt-3">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span>Progress</span>
+                            <span>{{ enrollment.completion_percentage }}%</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar" role="progressbar" style="width: {{ enrollment.completion_percentage }}%;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex justify-content-between">
+                    <a href="{% url 'course_detail' course_id=enrollment.course.id %}" class="btn btn-primary">View Course</a>
+                    <a href="{% url 'my_course_grades' course_id=enrollment.course.id %}" class="btn btn-outline-secondary">View Grades</a>
+                </div>
+            </div>
+        {% empty %}
+            <div class="card card-body">
+                <p class="mb-0">You are not enrolled in any courses yet. <a href="{% url 'course_catalog' %}">Browse the catalog to get started.</a></p>
+            </div>
+        {% endfor %}
+        </div>
+    </div>
+    <div class="col-lg-3">
+        <h3>Quick Access</h3>
+        <div class="card">
+            <div class="card-body quick-access-list">
+                <ul class="list-unstyled">
+                    <li><a href="{% url 'my_courses' %}"><i class="fas fa-book-open fa-fw me-2"></i>All My Courses</a></li>
+                    <li><a href="{% url 'course_catalog' %}"><i class="fas fa-search fa-fw me-2"></i>Course Catalog</a></li>
+                    <li><a href="{% url 'ctf_list' %}"><i class="fas fa-flag fa-fw me-2"></i>CTF Competitions</a></li>
+                    <li><a href="{% url 'student_cybercity_list' %}"><i class="fas fa-city fa-fw me-2"></i>CyberCity</a></li>
+                    <li><a href="{% url 'my_achievements' %}"><i class="fas fa-trophy fa-fw me-2"></i>My Achievements</a></li>
+                    <li><a href="{% url 'profile_detail' user_id=user.id %}"><i class="fas fa-user-circle fa-fw me-2"></i>My Profile</a></li>
+                    <li><a href="{% url 'help_desk_portal' %}"><i class="fas fa-question-circle fa-fw me-2"></i>Help & FAQs</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

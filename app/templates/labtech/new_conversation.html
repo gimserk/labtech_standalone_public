@@ -1,0 +1,37 @@
+{% extends "labtech/generic_base.html" %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_content %}
+<div class="container mt-4" style="max-width: 800px;">
+    <div class="mb-4">
+        <h2>Message Instructors</h2>
+        <p class="text-muted">For the course: <strong>{{ course.title }}</strong></p>
+         <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'course_detail' course_id=course.id %}">Course Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">New Message</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="{{ form.subject.id_for_label }}" class="form-label fw-bold">Subject</label>
+                    {{ form.subject }}
+                </div>
+                <div class="mb-3">
+                    <label for="{{ form.content.id_for_label }}" class="form-label fw-bold">Message</label>
+                    {{ form.content }}
+                    {{ form.media }}
+                </div>
+                <button type="submit" class="btn btn-primary">Send Message</button>
+                <a href="{% url 'course_detail' course_id=course.id %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

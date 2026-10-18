@@ -1,0 +1,50 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .management-container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid var(--lt-border); }
+    .page-header h2 { margin: 0; }
+    .announcement-item { background-color: var(--lt-surface); border: 1px solid var(--lt-border); border-radius: 8px; margin-bottom: 15px; }
+    .announcement-header { padding: 15px 20px; background-color: var(--lt-surface-muted); border-bottom: 1px solid var(--lt-border); display: flex; justify-content: space-between; align-items: center; }
+    .announcement-title { font-size: 1.2em; font-weight: 600; margin: 0; }
+    .announcement-meta { font-size: 0.9em; color: var(--lt-muted); }
+    .announcement-body { padding: 20px; }
+    .announcement-actions { display: flex; gap: 10px; }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="management-container">
+    <div class="page-header">
+        <h2>{{ title }}</h2>
+        <a href="{% url 'add_announcement' course_id=course.id %}" class="btn btn-primary">Add Announcement</a>
+    </div>
+
+    {% for announcement in announcements %}
+    <div class="announcement-item">
+        <div class="announcement-header">
+            <div>
+                <h3 class="announcement-title">
+                    {{ announcement.title }}
+                    {% if announcement.is_pinned %}<i class="fas fa-thumbtack" title="Pinned"></i>{% endif %}
+                </h3>
+                <p class="announcement-meta">Posted on {{ announcement.created_at|date:"F j, Y, P" }}</p>
+            </div>
+            <div class="announcement-actions">
+                <a href="{% url 'edit_announcement' course_id=course.id announcement_id=announcement.id %}" class="btn btn-sm btn-secondary">Edit</a>
+                <a href="{% url 'delete_announcement' course_id=course.id announcement_id=announcement.id %}" class="btn btn-sm btn-danger">Delete</a>
+            </div>
+        </div>
+        <div class="announcement-body">
+            {{ announcement.body|safe }}
+        </div>
+    </div>
+    {% empty %}
+    <p>No announcements have been posted for this course yet.</p>
+    {% endfor %}
+</div>
+{% endblock %}

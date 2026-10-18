@@ -1,0 +1,146 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+    {{ form.media }}
+{% endblock %}
+
+{% block labtech_content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-10 offset-lg-1">
+            <h2>{{ title }}</h2>
+            <hr>
+            <form method="post">
+                {% csrf_token %}
+                
+                <h4>Activity Details</h4>
+                <div class="mb-3">
+                    <label class="form-label">{{ form.title.label }}</label>
+                    {{ form.title }}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ form.chapter.label }}</label>
+                    {{ form.chapter }}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ form.description.label }}</label>
+                    {{ form.description }}
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.language.label }}</label>
+                        {{ form.language }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.order.label }}</label>
+                        {{ form.order }}
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ form.starter_code.label }}</label>
+                    {{ form.starter_code }}
+                </div>
+
+                <hr class="my-4">
+                <h4>Test Cases</h4>
+                <p class="text-muted">Define the tests to validate the student's code. The student's code will be executed between the Setup and Test code.</p>
+                
+                {{ formset.management_form }}
+                <div id="testcase-formset-container">
+                    {% for form in formset %}
+                        <div class="testcase-form mb-4 p-3 border rounded">
+                            {{ form.id }}
+                            <div class="mb-2">
+                                <label class="form-label fw-bold">{{ form.name.label }}</label>
+                                {{ form.name }}
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label">{{ form.setup_code.label }}</label>
+                                    {{ form.setup_code }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">{{ form.test_code.label }}</label>
+                                    {{ form.test_code }}
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <label class="form-label">{{ form.expected_output.label }}</label>
+                                {{ form.expected_output }}
+                            </div>
+                            <div class="mt-2 form-check">
+                                {{ form.is_hidden }}
+                                <label class="form-check-label" for="{{ form.is_hidden.id_for_label }}">{{ form.is_hidden.label }}</label>
+                            </div>
+                             {% if form.instance.pk %}
+                                <div class="mt-2 form-check">
+                                    {{ form.DELETE }} <label class="form-check-label text-danger" for="{{ form.DELETE.id_for_label }}">Delete this test case</label>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+                <button type="button" id="add-testcase-btn" class="btn btn-outline-secondary btn-sm">Add Another Test Case</button>
+
+                <hr class="my-4">
+                <button type="submit" class="btn btn-primary">Save Activity</button>
+
+                <a href="{% url 'labtech_manage_course_content' course_id=course.id %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+
+<template id="empty-form-template">
+    <div class="testcase-form mb-4 p-3 border rounded">
+        {{ formset.empty_form.id }}
+        <div class="mb-2">
+            <label class="form-label fw-bold" for="id_{{ formset.prefix }}-__prefix__-name">{{ formset.empty_form.name.label }}</label>
+            {{ formset.empty_form.name }}
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <label class="form-label" for="id_{{ formset.prefix }}-__prefix__-setup_code">{{ formset.empty_form.setup_code.label }}</label>
+                {{ formset.empty_form.setup_code }}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="id_{{ formset.prefix }}-__prefix__-test_code">{{ formset.empty_form.test_code.label }}</label>
+                {{ formset.empty_form.test_code }}
+            </div>
+        </div>
+        <div class="mt-2">
+            <label class="form-label" for="id_{{ formset.prefix }}-__prefix__-expected_output">{{ formset.empty_form.expected_output.label }}</label>
+            {{ formset.empty_form.expected_output }}
+        </div>
+        <div class="mt-2 form-check">
+            {{ formset.empty_form.is_hidden }}
+            <label class="form-check-label" for="id_{{ formset.prefix }}-__prefix__-is_hidden">{{ formset.empty_form.is_hidden.label }}</label>
+        </div>
+    </div>
+</template>
+{% endblock %}
+
+{% block labtech_extra_body %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const addBtn = document.getElementById('add-testcase-btn');
+    const container = document.getElementById('testcase-formset-container');
+    const totalFormsInput = document.getElementById('id_{{ formset.prefix }}-TOTAL_FORMS');
+    const template = document.getElementById('empty-form-template');
+
+    addBtn.addEventListener('click', () => {
+        let formIdx = parseInt(totalFormsInput.value);
+        const newFormHtml = template.innerHTML.replace(/__prefix__/g, formIdx);
+        
+        const div = document.createElement('div');
+        div.innerHTML = newFormHtml;
+        container.appendChild(div.firstElementChild);
+
+        totalFormsInput.value = formIdx + 1;
+    });
+});
+</script>
+{% endblock %}

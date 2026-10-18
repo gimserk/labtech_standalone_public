@@ -1,0 +1,56 @@
+{% extends "labtech/generic_base.html" %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    /* You can reuse the form styles from your other form templates */
+    .form-container { max-width: 900px; margin: 0 auto; padding: 25px; }
+    .form-container h2 { text-align: center; color: var(--lt-text); margin-bottom: 25px; border-bottom: 1px solid var(--lt-border); padding-bottom: 15px; }
+    .form-field { margin-bottom: 20px; }
+    .form-field label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--lt-text); }
+    .form-field input[type="text"], .form-field input[type="number"] {
+        width: 100%; padding: 10px; border: 1px solid var(--lt-border); border-radius: 4px; box-sizing: border-box; font-size: 0.95em;
+    }
+    .form-field .helptext { font-size: 0.85em; color: var(--lt-muted); margin-top: 5px; }
+    .form-field .errorlist { list-style: none; padding: 0; margin: 5px 0 0 0; color: var(--lt-danger); font-size: 0.85em; }
+    .form-actions { margin-top: 30px; text-align: right; }
+    .btn { padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 1em; cursor: pointer; border: none; }
+    .btn-primary { background-color: var(--lt-primary); color: var(--lt-on-accent); }
+    .btn-primary:hover { background-color: var(--lt-primary-hover); color: var(--lt-on-accent); }
+    .btn-secondary { background-color: var(--lt-secondary); color: var(--lt-on-accent); margin-right: 10px; }
+    .btn-secondary:hover { background-color: var(--lt-secondary-hover); color: var(--lt-on-accent); }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="form-container">
+    <h2>{{ title }}</h2>
+    <p>Course: <strong>{{ course.title }}</strong></p>
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+        
+        {% for field in form %}
+            <div class="form-field">
+                <label for="{{ field.id_for_label }}">
+                    {{ field.label }}
+                    {% if field.field.required %}*{% endif %}
+                </label>
+                {{ field }}
+                {% if field.help_text %}
+                    <div class="helptext">{{ field.help_text|safe }}</div>
+                {% endif %}
+                {% for error in field.errors %}<p class="errorlist">{{ error }}</p>{% endfor %}
+            </div>
+        {% endfor %}
+
+        <div class="form-actions">
+            <a href="{% url 'manage_course_content' course_id=course.id %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">
+                {% if form.instance.pk %}Save Changes{% else %}Add Chapter{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

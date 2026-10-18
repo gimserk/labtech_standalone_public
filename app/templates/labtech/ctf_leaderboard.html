@@ -1,0 +1,69 @@
+{% extends "labtech/generic_base.html" %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .leaderboard-table th {
+        font-weight: 600;
+    }
+    .leaderboard-table .rank {
+        width: 10%;
+        font-weight: 700;
+        font-size: 1.2rem;
+    }
+    .leaderboard-table .score {
+        width: 20%;
+        font-weight: 700;
+    }
+    .leaderboard-table tr:first-child .rank {
+        color: var(--lt-warning-text); /* Gold */
+    }
+    .leaderboard-table tr:nth-child(2) .rank {
+        color: var(--lt-muted); /* Silver */
+    }
+    .leaderboard-table tr:nth-child(3) .rank {
+        color: var(--lt-warning-text); /* Bronze */
+    }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="page-header">
+    <h2>{{ title }}</h2>
+    <a href="{% url 'ctf_detail' ctf_id=ctf.id %}" class="btn btn-secondary">Back to Challenge Board</a>
+</div>
+
+<div class="table-responsive mt-4">
+    <table class="table table-striped table-hover leaderboard-table">
+        <thead class="table-light">
+            <tr>
+                <th class="rank">Rank</th>
+                <th>Participant</th>
+                <th class="score text-end">Score</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in leaderboard_data %}
+            <tr>
+                <td class="rank">#{{ forloop.counter }}</td>
+                <td>
+                    <strong>
+                        {% if ctf.allow_teams %}
+                            {{ entry.name }}
+                        {% else %}
+                            {{ entry.username }}
+                        {% endif %}
+                    </strong>
+                </td>
+                <td class="score text-end">{{ entry.total_score }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3" class="text-center p-4">No one has scored any points yet!</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,131 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+    {{ question_form.media }}
+    {{ choice_formset.media }}
+    {{ short_answer_formset.media }}
+<style>
+    .form-container { max-width: 900px; margin: 20px auto; padding: 30px; background-color: var(--lt-surface); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .form-header h2 { margin-top: 0; color: var(--lt-text); }
+    .form-field { margin-bottom: 20px; }
+    .form-field label { display: block; margin-bottom: 8px; font-weight: 600; }
+    .form-field input[type="text"], .form-field input[type="number"], .form-field select, .form-field textarea, .django-ckeditor-widget {
+        width: 100% !important;
+        padding: 10px;
+        box-sizing: border-box;
+        border: 1px solid var(--lt-border);
+        border-radius: 4px;
+    }
+    .answer-options-wrapper { margin-top: 20px; padding: 20px; border: 1px solid var(--lt-border); border-radius: 5px; background-color: var(--lt-surface-muted); }
+    .answer-options-wrapper h4 { margin-top: 0; }
+    #answer-options-mcq, #answer-options-tf, #answer-options-sa { display: none; }
+    #answer-options-mcq.active, #answer-options-tf.active, #answer-options-sa.active { display: block; }
+    
+    .sub-form-container { margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed var(--lt-border); }
+    .sub-form-container:last-of-type { border-bottom: none; }
+    .sub-form-container label { font-size: 0.9em; font-weight: normal; }
+    
+    .form-actions { margin-top: 30px; text-align: right; border-top: 1px solid var(--lt-border); padding-top: 20px; }
+    .btn { padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 1em; font-weight: 500; cursor: pointer; border: 1px solid transparent; }
+    .btn-primary { background-color: var(--lt-primary); color: var(--lt-on-accent); }
+    .btn-secondary { background-color: var(--lt-secondary); color: var(--lt-on-accent); }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="form-container">
+    <div class="form-header">
+        <h2>{{ title }}</h2>
+    </div>
+    <hr>
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="form-field"><label for="{{ question_form.text.id_for_label }}">{{ question_form.text.label }}</label>{{ question_form.text }}</div>
+        <div class="form-field"><label for="{{ question_form.question_type.id_for_label }}">{{ question_form.question_type.label }}</label>{{ question_form.question_type }}</div>
+        <div class="form-field"><label for="{{ question_form.points.id_for_label }}">{{ question_form.points.label }}</label>{{ question_form.points }}</div>
+        <div class="form-field"><label for="{{ question_form.order.id_for_label }}">{{ question_form.order.label }}</label>{{ question_form.order }}</div>
+
+        <div class="form-field form-check">
+            {{ question_form.add_to_bank }}
+            <label class="form-check-label" for="{{ question_form.add_to_bank.id_for_label }}">{{ question_form.add_to_bank.label }}</label>
+            <small class="form-text text-muted d-block">{{ question_form.add_to_bank.help_text }}</small>
+        </div>
+
+        <div class="answer-options-wrapper">
+            <div id="answer-options-mcq">
+                <h4>Choices for Multiple Choice</h4>
+                <p class="text-muted"><small>Enter the answer choices below and check the box for the single correct answer.</small></p>
+                {{ choice_formset.management_form }}
+                {% for form in choice_formset %}
+                    <div class="sub-form-container">
+                        {{ form.id }}
+                        {{ form.text.label_tag }} {{ form.text }}
+                        {{ form.is_correct.label_tag }} {{ form.is_correct }}
+                        {% if form.can_delete %}{{ form.DELETE.label_tag }} {{ form.DELETE }}{% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div id="answer-options-tf">
+                <h4>Correct Answer for True/False</h4>
+                <select name="true_false_correct" class="form-control">
+                    {# --- THIS IS THE CORRECTED LOGIC --- #}
+                    <option value="true" {% if current_tf_answer == 'true' %}selected{% endif %}>True</option>
+                    <option value="false" {% if current_tf_answer == 'false' %}selected{% endif %}>False</option>
+                </select>
+            </div>
+
+            <div id="answer-options-sa">
+                <h4>Acceptable Answers for Fill-in-the-Blank</h4>
+                <p class="text-muted"><small>Enter one or more acceptable answers. The check is case-insensitive.</small></p>
+                {{ short_answer_formset.management_form }}
+                {% for form in short_answer_formset %}
+                    <div class="sub-form-container">
+                         {{ form.id }}
+                        {{ form.answer_text.label_tag }} {{ form.answer_text }}
+                        {% if form.can_delete %}{{ form.DELETE.label_tag }} {{ form.DELETE }}{% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a href="{% if quiz %}{% url 'labtech_manage_quiz_questions' course_id=course.id quiz_id=quiz.id %}{% else %}{% url 'manage_question_bank' course_id=course.id %}{% endif %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Save Question</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block labtech_extra_body %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const questionTypeSelect = document.getElementById('id_question_type');
+    const mcqOptions = document.getElementById('answer-options-mcq');
+    const tfOptions = document.getElementById('answer-options-tf');
+    const saOptions = document.getElementById('answer-options-sa');
+
+    function toggleAnswerOptions() {
+        mcqOptions.classList.remove('active');
+        tfOptions.classList.remove('active');
+        saOptions.classList.remove('active');
+
+        const selectedType = questionTypeSelect.value;
+        if (selectedType === 'MCQ') {
+            mcqOptions.classList.add('active');
+        } else if (selectedType === 'TF') {
+            tfOptions.classList.add('active');
+        } else if (selectedType === 'SA') {
+            saOptions.classList.add('active');
+        }
+    }
+    
+    toggleAnswerOptions(); // Run on page load to set initial state
+    questionTypeSelect.addEventListener('change', toggleAnswerOptions);
+});
+</script>
+{% endblock %}

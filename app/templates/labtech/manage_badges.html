@@ -1,0 +1,44 @@
+{% extends "labtech/generic_base.html" %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">{{ title }}</h1>
+    <a href="{% url 'add_badge' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Add New Badge
+    </a>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover table-nowrap">
+            <thead class="table-light">
+                <tr>
+                    <th>Icon</th>
+                    <th>Badge Name</th>
+                    <th>Description</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for badge in badges %}
+                <tr>
+                    <td><img src="{{ badge.icon.url }}" alt="{{ badge.name }}" width="40" height="40"></td>
+                    <td>{{ badge.name }}</td>
+                    <td>{{ badge.description|truncatechars:100 }}</td>
+                    <td class="text-end">
+                        <a href="{% url 'edit_badge' badge.id %}" class="btn btn-sm btn-neutral">Edit</a>
+                        <a href="{% url 'delete_badge' badge.id %}" class="btn btn-sm btn-danger">Delete</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center py-4">No badges have been created yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

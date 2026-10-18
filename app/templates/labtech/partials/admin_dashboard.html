@@ -1,0 +1,108 @@
+<style>
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+    .stat-card { background-color: var(--lt-surface); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--lt-border); text-align: center; }
+    .stat-card .stat-icon { font-size: 2rem; color: var(--lt-primary); margin-bottom: 1rem; display: block; }
+    .stat-card .stat-value { font-size: 2.5rem; font-weight: 700; color: var(--lt-text); line-height: 1; }
+    .stat-card .stat-label { font-size: 1rem; color: var(--lt-muted); margin-top: 0.5rem; }
+    .stat-card .stat-subtext { font-size: 0.85rem; color: var(--lt-muted); margin-top: 0.25rem; }
+    .dashboard-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; }
+    
+    .activity-feed .feed-item { display: flex; gap: 1rem; border-bottom: 1px solid var(--lt-border); padding-bottom: 1rem; margin-bottom: 1rem; }
+    .activity-feed .feed-item:last-child { border-bottom: none; margin-bottom: 0; }
+    .activity-feed .feed-icon { font-size: 1.5rem; color: var(--lt-muted); }
+    .activity-feed .feed-content { font-size: 0.95rem; }
+
+    /* --- NEW STYLES FOR ADMIN ACTIONS LIST --- */
+    .action-card h4 {
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+    }
+    .action-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        border: 1px solid var(--lt-border);
+        border-radius: .375rem;
+        overflow: hidden;
+    }
+    .action-list-item a {
+        display: flex;
+        align-items: center;
+        padding: .75rem 1.25rem;
+        text-decoration: none;
+        color: var(--lt-text);
+        transition: background-color 0.2s ease;
+        border-bottom: 1px solid var(--lt-border);
+    }
+    .action-list-item:last-child a {
+        border-bottom: none;
+    }
+    .action-list-item a:hover {
+        background-color: var(--lt-surface-muted);
+        color: var(--lt-primary);
+    }
+    .action-list-item i.fa-fw {
+        margin-right: .75rem;
+        color: var(--lt-muted);
+        width: 20px;
+    }
+</style>
+<div class="view-as-switcher">
+    <strong>View Dashboard As:</strong>
+    <a href="{% url 'home' %}" class="{% if dashboard_to_render == 'admin' %}fw-bold{% endif %}">Admin</a>
+    
+    {% if 'instructor' in active_roles %}
+    | <a href="{% url 'home' %}?view_as=instructor" class="{% if dashboard_to_render == 'instructor' %}fw-bold{% endif %}">Instructor</a>
+    {% endif %}
+
+    {% if 'student' in active_roles %}
+    | <a href="{% url 'home' %}?view_as=student" class="{% if dashboard_to_render == 'student' %}fw-bold{% endif %}">Student</a>
+    {% endif %}
+</div>
+<div class="stat-grid">
+    <div class="stat-card">
+        <span class="stat-icon"><i class="fas fa-users"></i></span>
+        <div class="stat-value">{{ admin_stats.total_users }}</div>
+        <div class="stat-label">Total Users</div>
+        <div class="stat-subtext">{{ admin_stats.admin_count }} Admins, {{ admin_stats.instructor_count }} Instructors</div>
+    </div>
+    <div class="stat-card">
+        <span class="stat-icon"><i class="fas fa-book-open"></i></span>
+        <div class="stat-value">{{ admin_stats.active_courses }}</div>
+        <div class="stat-label">Active Courses</div>
+    </div>
+    <div class="stat-card">
+        <span class="stat-icon"><i class="fas fa-user-graduate"></i></span>
+        <div class="stat-value">{{ admin_stats.total_enrollments }}</div>
+        <div class="stat-label">Total Enrollments</div>
+    </div>
+    <div class="stat-card">
+        <span class="stat-icon"><i class="fas fa-flask"></i></span>
+        <div class="stat-value">{{ admin_stats.active_labs }}</div>
+        <div class="stat-label">Active Labs</div>
+    </div>
+</div>
+
+{# NOTE: The dashboard grid below contains links that may be for deleted pages. #}
+{# You may need to update these links to match your current urls.py #}
+<div class="dashboard-grid">
+    <div class="card">
+        <div class="card-body activity-feed">
+            <h4 class="card-title">Recent Activity</h4>
+            {# Activity feed logic would go here #}
+            <p class="text-muted">No recent activity to display.</p>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body action-card">
+            <h4><i class="fas fa-tasks me-2"></i>Admin Actions</h4>
+            <ul class="action-list">
+                <li class="action-list-item"><a href="{% url 'instructor_my_courses' %}"><i class="fas fa-book fa-fw"></i>Manage Courses</a></li>
+                <li class="action-list-item"><a href="{% url 'manage_certificate_templates' %}"><i class="fas fa-certificate fa-fw"></i>Certificate Templates</a></li>
+                <li class="action-list-item"><a href="{% url 'manage_badges' %}"><i class="fas fa-award fa-fw"></i>Badges</a></li>
+                <li class="action-list-item"><a href="{% url 'ctf_dashboard' %}"><i class="fas fa-flag fa-fw"></i>CTF Campaigns</a></li>
+                <li class="action-list-item"><a href="{% url 'cybercity_dashboard' %}"><i class="fas fa-city fa-fw"></i>CyberCity</a></li>
+            </ul>
+        </div>
+    </div>
+</div>

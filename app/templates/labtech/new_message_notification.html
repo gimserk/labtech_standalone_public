@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>New Message Notification</title>
+</head>
+<body style="font-family: sans-serif; margin: 20px;">
+    <p>Hi {{ recipient_name }},</p>
+    <p>You have received a new message from <strong>{{ author_name }}</strong> regarding the conversation: <strong>"{{ conversation_subject }}"</strong>.</p>
+    <blockquote style="border-left: 3px solid #ccc; padding-left: 15px; margin-left: 15px; color: #555;">
+        <p>{{ message_content }}...</p>
+    </blockquote>
+    <p>To view the full message and reply, please visit your WyoCyberRange Inbox:</p>
+    <p><a href="{{ conversation_url }}" style="background-color: #007bff; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px;">View Conversation in WyoCyberRange</a></p>
+    <p>Thank you,<br>The WyoCyberRange Team</p>
+</body>
+</html>

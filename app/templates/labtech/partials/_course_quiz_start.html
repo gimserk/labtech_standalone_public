@@ -1,0 +1,11 @@
+<div class="content-body">
+    {{ content.description|safe }}
+    <hr>
+    <p>This quiz has <strong>{{ content.questions.count }} questions</strong>.</p>
+    {% if content.max_attempts > 0 %}
+        <p>You have <strong>{{ content.max_attempts }} attempt(s)</strong> available.</p>
+    {% else %}
+        <p>You have unlimited attempts.</p>
+    {% endif %}
+    <a href="{% url 'take_quiz' course.id content.id %}" class="btn btn-primary btn-lg mt-3">Start Quiz</a>
+</div>

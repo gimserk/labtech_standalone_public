@@ -1,0 +1,60 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+{% block labtech_title %}{{ title }}{% endblock %}
+{% block labtech_extra_head %}
+{{ form.media }}{{ persona_form.media }}
+<link rel="stylesheet" href="{% static 'labtech/css/content-editor.css' %}">
+{% endblock %}
+
+{% block labtech_content %}
+<div class="content-editor">
+    <h2>{{ title }}</h2>
+    <p>Course: <strong>{{ course.title }}</strong></p>
+    <p class="text-muted">Create an interactive troubleshooting scenario where students interact with an AI-powered customer.</p>
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="h5 mb-0">Scenario Details</h3>
+            </div>
+            <div class="card-body">
+                {{ form.non_field_errors }}
+                {% for field in form %}
+                <div class="form-field">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+                    {{ field }}
+                    {% if field.help_text %}<div class="helptext">{{ field.help_text|safe }}</div>{% endif %}
+                    {{ field.errors }}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        {% if persona_form %}
+        <div class="card">
+            <div class="card-header">
+                <h3 class="h5 mb-0">AI Persona Configuration</h3>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Define the character the AI will play. Provide all the necessary background details the AI needs to answer student questions accurately.</p>
+                {{ persona_form.non_field_errors }}
+                {% for field in persona_form %}
+                <div class="form-field">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+                    {{ field }}
+                    {% if field.help_text %}<div class="helptext">{{ field.help_text|safe }}</div>{% endif %}
+                    {{ field.errors }}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="form-actions">
+            <a href="{% url 'labtech_manage_course_content' course_id=course.id %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">{% if form.instance.pk %}Save Changes{% else %}Add Scenario{% endif %}</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

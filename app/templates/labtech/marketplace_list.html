@@ -1,0 +1,152 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}Explore Marketplace{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .page-header { text-align: center; padding: 2rem 1rem; }
+    .page-header h1 { font-size: 2.5rem; font-weight: 800; color: var(--text-dark); }
+    .page-header p { font-size: 1.1rem; color: var(--text-muted-light); }
+
+    .filter-bar { background: var(--lt-surface); border: 1px solid var(--lt-border); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; }
+    .filter-bar input[type="text"] { flex-grow: 1; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--lt-border); }
+
+    .course-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem; }
+    .course-card { background: var(--lt-surface); border: 1px solid var(--lt-border); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; transition: transform 0.3s ease; }
+    .course-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px rgba(30, 41, 59, 0.08); }
+    
+    .course-card-img-container { height: 150px; background-color: var(--navbar-bg); display: flex; align-items: center; justify-content: center; color: var(--lt-nav-text); font-size: 3rem; overflow: hidden; }
+    .course-card-body { padding: 1.5rem; flex-grow: 1; }
+    .course-card-meta { display: flex; flex-wrap: wrap; gap: 0.8rem; font-size: 0.85rem; color: var(--text-muted-light); border-top: 1px solid var(--lt-border); padding-top: 1rem; margin-top: 1rem; }
+    .course-card-meta span { background: var(--lt-surface-muted); padding: 0.3rem 0.6rem; border-radius: 6px; border: 1px solid var(--lt-border); }
+    .course-card-footer { padding: 0 1.5rem 1.5rem; background-color: var(--lt-surface); }
+    
+    /* Unauthorized State Styles */
+    .unlicensed-banner {
+        background: var(--lt-surface);
+        border: 1px solid var(--lt-border);
+        border-radius: 12px;
+        padding: 4rem 2rem;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    }
+    .unlicensed-icon {
+        font-size: 4rem;
+        color: var(--lt-danger);
+        margin-bottom: 1.5rem;
+    }
+    .error-terminal {
+        background: var(--lt-surface-muted);
+        color: var(--lt-danger);
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: monospace;
+        text-align: left;
+        max-width: 700px;
+        margin: 1.5rem auto;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="container">
+    <header class="page-header">
+        <h1>LabTech Marketplace</h1>
+        <p>Import ready-made, hands-on courses directly into your environment.</p>
+    </header>
+
+    <div class="filter-bar">
+        <form method="GET" action="." class="d-flex gap-3">
+            <input type="text" name="q" placeholder="Search marketplace packages..." value="{{ request.GET.q }}">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-search me-2"></i>Search</button>
+        </form>
+    </div>
+
+    {% if packages_page %}
+    <div class="course-grid">
+        {% for package in packages_page %}
+        <div class="course-card">
+            
+            <div class="course-card-img-container">
+                {% if package.thumbnail %}
+                    <img src="{{ package.thumbnail }}" alt="{{ package.title }} thumbnail" style="width: 100%; height: 100%; object-fit: cover;">
+                {% else %}
+                    <i class="fas fa-box-open"></i>
+                {% endif %}
+            </div>
+            
+            <div class="course-card-body">
+                <h3 style="margin-top: 0;">{{ package.title }}</h3>
+                <p style="color: var(--text-muted-light);">{{ package.description|truncatewords:20 }}</p>
+                <div class="course-card-meta">
+                    <span title="Recommended Length"><i class="fas fa-clock me-1"></i>{{ package.recommended_length|default:"Self-Paced" }}</span>
+                    <span title="Text Files"><i class="fas fa-file-alt me-1"></i>{{ package.counts.text_files }}</span>
+                    <span title="Quizzes"><i class="fas fa-question-circle me-1"></i>{{ package.counts.quizzes }}</span>
+                    <span title="Hands-on Labs"><i class="fas fa-laptop-code me-1"></i>{{ package.counts.labs }}</span>
+                </div>
+            </div>
+            
+            <div class="course-card-footer">
+                <form action="{% url 'marketplace_install' package.id %}" method="POST" onsubmit="return confirm('Install {{ package.title }} into your platform?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-cloud-download-alt me-2"></i>Install Course
+                    </button>
+                </form>
+            </div>
+            
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if packages_page.has_other_pages %}
+    <nav class="d-flex justify-content-center mt-5 gap-2">
+        {% if packages_page.has_previous %}
+            <a href="?page={{ packages_page.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="btn btn-outline-secondary">Previous</a>
+        {% endif %}
+        <span class="btn btn-secondary disabled">Page {{ packages_page.number }} of {{ packages_page.paginator.num_pages }}</span>
+        {% if packages_page.has_next %}
+            <a href="?page={{ packages_page.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="btn btn-outline-secondary">Next</a>
+        {% endif %}
+    </nav>
+    {% endif %}
+
+    {% else %}
+        <!-- Unlicensed / Error State -->
+        <div class="unlicensed-banner">
+            <div class="unlicensed-icon">
+                <i class="fas fa-lock"></i>
+            </div>
+            <h3 class="mb-3">Marketplace Access Restricted</h3>
+            <p class="text-muted fs-5 mb-4 mx-auto" style="max-width: 800px;">
+                We could not retrieve packages from the Marketplace. This typically occurs when your client instance does not have an active or valid license to sync with the master server.
+            </p>
+            
+            <div class="error-terminal">
+                <i class="fas fa-exclamation-triangle me-2"></i> <strong>Connection Error:</strong><br>
+                Could not connect to the Marketplace. Ensure your license is active.<br>
+                <span class="text-white-50">Details: 403 Client Error: Forbidden for url: https://wyocyberrange.com/api/marketplace/packages/</span>
+            </div>
+
+            <hr class="w-50 mx-auto my-5 text-muted">
+
+            <h4>Want access to pre-made courses?</h4>
+            <p class="text-muted mb-4 mx-auto" style="max-width: 600px;">
+                If you would like to unlock our premium library of hands-on cybersecurity courses, labs, and interactive modules, please reach out to our team to activate or renew your license.
+            </p>
+            
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
+                <a href="mailto:labtech@wyocyberrange.com" class="btn btn-primary btn-lg px-4">
+                    <i class="fas fa-envelope me-2"></i> Email Support
+                </a>
+                <a href="tel:3073165209" class="btn btn-outline-secondary btn-lg px-4">
+                    <i class="fas fa-phone me-2"></i> (307) 316-5209
+                </a>
+            </div>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}

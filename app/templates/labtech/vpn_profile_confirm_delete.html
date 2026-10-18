@@ -1,0 +1,15 @@
+{% extends "labtech/generic_base.html" %}
+
+{% block labtech_title %}Confirm Deletion{% endblock %}
+
+{% block labtech_content %}
+    <h1>Delete VPN Profile</h1>
+    <p class="lead">Are you sure you want to delete the profile "<strong>{{ profile.name }}</strong>"?</p>
+    <p>This action cannot be undone. If the VPN is currently connected, it will be disconnected.</p>
+    
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Confirm Delete</button>
+        <a href="{% url 'labtech_manage_vpn_profiles' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+{% endblock %}

@@ -1,0 +1,298 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    body {
+        overflow: hidden; /* Prevent scrolling */
+    }
+    .visualizer-wrapper {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 120px); /* Full height minus header/footer */
+        background-color: var(--lt-surface-muted);
+    }
+    .visualizer-header {
+        padding: 10px 20px;
+        background-color: var(--lt-surface);
+        border-bottom: 1px solid var(--lt-border);
+        flex-shrink: 0;
+    }
+    .visualizer-header h1 {
+        margin: 0;
+        font-size: 1.5em;
+    }
+    .visualizer-header .city-name {
+        font-weight: normal;
+        color: var(--lt-primary);
+    }
+    .visualizer-container {
+        display: flex;
+        flex-grow: 1;
+        overflow: hidden;
+    }
+    .canvas-section {
+        flex-grow: 1;
+        display: flex;
+    }
+    .canvas-wrapper {
+        flex-grow: 1;
+        position: relative;
+        overflow: hidden;
+    }
+    #cityCanvas {
+        display: block;
+        background-color: var(--lt-surface-muted);
+    }
+    .video-feeds-section {
+        width: 30%;
+        min-width: 350px;
+        flex-shrink: 0;
+        background-color: var(--lt-surface);
+        padding: 15px;
+        overflow-y: auto;
+        border-left: 1px solid var(--lt-border);
+    }
+    .video-feeds-section h3 {
+        margin-top: 0;
+        color: var(--lt-text);
+        border-bottom: 1px solid var(--lt-border);
+        padding-bottom: 10px;
+        font-size: 1.2em;
+    }
+    .video-feed-item {
+        margin-bottom: 1.5rem;
+    }
+    .video-feed-item h5 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    .video-container {
+        position: relative;
+        width: 100%;
+        padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+        height: 0;
+        overflow: hidden;
+        border-radius: 5px;
+        background-color: var(--lt-surface-muted);
+    }
+    .video-container iframe,
+    .video-container video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+    #status-indicator {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        padding: 8px 12px;
+        background-color: rgba(0,0,0,0.6);
+        color: var(--lt-nav-text);
+        border-radius: 5px;
+        font-size: 0.9em;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .status-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+    }
+    .status-dot.connected { background-color: var(--lt-success); color: var(--lt-on-accent); }
+    .status-dot.disconnected { background-color: var(--lt-danger); color: var(--lt-on-accent); }
+    .status-dot.loading { background-color: var(--lt-warning); color: var(--lt-on-warning); }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="visualizer-wrapper">
+    <div class="visualizer-header">
+        <h1>CyberCity: <span class="city-name">{{ city.name }}</span></h1>
+    </div>
+    <div class="visualizer-container">
+        <div class="canvas-section">
+            <div class="canvas-wrapper">
+                <canvas id="cityCanvas"></canvas>
+                <div id="status-indicator">
+                    <div id="statusDot" class="status-dot loading"></div>
+                    <span id="statusText">Connecting...</span>
+                </div>
+            </div>
+        </div>
+        <div class="video-feeds-section">
+            <h3><i class="fas fa-video"></i> Live Camera Feeds</h3>
+            {% for feed in video_feeds %}
+                <div class="video-feed-item">
+                    <h5>{{ feed.name }}</h5>
+                    <div class="video-container">
+                        {% if feed.feed_type == 'youtube' %}
+                            <iframe src="https://www.youtube.com/embed/{{ feed.video_id_or_url }}?autoplay=1&mute=1&loop=1&playlist={{ feed.video_id_or_url }}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        {% elif feed.feed_type == 'hls' %}
+                            <video id="hls-player-{{ feed.id }}" controls muted playsinline></video>
+                        {% else %}
+                            <p class="text-white p-3">Video feed type not supported for direct display.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            {% empty %}
+                <p class="text-muted">No active camera feeds for this city.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // ... (The entire canvas drawing script from the previous version remains here unchanged)
+    const canvas = document.getElementById('cityCanvas');
+    const ctx = canvas.getContext('2d');
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+
+    const BUILDING_WIDTH = 180;
+    const BUILDING_HEIGHT = 120;
+    const GRID_SIZE = 20;
+    const REFRESH_INTERVAL = 5000;
+    const CITY_ID = "{{ city.id }}";
+    const IS_READ_ONLY = {{ is_read_only|yesno:"true,false" }};
+
+    let buildings = [];
+
+    function resizeCanvas() {
+        const wrapper = document.querySelector('.canvas-wrapper');
+        canvas.width = wrapper.offsetWidth;
+        canvas.height = wrapper.offsetHeight;
+        draw();
+    }
+
+    function themeColor(role) {
+        return getComputedStyle(document.documentElement).getPropertyValue('--lt-' + role).trim();
+    }
+
+    function drawGrid() {
+        ctx.strokeStyle = themeColor('border');
+        ctx.lineWidth = 0.5;
+        for (let x = 0; x < canvas.width; x += GRID_SIZE) {
+            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+        }
+        for (let y = 0; y < canvas.height; y += GRID_SIZE) {
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+        }
+    }
+
+    function drawBuilding(building) {
+        if (building.pos_x === null || building.pos_y === null) return;
+        
+        ctx.fillStyle = themeColor('surface');
+        ctx.strokeStyle = themeColor('secondary');
+        ctx.lineWidth = 2;
+        ctx.shadowColor = 'rgba(0,0,0,0.1)';
+        ctx.shadowBlur = 8;
+        ctx.shadowOffsetX = 3;
+        ctx.shadowOffsetY = 3;
+
+        ctx.fillRect(building.pos_x, building.pos_y, BUILDING_WIDTH, BUILDING_HEIGHT);
+        ctx.strokeRect(building.pos_x, building.pos_y, BUILDING_WIDTH, BUILDING_HEIGHT);
+        ctx.shadowColor = 'transparent';
+
+        ctx.fillStyle = themeColor('text');
+        ctx.font = 'bold 14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(building.name, building.pos_x + BUILDING_WIDTH / 2, building.pos_y + 22);
+
+        ctx.strokeStyle = themeColor('muted');
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(building.pos_x + 10, building.pos_y + 35);
+        ctx.lineTo(building.pos_x + BUILDING_WIDTH - 10, building.pos_y + 35);
+        ctx.stroke();
+
+        if (building.pins && building.pins.length > 0) {
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'left';
+            const pinStartY = building.pos_y + 50;
+            building.pins.slice(0, 4).forEach((pin, index) => {
+                const pinY = pinStartY + index * 16;
+                const statusIcon = (pin.status && pin.status.toLowerCase() === 'on') ? '✅' : '❌';
+                const statusText = pin.status ? pin.status.toUpperCase() : 'N/A';
+                ctx.fillStyle = themeColor('muted');
+                ctx.fillText(`${statusIcon} ${pin.name}: `, building.pos_x + 15, pinY);
+                ctx.fillStyle = (statusIcon === '✅') ? themeColor('success') : themeColor('danger');
+                ctx.font = 'bold 12px sans-serif';
+                ctx.fillText(statusText, building.pos_x + 100, pinY);
+                ctx.font = '12px sans-serif';
+            });
+        }
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawGrid();
+        buildings.forEach(drawBuilding);
+    }
+
+    new MutationObserver(draw).observe(document.documentElement, {
+        attributes: true, attributeFilter: ['data-bs-theme', 'data-contrast']
+    });
+
+    async function fetchData() {
+        try {
+            const response = await fetch(`/api/cybercity/${CITY_ID}/status/`);
+            if (!response.ok) throw new Error('Network response was not ok');
+            const data = await response.json();
+            buildings = data.buildings || [];
+            draw();
+            statusDot.className = 'status-dot connected';
+            statusText.textContent = 'Live';
+        } catch (error) {
+            console.error("Failed to fetch city status:", error);
+            statusDot.className = 'status-dot disconnected';
+            statusText.textContent = 'Disconnected';
+        }
+    }
+
+    function init() {
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        fetchData();
+        setInterval(fetchData, REFRESH_INTERVAL);
+    }
+
+    init();
+});
+</script>
+{% endblock %}
+
+{% block labtech_extra_body %}
+<script>
+// This script runs after the main DOM is loaded.
+document.addEventListener('DOMContentLoaded', function () {
+    {% for feed in video_feeds %}
+        {% if feed.feed_type == 'hls' %}
+            // Check if the HLS player library is available
+            if (typeof Hls !== 'undefined' && Hls.isSupported()) {
+                var video_{{ feed.id }} = document.getElementById('hls-player-{{ feed.id }}');
+                var hls_url = '{{ feed.video_id_or_url }}';
+                var hls = new Hls();
+                hls.loadSource(hls_url);
+                hls.attachMedia(video_{{ feed.id }});
+                hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                    // Muting the video is required for autoplay in most browsers
+                    video_{{ feed.id }}.muted = true; 
+                    video_{{ feed.id }}.play().catch(e => console.error("Autoplay was blocked for HLS video:", e));
+                });
+            }
+        {% endif %}
+    {% endfor %}
+});
+</script>
+{% endblock %}

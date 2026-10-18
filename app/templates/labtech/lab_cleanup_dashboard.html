@@ -1,0 +1,19 @@
+{% extends 'labtech/generic_base.html' %}
+{% block labtech_title %}Lab Cleanup: {{ course.title }}{% endblock %}
+{% block labtech_content %}
+<div class="container-fluid mt-4">
+  <h1>Lab Cleanup: {{ course.title }}</h1>
+  <a href="{% url 'instructor_manage_labs' course_id=course.pk %}">Manage Labs</a>
+  <div class="table-responsive mt-3"><table class="table table-striped">
+    <thead><tr><th>Job</th><th>Student ID</th><th>Lab ID</th><th>Session ID</th><th>Machine IDs / VMIDs</th><th>Status</th><th>Attempts</th><th>Safe error</th><th>Action</th></tr></thead>
+    <tbody>{% for job in jobs %}<tr>
+      <td>{{ job.pk }}</td><td>{{ job.student_id_snapshot }}</td><td>{{ job.lab_id_snapshot }}</td>
+      <td>{{ job.instance_id_snapshot }}</td>
+      <td>{% for resource in job.resources %}{{ resource.machine_id }} / {{ resource.vmid|default:'none' }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+      <td>{{ job.status }}</td><td>{{ job.attempt_count }}{% if job.attempts.last %} (last {{ job.attempts.last.finished_at }}: {{ job.attempts.last.outcome }}){% endif %}{% if job.next_attempt_at %} (next {{ job.next_attempt_at }}){% endif %}</td>
+      <td>{{ job.last_error|default:'—' }}</td>
+      <td>{% if job.status == 'failed' %}<form method="post" action="{% url 'retry_lab_cleanup' course_id=course.pk job_id=job.pk %}">{% csrf_token %}<button type="submit" class="btn btn-warning btn-sm">Retry Cleanup</button></form>{% endif %}</td>
+    </tr>{% empty %}<tr><td colspan="9">No cleanup jobs.</td></tr>{% endfor %}</tbody>
+  </table></div>
+</div>
+{% endblock %}

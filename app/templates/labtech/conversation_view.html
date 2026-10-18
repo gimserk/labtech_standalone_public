@@ -1,0 +1,99 @@
+{% extends "labtech/generic_base.html" %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .conversation-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+    @media (min-width: 992px) {
+        .conversation-grid { grid-template-columns: 1fr 320px; }
+    }
+    .message-item { display: flex; gap: 15px; margin-bottom: 1.5rem; }
+    .message-author img { width: 45px; height: 45px; border-radius: 50%; }
+    .message-body { flex-grow: 1; }
+    .message-header { margin-bottom: 5px; font-size: 0.9em; }
+    .message-header strong { font-size: 1.05em; }
+    .message-header .timestamp { color: var(--lt-muted); }
+    .message-content {
+        background: var(--lt-surface-muted);
+        padding: 15px;
+        border-radius: 8px;
+        border-top-left-radius: 0;
+    }
+    .message-item.is-user .message-content {
+        background: var(--lt-info-subtle);
+        border-top-left-radius: 8px;
+        border-top-right-radius: 0;
+    }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="container mt-4">
+    <div class="mb-4">
+        <h3>{{ conversation.subject }}</h3>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'inbox' %}">Inbox</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Conversation</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="conversation-grid">
+        <div class="conversation-thread">
+            {% for message in conversation.messages.all %}
+            <div class="message-item {% if message.author == request.user %}is-user flex-row-reverse{% endif %}">
+                <div class="message-author">
+                    <img src="{{ message.author.profile.profile_picture.url }}" alt="{{ message.author.username }}">
+                </div>
+                <div class="message-body">
+                    <div class="message-header {% if message.author == request.user %}text-end{% endif %}">
+                        <strong>{{ message.author.get_full_name|default:message.author.username }}</strong>
+                        <span class="timestamp ms-2">{{ message.sent_at|timesince }} ago</span>
+                    </div>
+                    <div class="message-content">{{ message.content|safe }}</div>
+                </div>
+            </div>
+            {% endfor %}
+
+            <hr>
+            <h4>Send a Reply</h4>
+            <form method="post">
+                {% csrf_token %}
+                {{ form.media }}
+                {{ form.content }}
+                <button type="submit" class="btn btn-primary mt-3">Send Reply</button>
+            </form>
+        </div>
+
+        <div class="student-snippet">
+            {% if student_participant and user.is_superuser or user.institution_profile %}
+            <div class="card">
+                <div class="card-header">Student Info</div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <img src="{{ student_participant.profile.profile_picture.url }}" class="rounded-circle" width="80" alt="Student">
+                        <h5 class="mt-2 mb-0">{{ student_participant.get_full_name|default:student_participant.username }}</h5>
+                        <small class="text-muted">{{ student_participant.email }}</small>
+                    </div>
+                    <hr>
+                    <strong>Enrolled Courses:</strong>
+                    <ul>
+                        {% for enrollment in student_participant.enrollments.all %}
+                        <li>{{ enrollment.course.title }}</li>
+                        {% empty %}
+                        <li>No other enrollments.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

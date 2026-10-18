@@ -1,0 +1,55 @@
+{% extends 'labtech/generic_base.html' %}
+{% load course_extras %}
+{% block labtech_title %}{{ title }}{% endblock %}
+{% block labtech_content %}
+<div class="container py-3">
+    <h1 class="h3">{{ title }}</h1>
+    <p>Each included activity contributes its points in Points mode. Weighted mode uses points within each type and requires active category weights to total 100%.</p>
+    <form method="post">{% csrf_token %}
+        {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+        <div class="mb-3">{{ form.mode.label_tag }} {{ form.mode }} {{ form.mode.errors }}</div>
+        <h2 class="h5">Category weights</h2>
+        <div class="row g-2 mb-4">
+            {% for key, weight in form.snapshot.weights.items %}
+            {% with field_name='weight_'|add:key %}{% for bound in form %}{% if bound.name == field_name %}
+            <div class="col-6 col-md-3"><label class="form-label" for="{{ bound.id_for_label }}">{{ key|gradebook_label }} %</label>{{ bound }}{{ bound.errors }}</div>
+            {% endif %}{% endfor %}{% endwith %}{% endfor %}
+        </div>
+        <p id="gradebook-weight-preview" class="alert alert-info" role="status">In weighted mode, active category weights must total 100%. For example, two text pages worth 5 and 15 points earn 25% in the Text Pages category when only the first page is complete.</p>
+        <h2 class="h5">Activity points</h2>
+        <div class="table-responsive"><table class="table table-sm"><thead><tr><th>Activity</th><th>Type</th><th>Count toward grade</th><th>Points</th></tr></thead>
+            <tbody>{% for item, included, points in item_fields %}<tr><td>{{ item.item.title }}</td><td>{{ item.category_key|gradebook_label }}</td><td>{{ included }} {{ included.errors }}</td><td>{{ points }} {{ points.errors }}</td></tr>
+            {% empty %}<tr><td colspan="4">Add course activities before assigning points.</td></tr>{% endfor %}</tbody>
+        </table></div>
+        <button class="btn btn-primary" type="submit">Save grading setup</button>
+        <a class="btn btn-outline-secondary" href="{% url 'instructor_gradebook' course.id %}">Cancel</a>
+    </form>
+</div>
+{% endblock %}
+{% block labtech_extra_body %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.querySelector('form');
+  const preview = document.getElementById('gradebook-weight-preview');
+  if (!form || !preview) return;
+  function updatePreview() {
+    const active = new Set();
+    form.querySelectorAll('input[name^="included_"]:checked').forEach(input => {
+      const name = input.name.slice('included_'.length);
+      const category = name.slice(0, name.lastIndexOf('_'));
+      active.add(category);
+    });
+    const total = Array.from(active).reduce((sum, key) => {
+      const field = form.elements['weight_' + key];
+      return sum + (Number(field && field.value) || 0);
+    }, 0);
+    preview.textContent = form.elements.mode.value === 'weighted'
+      ? `Active category weights: ${total.toFixed(2)}% of 100%. Points set each activity's share within its type. For example, a completed 5-point page in a 20-point Text Pages category earns 25% of that category.`
+      : 'Points mode: each included activity contributes its points to the course total. For example, earning 5 of 20 available points gives a 25% course grade.';
+  }
+  form.addEventListener('input', updatePreview);
+  form.addEventListener('change', updatePreview);
+  updatePreview();
+});
+</script>
+{% endblock %}

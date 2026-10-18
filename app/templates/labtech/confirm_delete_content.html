@@ -1,0 +1,78 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .confirm-delete-container {
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 25px;
+        background-color: var(--lt-surface);
+        border: 1px solid var(--lt-danger); /* Red border for emphasis */
+        border-radius: 8px;
+        text-align: center;
+    }
+    .confirm-delete-container h2 {
+        color: var(--lt-danger); /* Red heading */
+        margin-top: 0;
+    }
+    .confirm-delete-container p {
+        font-size: 1.1em;
+        margin-bottom: 25px;
+        line-height: 1.6;
+    }
+    .form-actions {
+        margin-top: 20px;
+    }
+    .btn {
+        padding: 10px 20px;
+        text-decoration: none;
+        border-radius: 5px;
+        font-size: 1em;
+        cursor: pointer;
+        border: none;
+        margin: 0 10px;
+    }
+    .btn-danger {
+        background-color: var(--lt-danger);
+        color: var(--lt-on-accent);
+    }
+    .btn-danger:hover {
+        background-color: var(--lt-danger-hover);
+        color: var(--lt-on-accent);
+    }
+    .btn-secondary {
+        background-color: var(--lt-secondary);
+        color: var(--lt-on-accent);
+    }
+    .btn-secondary:hover {
+        background-color: var(--lt-secondary-hover);
+        color: var(--lt-on-accent);
+    }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="confirm-delete-container">
+    <h2>{{ title }}</h2>
+
+    {# --- UPDATED: Use a specific warning message if provided, otherwise use the generic one --- #}
+    {% if warning_message %}
+        <p>{{ warning_message|safe }}</p>
+    {% else %}
+        <p>Are you sure you want to delete "<strong>{{ item_to_delete.title|default:"this item" }}</strong>"?</p>
+    {% endif %}
+    
+    <p class="text-muted">This action cannot be undone.</p>
+    
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-actions">
+            <a href="{{ cancel_url|default:"#" }}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-danger">Yes, Delete</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,99 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .forum-container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+    .forum-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid var(--lt-border); }
+    .thread-list .thread-item {
+        display: grid;
+        grid-template-columns: 50px 1fr 100px 150px;
+        align-items: center;
+        padding: 15px;
+        border-bottom: 1px solid var(--lt-border);
+        gap: 15px;
+    }
+    .thread-list .thread-header {
+        font-weight: 600;
+        color: var(--lt-muted);
+        background-color: var(--lt-surface-muted);
+    }
+    .thread-icon { font-size: 1.5rem; color: var(--lt-muted); text-align: center; }
+    .thread-title a { text-decoration: none; font-weight: 600; color: var(--lt-primary); }
+    .thread-title a:hover { text-decoration: underline; }
+    .thread-meta { font-size: 0.85rem; color: var(--lt-muted); }
+    .thread-stats, .thread-activity { text-align: center; font-size: 0.9rem; }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="forum-container">
+    <div class="forum-header">
+        <div>
+            <h2>{{ course.title }} Forum</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'course_detail' course_id=course.id %}">Course Home</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Forum</li>
+                </ol>
+            </nav>
+        </div>
+        <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#newThreadForm" aria-expanded="false" aria-controls="newThreadForm">
+            <i class="fas fa-plus"></i> New Thread
+        </button>
+    </div>
+
+    <div class="collapse" id="newThreadForm">
+        <div class="card card-body mb-4">
+            <h3>Start a New Discussion</h3>
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="{{ form.title.id_for_label }}" class="form-label">Title</label>
+                    {{ form.title }}
+                </div>
+                <div class="mb-3">
+                    <label for="{{ form.content.id_for_label }}" class="form-label">Message</label>
+                    {{ form.content }}
+                    {{ form.media }}
+                </div>
+                <button type="submit" class="btn btn-success">Post Thread</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="thread-list">
+            <div class="thread-item thread-header">
+                <div></div>
+                <div>Topic</div>
+                <div class="text-center">Replies</div>
+                <div class="text-center">Last Activity</div>
+            </div>
+            {% for thread in threads %}
+            <div class="thread-item">
+                <div class="thread-icon">
+                    {% if thread.is_pinned %}<i class="fas fa-thumbtack text-danger"></i>
+                    {% elif thread.is_locked %}<i class="fas fa-lock"></i>
+                    {% else %}<i class="far fa-comments"></i>
+                    {% endif %}
+                </div>
+                <div>
+                    <div class="thread-title"><a href="{{ thread.get_absolute_url }}">{{ thread.title }}</a></div>
+                    <div class="thread-meta">by {{ thread.author.username }} on {{ thread.created_at|date:"M d, Y" }}</div>
+                </div>
+                <div class="thread-stats">{{ thread.post_count|add:"-1" }}</div>
+                <div class="thread-activity">{{ thread.last_activity|timesince }} ago</div>
+            </div>
+            {% empty %}
+            <div class="text-center p-5">
+                <p class="lead">No discussions have been started yet.</p>
+                <p>Be the first to ask a question or share something with the class!</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

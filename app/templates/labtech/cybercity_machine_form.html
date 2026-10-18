@@ -1,0 +1,113 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }} - LabTech{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    /* Basic form styling */
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: var(--lt-surface);
+        border: 1px solid var(--lt-border);
+        border-radius: 8px;
+    }
+    .breadcrumb-nav {
+        margin-bottom: 20px;
+        font-size: 0.9rem;
+    }
+    .breadcrumb-nav a {
+        text-decoration: none;
+        color: var(--lt-primary);
+    }
+    .breadcrumb-nav a:hover {
+        text-decoration: underline;
+    }
+    .form-field {
+        margin-bottom: 1.5rem;
+    }
+    .form-field label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    .form-field input[type="text"],
+    .form-field select,
+    .form-field textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid var(--lt-border);
+        border-radius: 4px;
+        font-size: 1rem;
+    }
+    .form-field textarea {
+        min-height: 120px;
+        resize: vertical;
+    }
+    .form-field .help-text {
+        font-size: 0.85rem;
+        color: var(--lt-muted);
+        margin-top: 5px;
+    }
+    .form-actions {
+        margin-top: 20px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        text-decoration: none;
+        font-size: 1rem;
+        cursor: pointer;
+    }
+    .btn-primary {
+        background-color: var(--lt-primary);
+        color: var(--lt-on-accent);
+    }
+    .btn-secondary {
+        background-color: var(--lt-surface-muted);
+        color: var(--lt-text);
+        border: 1px solid var(--lt-border);
+    }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="breadcrumb-nav">
+    <a href="{% url 'cybercity_dashboard' %}">CyberCity Dashboard</a> &raquo;
+    <a href="{% url 'cybercity_detail' city.id %}">{{ city.name }}</a> &raquo;
+    <a href="{% url 'cybercity_building_detail' city.id building.id %}">{{ building.name }}</a> &raquo;
+    <span>Add Machine</span>
+</div>
+
+<div class="form-container">
+    <h1>{{ title }}</h1>
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        {% for field in form %}
+            <div class="form-field">
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.help_text %}
+                    <div class="help-text">{{ field.help_text|safe }}</div>
+                {% endif %}
+                {% for error in field.errors %}
+                    <div class="alert alert-danger">{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+
+        <div class="form-actions">
+            <a href="{% url 'cybercity_building_detail' city.id building.id %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Add Machine</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

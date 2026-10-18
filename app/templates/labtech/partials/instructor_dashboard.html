@@ -1,0 +1,129 @@
+<style>
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 2rem;
+        align-items: start;
+    }
+    @media (max-width: 991.98px) {
+        .dashboard-grid { grid-template-columns: 1fr; }
+    }
+    .course-table {
+        font-size: 0.95em;
+    }
+    .course-table th {
+        font-weight: 600;
+    }
+    .course-table td {
+        vertical-align: middle;
+    }
+    .table-responsive {
+        overflow: visible;
+    }
+    .quick-access-list a {
+        display: flex;
+        align-items: center;
+        padding: .75rem 1rem;
+        text-decoration: none;
+        color: var(--lt-text);
+        transition: background-color 0.2s ease;
+        border-bottom: 1px solid var(--lt-border);
+    }
+    .quick-access-list a:last-child { border-bottom: none; }
+    .quick-access-list a:hover { background-color: var(--lt-surface-muted); color: var(--lt-primary); }
+    .quick-access-list i.fa-fw { margin-right: .75rem; color: var(--lt-muted); width: 20px; }
+</style>
+
+<div class="dashboard-grid">
+    <div>
+        <h3>My Teaching Courses</h3>
+        <div class="card mb-4">
+            <div class="table-responsive">
+                <table class="table table-hover course-table mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Course Title</th>
+                            <th>Status</th>
+                            <th>Students</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for course in courses_for_dashboard %}
+                        <tr>
+                            <td>
+                                <span class="fw-bold">{{ course.title }}</span>
+                            </td>
+                            <td>
+                                {% if course.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'instructor_student_list' course_id=course.id %}" class="text-decoration-none">{{ course.student_count }}</a>
+                            </td>
+                            <td class="text-end">
+                                <div class="dropstart">
+                                <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">Actions</button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item" href="{% url 'labtech_manage_course_content' course_id=course.id %}"><i class="fas fa-edit fa-fw me-2"></i>Manage Content</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'labtech_edit_course' course_id=course.id %}"><i class="fas fa-cog fa-fw me-2"></i>Edit Details</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'instructor_student_list' course_id=course.id %}"><i class="fas fa-users fa-fw me-2"></i>View Students</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'instructor_gradebook' course_id=course.id %}"><i class="fas fa-graduation-cap fa-fw me-2"></i>Gradebook</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'course_detail' course_id=course.id %}" target="_blank"><i class="fas fa-eye fa-fw me-2"></i>Student View</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{% url 'manage_announcements' course_id=course.id %}"><i class="fas fa-bullhorn fa-fw me-2"></i>Announcements</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'manage_course_resources' course_id=course.id %}"><i class="fas fa-paperclip fa-fw me-2"></i>Resources</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'manage_course_backups' course_id=course.id %}"><i class="fas fa-history fa-fw me-2"></i>View Backups</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{% url 'import_content' course_id=course.id %}"><i class="fas fa-upload fa-fw me-2"></i>Import Content</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'export_course' course.id %}"><i class="fas fa-download fa-fw me-2"></i>Export</a></li>
+                                    <li>
+                                        <a class="dropdown-item" href="#" onclick="event.preventDefault(); document.getElementById('clone-form-{{ course.id }}').submit();"><i class="fas fa-clone fa-fw me-2"></i>Clone Course</a>
+                                        <form id="clone-form-{{ course.id }}" action="{% url 'clone_course' course_id=course.id %}" method="post" class="d-none">{% csrf_token %}</form>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" href="#" onclick="event.preventDefault(); document.getElementById('archive-form-{{ course.id }}').submit();"><i class="fas fa-archive fa-fw me-2"></i>Archive Course</a>
+                                        <form id="archive-form-{{ course.id }}" action="{% url 'archive_course' course_id=course.id %}" method="post" class="d-none">{% csrf_token %}</form>
+                                    </li>
+                                    {% if user.is_superuser %}
+                                    <li>
+                                        <a class="dropdown-item text-danger" href="{% url 'labtech_delete_course' course_id=course.id %}"><i class="fas fa-trash-alt fa-fw me-2"></i>Delete Course</a>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">You are not currently teaching any courses.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% if has_more_courses %}
+            <div class="text-center">
+                <a href="{% url 'instructor_my_courses' %}" class="btn btn-outline-primary">View All My Courses &rarr;</a>
+            </div>
+        {% endif %}
+    </div>
+
+    <div>
+        <h3>Instructor Tools</h3>
+        <div class="card mb-4">
+            <div class="card-body p-0">
+                <ul class="list-unstyled quick-access-list mb-0">
+                    <li><a href="{% url 'inbox' %}"><i class="fas fa-inbox fa-fw"></i>Message Inbox</a></li>
+                    <li><a href="{% url 'instructor_add_course' %}"><i class="fas fa-plus-circle fa-fw"></i>Create New Course</a></li>
+                    <li><a href="{% url 'marketplace_list' %}"><i class="fas fa-store fa-fw"></i>Browse Marketplace</a></li>
+                    <li><a href="{% url 'ctf_dashboard' %}"><i class="fas fa-flag fa-fw"></i>Manage CTF Campaigns</a></li>
+                    <li><a href="{% url 'template_library' %}"><i class="fas fa-layer-group fa-fw"></i>Proxmox Template Library</a></li>
+                    <li><a href="{% url 'help_desk_portal' %}"><i class="fas fa-question-circle fa-fw"></i>Help & Support</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

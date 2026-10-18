@@ -1,0 +1,88 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .form-container { max-width: 700px; margin: 0 auto; padding: 25px; }
+    .form-container h2 { text-align: center; color: var(--lt-text); margin-bottom: 25px; border-bottom: 1px solid var(--lt-border); padding-bottom: 15px; }
+    .form-field { margin-bottom: 20px; }
+    .form-field label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--lt-text); }
+    
+    /* UPDATED: This selector now targets both select and date inputs */
+    .form-field select,
+    .form-field input[type="date"] {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid var(--lt-border);
+        border-radius: 4px;
+        box-sizing: border-box;
+        font-size: 0.95em;
+    }
+
+    .form-field .helptext { font-size: 0.85em; color: var(--lt-muted); margin-top: 5px; }
+    .form-field .errorlist { list-style: none; padding: 0; margin: 5px 0 0 0; color: var(--lt-danger); font-size: 0.85em; }
+    .form-actions { margin-top: 30px; text-align: right; }
+    .btn { padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 1em; cursor: pointer; border: none; }
+    .btn-primary { background-color: var(--lt-primary); color: var(--lt-on-accent); }
+    .btn-primary:hover { background-color: var(--lt-primary-hover); color: var(--lt-on-accent); }
+    .btn-secondary { background-color: var(--lt-secondary); color: var(--lt-on-accent); margin-right: 10px; }
+    .btn-secondary:hover { background-color: var(--lt-secondary-hover); color: var(--lt-on-accent); }
+    .current-plan-info { background-color: var(--lt-surface-muted); padding: 15px; border-radius: 5px; margin-bottom: 20px; border: 1px solid var(--lt-border);}
+    .current-plan-info p { margin: 5px 0; }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="form-container">
+    <h2>{{ title }}</h2>
+
+    <div class="current-plan-info">
+        <p><strong>Institution:</strong> {{ institution.name }}</p>
+        <p><strong>Currently Assigned Plan:</strong> 
+            {% if institution.assigned_plan %}
+                {{ institution.assigned_plan.name }}
+            {% else %}
+                None
+            {% endif %}
+        </p>
+    </div>
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+        
+        <div class="form-field">
+            <label for="{{ form.assigned_plan.id_for_label }}">{{ form.assigned_plan.label }}:</label>
+            {{ form.assigned_plan }}
+            {% if form.assigned_plan.help_text %}
+                <div class="helptext">{{ form.assigned_plan.help_text|safe }}</div>
+            {% endif %}
+            {{ form.assigned_plan.errors }}
+        </div>
+        
+        <div class="form-field">
+            <label for="{{ form.plan_start_date.id_for_label }}">{{ form.plan_start_date.label }}:</label>
+            {{ form.plan_start_date }}
+            {% if form.plan_start_date.help_text %}
+                <div class="helptext">{{ form.plan_start_date.help_text|safe }}</div>
+            {% endif %}
+            {{ form.plan_start_date.errors }}
+        </div>
+        <div class="form-field">
+            <label for="{{ form.plan_end_date.id_for_label }}">{{ form.plan_end_date.label }}:</label>
+            {{ form.plan_end_date }}
+            {% if form.plan_end_date.help_text %}
+                <div class="helptext">{{ form.plan_end_date.help_text|safe }}</div>
+            {% endif %}
+            {{ form.plan_end_date.errors }}
+        </div>
+        
+
+        <div class="form-actions">
+            <a href="{% url 'labtech_manage_single_institution' institution_id=institution.id %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Save Plan Assignment</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

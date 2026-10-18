@@ -1,0 +1,122 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{{ title }}</h1>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">License Details</h5>
+                </div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Status</span>
+                        {% if license.expires_at %}
+                            {% if license.expires_at > now %}
+                                <span class="badge bg-success fs-6">Valid</span>
+                            {% else %}
+                                <span class="badge bg-danger fs-6">Expired</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="badge bg-secondary fs-6">Free Tier (Unlicensed)</span>
+                        {% endif %}
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Machine Fingerprint</span>
+                        <code class="fw-bold">{{ license.machine_fingerprint|default:"Not yet generated." }}</code>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Rolling License Expiration</span>
+                        <span class="fw-bold">{{ license.expires_at|date:"F d, Y"|default:"N/A" }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Final Contract End Date</span>
+                        <span class="fw-bold">{{ license.contract_end_date|date:"F d, Y"|default:"Not set" }}</span>
+                    </li>
+                    
+                    <!-- Marketplace Authorization Status -->
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Marketplace Access</span>
+                        {% if license.expires_at and license.expires_at > now %}
+                            <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Automatically Authorized</span>
+                        {% else %}
+                            <span class="badge bg-danger"><i class="fas fa-ban me-1"></i>No Access (Requires Active License)</span>
+                        {% endif %}
+                    </li>
+
+                     <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>CyberCity Feature</span>
+                        {% if license.cybercity_enabled %}
+                            <span class="badge bg-info text-dark">Enabled</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Disabled</span>
+                        {% endif %}
+                    </li>
+                    <li class="list-group-item">
+                        <span>User Limit</span>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <div class="progress flex-grow-1" style="height: 20px;">
+                                {% if license.expires_at and license.expires_at > now %}
+                                    <div class="progress-bar" role="progressbar" style="width: {% widthratio current_user_count license.max_users 100 %}%;" aria-valuenow="{{ current_user_count }}" aria-valuemin="0" aria-valuemax="{{ license.max_users }}">
+                                        {{ current_user_count }}
+                                    </div>
+                                {% else %}
+                                    <div class="progress-bar bg-secondary" role="progressbar" style="width: {% widthratio current_user_count 20 100 %}%;" aria-valuenow="{{ current_user_count }}" aria-valuemin="0" aria-valuemax="20">
+                                        {{ current_user_count }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <span class="ms-3 fw-bold">
+                                {% if license.expires_at and license.expires_at > now %}
+                                    {{ current_user_count }} / {{ license.max_users }} Users
+                                {% else %}
+                                    {{ current_user_count }} / 20 Max Users (Free Tier)
+                                {% endif %}
+                            </span>
+                        </div>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Last Checked In</span>
+                        <span class="text-muted">{{ license.last_checked_at|date:"Y-m-d H:i"|default:"Never" }}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4">
+                 <div class="card-body">
+                    <h5 class="card-title">Actions</h5>
+                    <p class="card-text">If you have recently updated your license on the central server, you can manually check for an update here.</p>
+                    <form action="{% url 'manage_license' %}" method="post">
+                        {% csrf_token %}
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-sync-alt me-2"></i>Check for Update / Renew License
+                            </button>
+                        </div>
+                    </form>
+                 </div>
+            </div>
+
+            <!-- Feature Overview Card -->
+            <div class="card shadow-sm border-info">
+                <div class="card-body">
+                    <h5 class="card-title text-info"><i class="fas fa-info-circle me-2"></i>Tier Overview</h5>
+                    <ul class="list-unstyled mt-3 mb-0 small text-muted">
+                        <li class="mb-2"><strong>Free Tier:</strong> Limited to 20 maximum users. No access to the online course marketplace.</li>
+                        <li><strong>Licensed Tier:</strong> Unlocks custom user caps, advanced features like CyberCity, and <strong>automatic marketplace authorization</strong> for instant course imports.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

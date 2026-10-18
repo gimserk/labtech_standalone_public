@@ -1,0 +1,22 @@
+{% extends 'labtech/generic_base.html' %}
+{% block labtech_content %}
+<h2>{{ activity.title }} — PBQ</h2>
+<p>{% if activity.is_published %}Published{% else %}Draft{% endif %} · {{ activity.max_score }} points</p>
+<a href="{% url 'pbq_edit' course.id activity.id %}" class="btn btn-secondary">Edit details</a>
+<a href="{% url 'pbq_preview' course.id activity.id %}" class="btn btn-secondary">Student preview</a>
+<a href="{% url 'labtech_manage_course_content' course.id %}">Back to chapter content</a>
+<form method="post" class="my-3">{% csrf_token %}<button name="action" value="publish" class="btn btn-primary">Publish PBQ</button> <button name="action" value="duplicate" class="btn btn-secondary">Duplicate PBQ</button>
+{% if not activity.content_locked_at %}<button name="action" value="delete" class="btn btn-outline-danger" onclick="return confirm('Delete this unused PBQ?')">Delete PBQ</button>{% endif %}</form>
+{% if activity.content_locked_at %}<p>Content is locked because a student has started. Duplicate this PBQ to revise its story, artifacts, or questions.</p>{% else %}
+<p><a href="{% url 'pbq_question_add' course.id activity.id %}" class="btn btn-primary">Add question</a> <a href="{% url 'pbq_artifact_add' course.id activity.id %}" class="btn btn-secondary">Add artifact</a></p>{% endif %}
+<h3>Story</h3><div>{{ activity.scenario|safe }}</div>
+<h3>Artifacts</h3>{% include 'labtech/pbq/artifacts.html' %}
+{% if not activity.content_locked_at %}{% for artifact in activity.artifacts.all %}<form method="post">{% csrf_token %}<input type="hidden" name="id" value="{{ artifact.id }}"><button name="action" value="delete_artifact" class="btn btn-sm btn-outline-danger">Delete {{ artifact.title }}</button></form>{% endfor %}{% endif %}
+<h3>Questions</h3>
+{% for question in questions %}<section class="card p-3 my-3"><div>{{ question.prompt|safe }}</div>
+{% if not activity.content_locked_at %}<p><a href="{% url 'pbq_question_edit' course.id activity.id question.id %}">Edit question</a> · <a href="{% url 'pbq_field_add' course.id activity.id question.id %}">Add answer field</a></p>
+<form method="post">{% csrf_token %}<input type="hidden" name="id" value="{{ question.id }}"><button name="action" value="delete_question" class="btn btn-sm btn-outline-danger">Delete question</button></form>{% endif %}
+<ol>{% for field in question.answer_fields.all %}<li>{{ field.label }} — {{ field.get_answer_type_display }} — {{ field.points }} points
+{% if not activity.content_locked_at %}<a href="{% url 'pbq_field_edit' course.id activity.id question.id field.id %}">Edit</a><form method="post">{% csrf_token %}<input type="hidden" name="id" value="{{ field.id }}"><button name="action" value="delete_field" class="btn btn-sm btn-outline-danger">Delete field</button></form>{% endif %}</li>{% endfor %}</ol></section>{% empty %}<p>Add your first question.</p>{% endfor %}
+<h3>Submissions</h3><ul>{% for attempt in attempts %}<li>{{ attempt.user.username }} — {{ attempt.get_state_display }} — <a href="{% url 'pbq_result' course.id activity.id attempt.id %}">Review</a> · <a href="{% url 'pbq_grade' course.id activity.id attempt.id %}">Grade</a></li>{% empty %}<li>No submissions yet.</li>{% endfor %}</ul>
+{% endblock %}

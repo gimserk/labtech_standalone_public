@@ -1,0 +1,183 @@
+{% extends "labtech/generic_base.html" %}
+{% load crispy_forms_tags %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">{{ title }}</h2>
+        <a href="{% url 'manage_course_content' course.id %}" class="btn btn-secondary">Back to Course Content</a>
+    </div>
+
+    {# --- The single, main form tag --- #}
+    <form method="post">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card mb-4">
+                    <div class="card-header"><h5 class="mb-0">Scenario Details</h5></div>
+                    <div class="card-body">
+                        {{ form|crispy }}
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header"><h5 class="mb-0">Machine Definitions</h5></div>
+                    <div class="card-body">
+                        <p class="text-muted small">Define the virtual machines for this scenario. After saving a machine, you can add the services that will be monitored for uptime.</p>
+                        {{ machine_formset.management_form }}
+                        <div id="machine-form-list">
+                            {% for machine_form in machine_formset %}
+                                <div class="card mb-3 p-3 bg-light">
+                                    {% if machine_form.instance.pk and machine_form.DELETE %}
+                                        <div class="form-check" style="float: right;">
+                                            {{ machine_form.DELETE }} <label class="form-check-label" for="{{ machine_form.DELETE.id_for_label }}">Delete</label>
+                                        </div>
+                                    {% endif %}
+                                    {{ machine_form.id }}
+                                    {{ machine_form|crispy }}
+                                    {% if machine_form.instance.pk %}
+                                        <a href="{% url 'manage_scenario_services' course_id=course.id scenario_id=scenario.id machine_id=machine_form.instance.pk %}" class="btn btn-sm btn-outline-info mt-2">
+                                            <i class="fas fa-network-wired"></i> Manage Monitored Services
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <button type="button" id="add-machine-form" class="btn btn-outline-primary mt-2"><i class="fas fa-plus"></i> Add Machine</button>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header"><h5 class="mb-0">Red Team Objectives (Flags)</h5></div>
+                    <div class="card-body">
+                        <p class="text-muted small">Define the goals or flags the Red Team must capture to earn points.</p>
+                        {{ objective_formset.management_form }}
+                        <div id="objective-form-list">
+                            {% for objective_form in objective_formset %}
+                                <div class="card mb-3 p-3 bg-light">
+                                    {% if objective_form.instance.pk and objective_form.DELETE %}
+                                        <div class="form-check" style="float: right;">
+                                            {{ objective_form.DELETE }} <label class="form-check-label" for="{{ objective_form.DELETE.id_for_label }}">Delete</label>
+                                        </div>
+                                    {% endif %}
+                                    {{ objective_form.id }}
+                                    {{ objective_form|crispy }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <button type="button" id="add-objective-form" class="btn btn-outline-primary mt-2"><i class="fas fa-plus"></i> Add Objective</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card mb-4">
+                    <div class="card-header"><h5 class="mb-0">Scenario Control</h5></div>
+                    <div class="card-body text-center">
+                        <p>Current Status: <strong class="text-capitalize">{{ scenario.get_status_display }}</strong></p>
+                        {% if scenario.status == 'failed' %}
+                            <div class="alert alert-danger">
+                                <strong>Startup Failed!</strong>
+                                <p class="small mt-2">The following error occurred:</p>
+                                <pre style="font-size: 0.7em; text-align: left; white-space: pre-wrap;">{{ scenario.last_error_message }}</pre>
+                            </div>
+                        {% endif %}
+
+                        {# --- NESTED FORMS REMOVED, BUTTONS NOW PART OF THE MAIN FORM --- #}
+                        {% if scenario.status == 'pending' or scenario.status == 'completed' or scenario.status == 'failed' %}
+                            <button type="submit" name="action" value="start" class="btn btn-success w-100"
+                                    onclick="return confirm('Are you sure you want to start this scenario? This will deploy all defined virtual machines.');">
+                                <i class="fas fa-play"></i> 
+                                {% if scenario.status == 'failed' %}Retry Start{% else %}Start Scenario{% endif %}
+                            </button>
+                        {% elif scenario.status == 'active' %}
+                            <button type="submit" name="action" value="stop" class="btn btn-danger w-100"
+                                    onclick="return confirm('Are you sure you want to stop this scenario? This will destroy all running virtual machines.');">
+                                <i class="fas fa-stop"></i> Stop Scenario
+                            </button>
+                        {% elif scenario.status == 'starting' or scenario.status == 'stopping' %}
+                            <button class="btn btn-warning w-100" disabled>
+                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                In Progress...
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h5 class="mb-0">Team Setup</h5></div>
+                    <div class="card-body">
+                        {{ team_formset.management_form }}
+                        {% for team_form in team_formset %}
+                            <div class="mb-3">
+                                {{ team_form.id }}
+                                <h6>{{ team_form.instance.get_team_type_display }}</h6>
+                                {{ team_form.name|as_crispy_field }}
+                                {{ team_form.team_type.as_hidden }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <hr class="my-4">
+        {# --- ADDED name and value to the save button --- #}
+        <button type="submit" name="action" value="save" class="btn btn-success btn-lg">Save Scenario Configuration</button>
+    </form>
+</div>
+
+<template id="machine-form-template">
+    <div class="card mb-3 p-3 bg-light">
+        <div class="form-check" style="float: right;">
+            {{ machine_formset.empty_form.DELETE }} <label class="form-check-label" for="{{ machine_formset.empty_form.DELETE.id_for_label }}">Delete</label>
+        </div>
+        {{ machine_formset.empty_form|crispy }}
+    </div>
+</template>
+<template id="objective-form-template">
+     <div class="card mb-3 p-3 bg-light">
+        <div class="form-check" style="float: right;">
+            {{ objective_formset.empty_form.DELETE }} <label class="form-check-label" for="{{ objective_formset.empty_form.DELETE.id_for_label }}">Delete</label>
+        </div>
+        {{ objective_formset.empty_form|crispy }}
+    </div>
+</template>
+{% endblock %}
+
+{% block labtech_extra_body %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Generic function to handle adding a new form to a formset
+    function setupAddFormButton(addButtonId, formListId, templateId, totalFormsInputId) {
+        const addBtn = document.getElementById(addButtonId);
+        const formList = document.getElementById(formListId);
+        const emptyFormTemplate = document.getElementById(templateId);
+        const totalFormsInput = document.getElementById(totalFormsInputId);
+
+        if (!addBtn || !formList || !emptyFormTemplate || !totalFormsInput) {
+            return; // Exit if any crucial element is missing
+        }
+
+        addBtn.addEventListener('click', function() {
+            let formNum = parseInt(totalFormsInput.value);
+            let newFormHtml = emptyFormTemplate.innerHTML.replace(/__prefix__/g, formNum);
+            
+            let tempDiv = document.createElement('div');
+            tempDiv.innerHTML = newFormHtml;
+
+            formList.append(tempDiv.firstElementChild);
+            totalFormsInput.value = formNum + 1;
+        });
+    }
+
+    // Initialize for Machine formset
+    setupAddFormButton('add-machine-form', 'machine-form-list', 'machine-form-template', 'id_machines-TOTAL_FORMS');
+    
+    // Initialize for Objective formset
+    setupAddFormButton('add-objective-form', 'objective-form-list', 'objective-form-template', 'id_objectives-TOTAL_FORMS');
+});
+</script>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "labtech/generic_base.html" %}
+{% load crispy_forms_tags %}
+
+{% block labtech_title %}
+    {{ title }}
+{% endblock %}
+
+{% block labtech_content %}
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-light">
+            <h4 class="mb-0">{{ title }}</h4>
+        </div>
+        <div class="card-body">
+            <p>Upload a CSV file with two columns: <strong>term</strong> and <strong>definition</strong>. The first row must be the header.</p>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ form|crispy }}
+                <button type="submit" class="btn btn-primary">Import Flashcards</button>
+                <a href="{% url 'edit_flashcard_deck' deck.course.id deck.id %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

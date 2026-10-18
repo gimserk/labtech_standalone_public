@@ -1,0 +1,175 @@
+{% extends "labtech/generic_base.html" %}
+
+{% block labtech_extra_head %}
+<style>
+    /* Styles copied from cybercity_building_detail.html for consistency */
+    .breadcrumb-nav { margin-bottom: 20px; font-size: 0.9rem; }
+    .breadcrumb-nav a { text-decoration: none; color: var(--lt-primary); }
+    .breadcrumb-nav a:hover { text-decoration: underline; }
+    
+    .page-header { background-color: var(--lt-surface); padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--lt-border); }
+    .page-header h1 { margin-top: 0; }
+
+    .card {
+        background: var(--lt-surface);
+        border: 1px solid var(--lt-border);
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        margin-bottom: 1.5rem;
+    }
+    .card-header {
+        padding: 1rem 1.25rem;
+        background-color: var(--lt-surface-muted);
+        border-bottom: 1px solid var(--lt-border);
+    }
+    .card-header h4 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+    .card-body {
+        padding: 1.25rem;
+    }
+    .monitor-list-item {
+        padding: 1rem;
+        border-top: 1px solid var(--lt-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap; /* Allow wrapping for smaller screens */
+        gap: 1rem;
+    }
+    .list-group-flush .monitor-list-item:first-child {
+        border-top: none;
+    }
+    .monitor-details {
+        flex-grow: 1;
+    }
+    .monitor-details p {
+        margin-bottom: 0.25rem;
+        font-size: 0.9rem;
+    }
+    .monitor-actions .btn {
+        margin-left: 0.5rem;
+        font-size: 0.8rem;
+    }
+    .text-muted {
+        color: var(--lt-muted) !important;
+    }
+    code {
+        font-size: 0.875em;
+        color: var(--lt-danger);
+        word-wrap: break-word;
+        background-color: var(--lt-surface-muted);
+        padding: 2px 4px;
+        border-radius: 3px;
+    }
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    .config-box {
+        background-color: var(--lt-surface-muted);
+        color: var(--lt-text);
+        padding: 1rem;
+        border-radius: 5px;
+        font-family: 'Courier New', Courier, monospace;
+        white-space: pre-wrap;
+    }
+</style>
+{% endblock %}
+
+
+{% block labtech_content %}
+<div class="container-fluid mt-4">
+    <div class="breadcrumb-nav">
+        <a href="{% url 'cybercity_dashboard' %}">CyberCity Dashboard</a> &raquo;
+        <a href="{% url 'cybercity_detail' machine.building.cybercity.id %}">{{ machine.building.cybercity.name }}</a> &raquo;
+        <a href="{% url 'cybercity_building_detail' machine.building.cybercity.id machine.building.id %}">{{ machine.building.name }}</a> &raquo;
+        <span>{{ machine.name }} Monitors</span>
+    </div>
+
+    <div class="page-header">
+        <h1>{{ title }}</h1>
+        <p class="text-muted">Configure agent monitors to check for specific states on the machine and trigger actions.</p>
+    </div>
+
+    <div class="row">
+        <!-- Column for Adding a New Monitor -->
+        <div class="col-lg-5 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Add New Monitor</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <button type="submit" class="btn btn-primary mt-3 w-100">Create Monitor</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Agent Setup Instructions -->
+            <div class="card">
+                <div class="card-header">
+                    <h4>Agent Setup</h4>
+                </div>
+                <div class="card-body">
+                    <p><strong>Step 1: Download the Agent</strong></p>
+                    <a href="{% url 'download_agent_script' %}" class="btn btn-success mb-3">Download agent.py</a>
+
+                    <p><strong>Step 2: Create `config.ini`</strong></p>
+                    <p class="text-muted small">On the target VM, create a file named <code>config.ini</code> in the same directory as the agent, and paste the content below.</p>
+                    <div class="config-box">
+[labtech]
+server_url = {{ request.scheme }}://{{ request.get_host }}
+api_key = {{ machine.api_key }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Column for Listing Existing Monitors -->
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Existing Monitors</h4>
+                </div>
+                
+                {% if monitors %}
+                    <div class="list-group list-group-flush">
+                        {% for monitor in monitors %}
+                        <div class="monitor-list-item">
+                            <div class="monitor-details">
+                                <h5 class="mb-1">{{ monitor.name }}</h5>
+                                <p><small><strong>Type:</strong> {{ monitor.get_monitor_type_display }}</small></p>
+                                <p><small>
+                                    <strong>Condition:</strong> Check if <code>{{ monitor.target }}</code> {{ monitor.get_comparison_type_display }} <code>{{ monitor.expected_value }}</code>
+                                </small></p>
+                                <p class="text-muted"><small>
+                                    <strong>Last Value:</strong> <code>{{ monitor.last_reported_value|default:"Never reported" }}</code>
+                                    {% if monitor.last_reported_at %}
+                                        ({{ monitor.last_reported_at|timesince }} ago)
+                                    {% endif %}
+                                </small></p>
+                                {% if monitor.trigger_on_match %}
+                                <p><small><strong>Triggers:</strong> {{ monitor.trigger_on_match.name }}</small></p>
+                                {% endif %}
+                            </div>
+                            <div class="monitor-actions">
+                                <a href="{% url 'edit_machine_monitor' machine.building.cybercity.id machine.building.id machine.id monitor.id %}" class="btn btn-sm btn-secondary">Edit</a>
+                                <a href="{% url 'delete_machine_monitor' machine.building.cybercity.id machine.building.id machine.id monitor.id %}" class="btn btn-sm btn-danger">Delete</a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="card-body">
+                        <p class="text-muted">No state monitors have been configured for this machine yet. Add one using the form on the left.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,12 @@
+# Use the official image from Microsoft
+FROM mcr.microsoft.com/powershell:latest
+
+# This image is Debian-based, which includes the 'useradd' command.
+# Create a new, non-root user named "coder" to run the code.
+RUN useradd --create-home --shell /bin/bash coder
+
+# Switch to the non-root user
+USER coder
+
+# Set the working directory for that user
+WORKDIR /home/coder

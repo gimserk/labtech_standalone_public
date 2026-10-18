@@ -1,0 +1,23 @@
+<section class="audio-player" data-audio-player data-source-type="{{ audio.source_type }}" aria-label="Audio lesson">
+    <div class="audio-player-heading">
+        <span class="audio-player-icon" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" focusable="false"><path d="M4 14v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="12" width="4" height="8" rx="2"/><rect x="17" y="12" width="4" height="8" rx="2"/></svg></span>
+        <div><h3>Listen to this lesson</h3><p>{% if audio.source_type == 'upload' %}Course recording{% else %}External audio recording{% endif %}</p></div>
+    </div>
+    {% if audio.description %}<div class="audio-player-description">{{ audio.description|linebreaks }}</div>{% endif %}
+    <div class="audio-player-controls">
+        <audio controls preload="metadata" aria-label="{{ audio.title }}" aria-describedby="audio-playback-status"
+               src="{% if audio.source_type == 'upload' %}{% url 'labtech_stream_audio' course_id=course.id audio_id=audio.id %}{% else %}{{ audio.audio_url }}{% endif %}">
+            Your browser does not support audio playback. Use the link below to listen.
+        </audio>
+        <p id="audio-playback-status" class="audio-player-status" data-audio-status role="status">Press play to listen.</p>
+    </div>
+    <div class="audio-player-actions">
+        <button type="button" class="btn btn-secondary" data-audio-retry hidden>Retry loading</button>
+        {% if audio.source_type == 'upload' %}
+            <a href="{% url 'labtech_download_audio' course_id=course.id audio_id=audio.id %}" class="btn btn-outline-primary">Download audio</a>
+        {% else %}
+            <a href="{{ audio.audio_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary">Open audio source<span class="visually-hidden"> (opens in a new tab)</span></a>
+        {% endif %}
+    </div>
+    <p class="audio-player-help">{% if audio.source_type == 'upload' %}If playback does not work, download the recording to listen on your device.{% else %}If playback does not work here, open the audio source in a new tab. Some providers require you to listen on their own site.{% endif %}</p>
+</section>

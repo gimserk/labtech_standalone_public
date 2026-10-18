@@ -1,0 +1,29 @@
+{% extends 'labtech/generic_base.html' %}
+{% load static %}
+{% block labtech_title %}{{ title }}{% endblock %}
+{% block labtech_extra_head %}
+{{ form.media }}
+<link rel="stylesheet" href="{% static 'labtech/css/content-editor.css' %}">
+{% endblock %}
+{% block labtech_content %}
+<div class="content-editor">
+  <h2>{{ title }}</h2>
+  <p>Course: <strong>{{ course.title }}</strong></p>
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {% for field in form %}
+      <div class="form-field">
+        <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+        {{ field }}
+        {% if field.help_text %}<div class="helptext">{{ field.help_text|safe }}</div>{% endif %}
+        {{ field.errors }}
+      </div>
+    {% endfor %}
+    <div class="form-actions">
+      <a class="btn btn-secondary" href="{% url 'labtech_manage_course_content' course_id=course.id %}">Cancel</a>
+      <button type="submit" class="btn btn-primary">{% if form.instance.pk %}Save Changes{% else %}Add Audio{% endif %}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

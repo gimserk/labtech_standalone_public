@@ -1,0 +1,165 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .management-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .management-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid var(--lt-border); }
+    .management-header h2 { margin: 0; color: var(--lt-text); font-size: 1.8em; }
+    .btn { padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 1em; cursor: pointer; border: none; display: inline-flex; align-items: center; justify-content: center; }
+    .btn-sm { padding: 6px 12px; font-size: 0.875em; }
+    .btn-primary { background-color: var(--lt-primary); color: var(--lt-on-accent); }
+    .btn-primary:hover { background-color: var(--lt-primary-hover); color: var(--lt-on-accent); }
+    .btn-edit { background-color: var(--lt-warning); color: var(--lt-on-warning); }
+    .btn-edit:hover { background-color: var(--lt-warning-hover); color: var(--lt-on-warning); }
+    .btn-danger { background-color: var(--lt-danger); color: var(--lt-on-accent); }
+    .btn-danger:hover { background-color: var(--lt-danger-hover); color: var(--lt-on-accent); }
+    .btn-info { background-color: var(--lt-info); color: var(--lt-on-accent); }
+    .btn-info:hover { background-color: var(--lt-info-hover); color: var(--lt-on-accent); }
+    .table-responsive { overflow-x: auto; margin-top: 20px; }
+    .styled-table { width: 100%; border-collapse: collapse; font-size: 0.9em; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .styled-table th, .styled-table td { border: 1px solid var(--lt-border); padding: 12px 15px; text-align: left; vertical-align: middle; }
+    .styled-table th { background-color: var(--lt-surface-muted); color: var(--lt-text); font-weight: 600; text-transform: uppercase; font-size: 0.85em; }
+    .styled-table tbody tr:nth-child(even) { background-color: var(--lt-surface-muted); }
+    .styled-table tbody tr:hover { background-color: var(--lt-surface-muted); }
+    .status-ok { color: var(--lt-success); font-weight: bold; }
+    .status-error { color: var(--lt-danger); font-weight: bold; }
+    .default-server { background-color: var(--lt-success-subtle); }
+    .search-container { margin-bottom: 20px; }
+    .search-container input[type="text"] { padding: 8px; width: 300px; border-radius: 4px; border: 1px solid var(--lt-border); }
+
+    /* New styles for button layout and spinner */
+    .action-buttons-wrapper {
+        display: flex;
+        gap: 8px; /* Adds space between buttons */
+        align-items: center;
+    }
+    .spinner {
+        display: none; /* Hidden by default */
+        width: 1em;
+        height: 1em;
+        vertical-align: -0.125em; /* Aligns spinner with text */
+        border: .2em solid currentColor;
+        border-right-color: transparent;
+        border-radius: 50%;
+        animation: spinner-border .75s linear infinite;
+        margin-left: 5px;
+    }
+    @keyframes spinner-border {
+        to { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="management-container">
+    <div class="management-header">
+        <h2>{{ title }}</h2>
+        <a href="{% url 'labtech_add_proxmox_server' %}" class="btn btn-primary">Add New Proxmox Server</a>
+    </div>
+
+    <p>Manage connections to your Proxmox VE servers/clusters. Templates will be synced from these servers to be used in labs.</p>
+
+    <div class="search-container">
+        <form method="get" action="">
+            <input type="text" name="q" placeholder="Search by name, host, or institution..." value="{{ search_query }}">
+            <button type="submit" class="btn btn-primary btn-sm">Search</button>
+        </form>
+    </div>
+
+    <div class="table-responsive">
+        <table class="styled-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Host:Port</th>
+                    <th>Institution/Owner</th>
+                    <th>User</th>
+                    <th>Default</th>
+                    <th>Last Sync Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for server in proxmox_servers %}
+                <tr class="{% if server.is_default %}default-server{% endif %}">
+                    <td><strong>{{ server.name }}</strong></td>
+                    <td>{{ server.host }}:{{ server.port }}</td>
+                    <td>
+                        {% if server.institution %}
+                            {{ server.institution.name }}
+                        {% else %}
+                            <span style="color: var(--lt-muted); font-style: italic;">Public Server</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ server.user }}{% if server.api_token_id %} (API Token){% endif %}</td>
+                    <td>{% if server.is_default %}⭐ Default{% else %}No{% endif %}</td>
+                    <td>
+                        {% if server.last_successful_sync %}
+                            <span class="status-ok">OK ({{ server.last_successful_sync|date:"Y-m-d H:i" }})</span>
+                        {% elif server.last_sync_status %}
+                            <span class="status-error">Error</span>
+                        {% else %}
+                            Not Synced Yet
+                        {% endif %}
+                        <br><small style="color: var(--lt-muted);">{{ server.last_sync_status|truncatechars:70|default:"" }}</small>
+                    </td>
+                    <td class="action-links">
+                        <div class="action-buttons-wrapper">
+                            <form action="{% url 'labtech_sync_proxmox_templates' server_id=server.id %}" method="post" class="sync-form" style="margin: 0;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-info btn-sm">
+                                    <span class="button-text">Sync</span>
+                                    <span class="spinner"></span>
+                                </button>
+                            </form>
+                            <a href="{% url 'labtech_edit_proxmox_server' server_id=server.id %}" class="btn btn-edit btn-sm">Edit</a>
+                            <a href="{% url 'labtech_delete_proxmox_server' server_id=server.id %}" class="btn btn-danger btn-sm">Delete</a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 20px;">
+                        {% if search_query %}
+                            No servers found matching your search criteria.
+                        {% else %}
+                            No Proxmox servers have been configured yet. 
+                            <a href="{% url 'labtech_add_proxmox_server' %}">Add the first one?</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const syncForms = document.querySelectorAll('.sync-form');
+    syncForms.forEach(form => {
+        form.addEventListener('submit', function(event) {
+            const button = form.querySelector('button[type="submit"]');
+            if (button) {
+                // Prevent multiple clicks by disabling the button
+                button.disabled = true;
+
+                // Update the UI to show a "syncing" state
+                const buttonText = button.querySelector('.button-text');
+                const spinner = button.querySelector('.spinner');
+
+                if (buttonText) {
+                    buttonText.textContent = 'Syncing...';
+                }
+                if (spinner) {
+                    spinner.style.display = 'inline-block';
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

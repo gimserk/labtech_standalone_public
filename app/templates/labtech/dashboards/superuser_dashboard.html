@@ -1,0 +1,72 @@
+{# --- SUPERUSER DASHBOARD CARDS --- #}
+            <div class="dashboard-card">
+                <h3>Platform Management</h3>
+                <ul>
+                    <li><a href="{% url 'admin:index' %}">Django Administration</a></li>
+                    <li><a href="{% url 'labtech_manage_proxmox_servers_list' %}">Manage Proxmox Servers</a></li>
+                    <li><a href="{% url 'labtech_manage_docker_servers_list' %}">Manage Docker Servers</a></li>
+                    <li><a href="{% url 'labtech_manage_docker_images_list' %}">Manage Docker Images</a></li>
+                    <li><a href="{% url 'labtech_manage_guacamole_servers_list' %}">Manage Guacamole Servers</a></li>
+                    <li><a href="{% url 'labtech_manage_vpn_profiles' %}">Manage VPN Profiles</a></li>
+                </ul>
+            </div>
+            <div class="dashboard-card">
+                <h3>Institution Management</h3>
+                <ul>
+                    <li><a href="{% url 'labtech_manage_institutions_list' %}">View/Manage Institutions</a></li>
+                    <li><a href="{% url 'admin:auth_user_changelist' %}">Manage All Users (Global)</a></li>
+                    <li><a href="{% url 'ctf_dashboard' %}">Manage CTF Campaigns</a></li>
+                </ul>
+            </div>
+            <div class="dashboard-card">
+                <h3>Course Management</h3>
+                <ul>
+                    <li><a href="{% url 'labtech_add_course' %}">Add New Global/Public Course</a></li>
+                    <li><a href="{% url 'labtech_manage_courses_list' %}">Manage All Courses</a></li>
+                    <li><a href="{% url 'course_catalog' %}">Course Catalog</a></li>
+                    <li><a class="dropdown-item" href="{% url 'admin_manage_all_labs' %}">Manage All Labs</a></li>
+                </ul>
+            </div>
+            <div class="dashboard-card">
+                <h3>Business Management</h3>
+                <ul>
+                    <li><a href="{% url 'labtech_manage_subscription_plans_list' %}">Manage Subscription Plans</a></li>
+                    <li><a href="{% url 'labtech_manage_user_subscriptions_list' %}">Manage User Subscriptions</a></li>
+                    <li><a href="{% url 'template_library' %}">Proxmox Template Library</a></li>
+                </ul>
+            </div>
+                        <div class="dashboard-card">
+                <h3>CyberCity Management</h3>
+                <ul>
+                    <li><a href="{% url 'cybercity_dashboard' %}">CyberCity Dashboard</a></li>
+                    <li><a href="{% url 'cybercity_add' %}">Add New CyberCity</a></li>
+                </ul>
+            </div>
+             <div class="dashboard-card">
+                <h3>Article Management</h3>
+                <ul>
+                    <li><a href="{% url 'labtech_manage_articles_list' %}">Manage Community Articles</a></li>
+                    <li><a href="{% url 'labtech_add_article' %}">Add New Article</a></li>
+                </ul>
+            </div>
+            <div class="dashboard-card quick-stats">
+                <h3>Quick Stats</h3>
+                {% if quick_stats %}
+                    <p><strong>Total Institutions:</strong> <span>{{ quick_stats.total_institutions }}</span></p>
+                    <p><strong>Total Users:</strong> <span>{{ quick_stats.total_users }}</span></p>
+                    <p><strong>Active Labs:</strong> <span>{{ quick_stats.active_labs }}</span></p>
+                    <p><strong>Courses Available:</strong> <span>{{ quick_stats.total_courses }}</span></p>
+                    <p><strong>Active Subscriptions:</strong> <span>{{ quick_stats.active_subscriptions }}</span></p>
+                {% else %}
+                    <p>Statistics are currently unavailable.</p>
+                {% endif %}
+            </div>
+            <div class="dashboard-card">
+                <h3>Support & Feedback</h3>
+                <ul>
+                    <li><a href="{% url 'admin_ticket_list' %}">Manage Help Desk</a></li>
+                    <li><a href="{% url 'manage_faq_categories' %}">Manage FAQ Categories</a></li>
+                    <li><a href="{% url 'global_add_faq' %}">Add New FAQ</a></li>
+                    <li><a href="#">User Feedback (Placeholder)</a></li>
+                </ul>
+            </div>

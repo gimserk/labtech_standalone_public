@@ -1,0 +1,253 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>{{ title }}</h1>
+    <a href="{% url 'labtech_add_vpn_profile' %}" class="btn btn-primary">Add New VPN Profile</a>
+</div>
+
+<div id="vpn-messages-container"></div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Status</th>
+                        <th>Last Connected</th>
+                        <th>Configuration File</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for profile in profiles %}
+                    <tr class="profile-row" data-profile-id="{{ profile.id }}">
+                        <td>{{ profile.name }}</td>
+                        <td class="status-cell">
+                            <div class="spinner-border spinner-border-sm" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </td>
+                        <td>{{ profile.last_connected|date:"N j, Y, P"|default:"Never" }}</td>
+                        <td>
+                            <a href="{{ profile.ovpn_file.url }}" download>{{ profile.ovpn_file.name|cut:"vpn_profiles/" }}</a>
+                        </td>
+                        <td class="text-center action-cell">
+                             <div class="spinner-border spinner-border-sm" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center">No VPN profiles have been created yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="logModal" tabindex="-1" aria-labelledby="logModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="logModalLabel">Connection Log</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <pre id="logModalContent" style="white-space: pre-wrap; word-break: break-all;"></pre>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block labtech_extra_body %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const messagesContainer = document.getElementById('vpn-messages-container');
+    const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]')?.value || '{{ csrf_token }}';
+    const tableBody = document.querySelector('table tbody');
+
+    /**
+     * Displays a dismissible alert message.
+     * @param {string} text - The message content (can be HTML).
+     * @param {string} level - 'success', 'info', 'warning', or 'error'.
+     */
+    function displayMessage(text, level = 'info') {
+        const alertClass = {
+            'success': 'alert-success',
+            'info': 'alert-info',
+            'warning': 'alert-warning',
+            'error': 'alert-danger'
+        }[level];
+
+        const messageHtml = `
+            <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                ${text}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+        messagesContainer.insertAdjacentHTML('afterbegin', messageHtml); // Prepend new messages
+    }
+
+    /**
+     * Updates a single profile row in the table based on its status.
+     * @param {string} profileId - The ID of the profile to update.
+     * @param {string} status - 'connected', 'connecting', or 'disconnected'.
+     */
+    function updateProfileRowUI(profileId, status) {
+        const row = document.querySelector(`.profile-row[data-profile-id="${profileId}"]`);
+        if (!row) return;
+
+        const statusCell = row.querySelector('.status-cell');
+        const actionCell = row.querySelector('.action-cell');
+
+        let statusHtml = '';
+        if (status === 'connected') {
+            statusHtml = '<span class="badge bg-success">Connected</span>';
+        } else if (status === 'connecting') {
+            statusHtml = '<span class="badge bg-warning">Connecting...</span>';
+        } else {
+            statusHtml = '<span class="badge bg-secondary">Disconnected</span>';
+        }
+        statusCell.innerHTML = statusHtml;
+
+        let actionHtml = '';
+        if (status === 'connected') {
+            actionHtml = `
+                <form method="post" class="d-inline" data-action="control-vpn">
+                    <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+                    <input type="hidden" name="action" value="disconnect">
+                    <button type="submit" class="btn btn-danger btn-sm">Disconnect</button>
+                </form>
+                <button type="button" class="btn btn-info btn-sm view-log-btn" data-bs-toggle="modal" data-bs-target="#logModal">Log</button>
+            `;
+        } else if (status === 'connecting') {
+            actionHtml = `<div class="spinner-border spinner-border-sm text-warning" role="status"><span class="visually-hidden">Loading...</span></div>`;
+        } else { // disconnected or error
+             actionHtml = `
+                <form method="post" class="d-inline" data-action="control-vpn">
+                    <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+                    <input type="hidden" name="action" value="connect">
+                    <button type="submit" class="btn btn-success btn-sm">Connect</button>
+                </form>
+                <button type="button" class="btn btn-info btn-sm view-log-btn" data-bs-toggle="modal" data-bs-target="#logModal">Log</button>
+                <a href="/labtech/vpn/profiles/${profileId}/edit/" class="btn btn-secondary btn-sm">Edit</a>
+                <a href="/labtech/vpn/profiles/${profileId}/delete/" class="btn btn-outline-danger btn-sm">Delete</a>
+            `;
+        }
+        actionCell.innerHTML = actionHtml;
+    }
+
+    /**
+     * Fetches the latest status for all VPN profiles on the page and updates the UI.
+     */
+    async function pollAllStatuses() {
+        const profileRows = document.querySelectorAll('.profile-row');
+        for (const row of profileRows) {
+            const profileId = row.dataset.profileId;
+            try {
+                const response = await fetch(`/labtech/vpn/profiles/${profileId}/status/`);
+                const data = await response.json();
+                updateProfileRowUI(profileId, data.status);
+            } catch (error) {
+                console.error(`Error polling status for profile ${profileId}:`, error);
+            }
+        }
+    }
+
+    /**
+     * Handles the form submission for connect/disconnect actions.
+     * @param {Event} event - The form submission event.
+     */
+    async function handleVpnAction(event) {
+        event.preventDefault();
+        const form = event.target;
+        const profileId = form.closest('.profile-row').dataset.profileId;
+        const action = form.querySelector('input[name="action"]').value;
+        
+        const row = document.querySelector(`.profile-row[data-profile-id="${profileId}"]`);
+        row.querySelector('.status-cell').innerHTML = `<span class="badge bg-warning">${action === 'connect' ? 'Connecting' : 'Disconnecting'}...</span>`;
+        row.querySelector('.action-cell').innerHTML = `<div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></div>`;
+
+        try {
+            const response = await fetch(`/labtech/vpn/profiles/${profileId}/control/`, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: { 'X-CSRFToken': csrfToken }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                displayMessage(data.message, 'success');
+                if (data.log_content) {
+                    displayMessage(`<pre class="mb-0" style="white-space: pre-wrap; font-size: 0.8em;">${data.log_content}</pre>`, 'info');
+                }
+            } else {
+                displayMessage(data.message, 'error');
+            }
+        } catch (error) {
+            console.error('Fetch error:', error);
+            displayMessage('An unexpected network error occurred. Please check the console.', 'error');
+        } finally {
+            await pollAllStatuses();
+        }
+    }
+
+    /**
+     * Handles clicks on the 'Log' button to fetch and display log content.
+     * @param {Event} event - The click event.
+     */
+    async function handleViewLog(event) {
+        const profileId = event.target.closest('.profile-row').dataset.profileId;
+        const modalTitle = document.getElementById('logModalLabel');
+        const modalContent = document.getElementById('logModalContent');
+
+        modalTitle.textContent = 'Loading Log...';
+        modalContent.textContent = 'Please wait...';
+
+        try {
+            const response = await fetch(`/labtech/vpn/profiles/${profileId}/log/`);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const data = await response.json();
+            modalTitle.textContent = `Connection Log for: ${data.profile_name}`;
+            modalContent.textContent = data.log_content;
+        } catch (error) {
+            console.error('Error fetching log:', error);
+            modalTitle.textContent = 'Error';
+            modalContent.textContent = 'Could not fetch the log content.';
+        }
+    }
+
+    // --- EVENT LISTENERS (using delegation) ---
+    if (tableBody) {
+        tableBody.addEventListener('submit', function(event) {
+            if (event.target.matches('form[data-action="control-vpn"]')) {
+                handleVpnAction(event);
+            }
+        });
+
+        tableBody.addEventListener('click', function(event) {
+            if (event.target.matches('.view-log-btn')) {
+                handleViewLog(event);
+            }
+        });
+    }
+
+    // --- INITIALIZATION ---
+    pollAllStatuses();
+    setInterval(pollAllStatuses, 10000); // Poll every 10 seconds
+});
+</script>
+{% endblock %}

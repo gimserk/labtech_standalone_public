@@ -1,0 +1,26 @@
+# Secrets and local environment
+.env
+*.pem
+*.key
+db.sqlite3
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Uploaded media and student submissions
+app/mediafiles/*
+!app/mediafiles/.gitkeep
+mediafiles/
+
+# Python caches and Nuitka build folders
+__pycache__/
+*.py[cod]
+*.pyi
+*.build/
+*.constructor/
+nuitka-crash-report.xml
+
+# Explicitly ensure compiled Nuitka binaries ARE tracked
+!*.so

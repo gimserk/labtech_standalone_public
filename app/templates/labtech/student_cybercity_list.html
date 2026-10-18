@@ -1,0 +1,130 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}CyberCity Dashboard{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .status-dot {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 6px;
+        vertical-align: middle;
+    }
+    .status-dot.loading { background-color: var(--lt-warning); color: var(--lt-on-warning); } /* Yellow */
+    .status-dot.online { background-color: var(--lt-success); color: var(--lt-on-accent); } /* Green */
+    .status-dot.offline { background-color: var(--lt-danger); color: var(--lt-on-accent); } /* Red */
+</style>
+{% endblock %}
+
+
+{% block labtech_content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">CyberCity Dashboard</h1>
+    </div>
+
+    <div class="alert alert-info" role="alert">
+        <h4 class="alert-heading">Welcome, Student!</h4>
+        <p>This is your hub for all available CyberCity simulations. Each city is a dynamic environment with unique buildings and systems. Launch a visualizer to see a top-down view, watch live camera feeds, and observe real-time events as they happen.</p>
+        <hr>
+        <p class="mb-0">Your access is read-only, allowing you to monitor the city without altering its state.</p>
+    </div>
+
+    <div class="row">
+        {% for city in cities %}
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body d-flex flex-column">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-start">
+                            <h5 class="card-title mb-1">{{ city.name }}</h5>
+                            {% if city.is_public %}
+                                <span class="badge bg-success">Public</span>
+                            {% else %}
+                                <span class="badge bg-info">Institutional</span>
+                            {% endif %}
+                        </div>
+                        <h6 class="card-subtitle mb-2 text-muted">
+                            {% if city.institution %}
+                                Hosted by: {{ city.institution.name }}
+                            {% else %}
+                                A Publicly Available City
+                            {% endif %}
+                        </h6>
+                        <p class="card-text small">
+                            {{ city.description|default:"No description available."|truncatewords:25 }}
+                        </p>
+                    </div>
+                    
+                    <ul class="list-group list-group-flush my-3 flex-grow-1">
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            Buildings
+                            <span class="badge bg-primary rounded-pill">{{ city.building_count }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            Broker Status
+                            <span class="broker-status" data-city-id="{{ city.id }}">
+                                <span class="status-dot loading"></span>
+                                <span class="status-text text-muted small">Checking...</span>
+                            </span>
+                        </li>
+                    </ul>
+
+                    <a href="{% url 'student_cybercity_visualizer' city.id %}" class="btn btn-primary mt-auto">
+                        <i class="fas fa-eye me-2"></i>Launch Visualizer
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="card card-body text-center py-5">
+                <h5 class="card-title">No CyberCities Available</h5>
+                <p class="text-muted">There are currently no CyberCity simulations available for you to view.</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block labtech_extra_body %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const statusElements = document.querySelectorAll('.broker-status');
+
+    statusElements.forEach(element => {
+        const cityId = element.dataset.cityId;
+        const statusDot = element.querySelector('.status-dot');
+        const statusText = element.querySelector('.status-text');
+
+        if (cityId) {
+            fetch(`/labtech/cybercity/${cityId}/check-broker-status/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'online') {
+                        statusDot.className = 'status-dot online';
+                        statusText.textContent = 'Online';
+                        statusText.classList.remove('text-muted');
+                        statusText.style.color = 'var(--lt-success)';
+                    } else {
+                        statusDot.className = 'status-dot offline';
+                        statusText.textContent = 'Offline';
+                        statusText.classList.remove('text-muted');
+                        statusText.style.color = 'var(--lt-danger)';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching broker status:', error);
+                    statusDot.className = 'status-dot offline';
+                    statusText.textContent = 'Error';
+                    statusText.style.color = 'var(--lt-danger)';
+                });
+        }
+    });
+});
+</script>
+{% endblock %}

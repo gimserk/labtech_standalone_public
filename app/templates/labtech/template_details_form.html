@@ -1,0 +1,122 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .form-container {
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 30px;
+        background-color: var(--lt-surface);
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .form-header h2 {
+        margin-top: 0;
+        color: var(--lt-text);
+    }
+    .form-field {
+        margin-bottom: 20px;
+    }
+    .form-field label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+    }
+    .form-field input, .form-field select, .form-field textarea {
+        width: 100%;
+        padding: 10px;
+        box-sizing: border-box;
+        border: 1px solid var(--lt-border);
+        border-radius: 4px;
+    }
+    .form-field-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    .form-field-checkbox label {
+        margin-bottom: 0;
+        font-weight: normal;
+    }
+    .form-actions {
+        margin-top: 30px;
+        text-align: right;
+        border-top: 1px solid var(--lt-border);
+        padding-top: 20px;
+    }
+    .help-text {
+        font-size: 0.9em;
+        color: var(--lt-muted);
+        margin-top: 5px;
+    }
+    
+    /* Themed Button Styles */
+    .btn {
+        padding: 10px 20px;
+        text-decoration: none;
+        border-radius: 5px;
+        font-size: 1em;
+        font-weight: 500;
+        cursor: pointer;
+        border: 1px solid transparent;
+    }
+    .btn-primary { background-color: var(--lt-primary); color: var(--lt-on-accent); border-color: var(--lt-primary); }
+    .btn-primary:hover { background-color: var(--lt-primary-hover); border-color: var(--lt-primary); color: var(--lt-on-accent); }
+    .btn-secondary { background-color: var(--lt-secondary); color: var(--lt-on-accent); border-color: var(--lt-border); }
+    .btn-secondary:hover { background-color: var(--lt-secondary-hover); border-color: var(--lt-border); color: var(--lt-on-accent); }
+</style>
+{% endblock %}
+
+
+{% block labtech_content %}
+<div class="form-container">
+    <div class="form-header">
+        <h2>{{ title }}</h2>
+        <p class="text-muted">Edit the manually-managed details for the Proxmox template: <strong>{{ template.name }}</strong></p>
+    </div>
+    
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="form-field">
+            <label for="{{ form.description.id_for_label }}">{{ form.description.label }}</label>
+            {{ form.description }}
+        </div>
+        
+        <hr>
+        <p><strong>Visibility & Access</strong></p>
+
+        <div class="form-field-checkbox">
+            {{ form.is_public }}
+            <label for="{{ form.is_public.id_for_label }}">{{ form.is_public.label }}</label>
+        </div>
+        <p class="help-text">{{ form.is_public.help_text }}</p>
+
+        <div class="form-field" style="margin-top:15px;">
+            <label for="{{ form.institution.id_for_label }}">{{ form.institution.label }}</label>
+            {{ form.institution }}
+            <p class="help-text">{{ form.institution.help_text }}</p>
+        </div>
+
+        <hr>
+        <p><strong>Settings</strong></p>
+        <div class="form-field-checkbox">
+            {{ form.internet_access }}
+            <label for="{{ form.internet_access.id_for_label }}">{{ form.internet_access.label }}</label>
+        </div>
+         <div class="form-field-checkbox">
+            {{ form.is_active_for_labs }}
+            <label for="{{ form.is_active_for_labs.id_for_label }}">{{ form.is_active_for_labs.label }}</label>
+        </div>
+
+        <div class="form-actions">
+            <a href="{% url 'template_library' %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Save Details</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

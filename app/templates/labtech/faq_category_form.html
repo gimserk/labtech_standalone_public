@@ -1,0 +1,110 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .form-container {
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 30px;
+        background-color: var(--lt-surface);
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .form-header h2 {
+        margin-top: 0;
+        color: var(--lt-text);
+    }
+    .form-field {
+        margin-bottom: 20px;
+    }
+    .form-field label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+    }
+    .form-field input[type="text"], .form-field input[type="number"] {
+        width: 100%;
+        padding: 10px;
+        box-sizing: border-box;
+        border: 1px solid var(--lt-border);
+        border-radius: 4px;
+    }
+    .form-actions {
+        margin-top: 30px;
+        text-align: right;
+        border-top: 1px solid var(--lt-border);
+        padding-top: 20px;
+    }
+    .help-text {
+        font-size: 0.9em;
+        color: var(--lt-muted);
+        margin-top: 5px;
+    }
+    .form-errors {
+        color: var(--lt-danger);
+        background-color: var(--lt-danger-subtle);
+        border: 1px solid var(--lt-border);
+        padding: 10px 15px;
+        border-radius: 4px;
+        margin-top: 10px;
+        list-style: none;
+        padding-left: 15px;
+    }
+
+    /* Themed Button Styles */
+    .btn {
+        padding: 10px 20px;
+        text-decoration: none;
+        border-radius: 5px;
+        font-size: 1em;
+        font-weight: 500;
+        cursor: pointer;
+        border: 1px solid transparent;
+    }
+    .btn-primary { background-color: var(--lt-primary); color: var(--lt-on-accent); border-color: var(--lt-primary); }
+    .btn-primary:hover { background-color: var(--lt-primary-hover); border-color: var(--lt-primary); color: var(--lt-on-accent); }
+    .btn-secondary { background-color: var(--lt-secondary); color: var(--lt-on-accent); border-color: var(--lt-border); }
+    .btn-secondary:hover { background-color: var(--lt-secondary-hover); border-color: var(--lt-border); color: var(--lt-on-accent); }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+
+    <div class="form-header">
+        <h2>{{ title }}</h2>
+    </div>
+    
+    <form method="post" novalidate>
+        {% csrf_token %}
+        
+        {% if form.non_field_errors %}
+            <ul class="form-errors">
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        <div class="form-field">
+            <label for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+            {{ form.name }}
+            {% if form.name.errors %}<ul class="form-errors">{% for error in form.name.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+        </div>
+
+        <div class="form-field">
+            <label for="{{ form.order.id_for_label }}">{{ form.order.label }}</label>
+            {{ form.order }}
+            {% if form.order.help_text %}<p class="help-text">{{ form.order.help_text }}</p>{% endif %}
+            {% if form.order.errors %}<ul class="form-errors">{% for error in form.order.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+        </div>
+
+        <div class="form-actions">
+            <a href="{% url 'manage_faq_categories' %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Save Category</button>
+        </div>
+    </form>
+
+{% endblock %}

@@ -1,0 +1,5 @@
+question_text,question_type,points,choice1,choice2,choice3,choice4,choice5,choice6,correct_choice
+"What does the acronym 'SQL' stand for?",MCQ,10,"Structured Query Language","Server Query Logic","Simple Question Language",,,"","1"
+"A firewall operates at Layer 7 of the OSI model.",TF,5,,,,,,,FALSE
+"What command-line tool is used on both Windows and Linux to view the route taken by packets across a network?",SA,10,traceroute,tracert,,,,,""
+"Which of the following is a common hashing algorithm?",MCQ,10,"AES","RSA","SHA-256","TCP",,,"3"

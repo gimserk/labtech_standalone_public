@@ -1,0 +1,116 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{# Match the block name defined in generic_base.html #}
+{% block labtech_title %}Admin: Manage All Labs{% endblock %}
+
+{% block labtech_content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-server me-2"></i>Manage All Allocated Labs</h2>
+        <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <div class="card shadow">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">All Allocated Labs</h5>
+        </div>
+        <div class="card-body">
+            
+            <div class="table-responsive">
+                <table class="table table-hover table-striped align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Student / User</th>
+                            <th>Lab Title</th>
+                            <th>Status</th>
+                            <th>Created At</th>
+                            <th>Expires At</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for instance in labs %}
+                        <tr>
+                            <td><code>#{{ instance.id }}</code></td>
+                            <td>
+                                <strong>{{ instance.user.get_full_name|default:instance.user.username }}</strong><br>
+                                <small class="text-muted">{{ instance.user.email }}</small>
+                            </td>
+                            <td>{{ instance.lab.title }}</td>
+                            <td>
+                                {% if instance.status == 'active' %}
+                                    <span class="badge bg-success">Active</span>
+                                {% elif instance.status == 'building' %}
+                                    <span class="badge bg-warning text-dark">Building</span>
+                                {% elif instance.status == 'error' %}
+                                    <span class="badge bg-danger">Error</span>
+                                {% elif instance.status == 'deleting' %}
+                                    <span class="badge bg-secondary">Deleting...</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ instance.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ instance.created_at|date:"M d, Y H:i" }}</td>
+                            <td>
+                                {% if instance.expires_at %}
+                                    {{ instance.expires_at|date:"M d, Y H:i" }}
+                                {% else %}
+                                    <span class="text-muted">No Expiry</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if instance.status != 'deleting' %}
+                                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ instance.id }}">
+                                        <i class="fas fa-trash-alt"></i> Finish
+                                    </button>
+
+                                    <div class="modal fade" id="deleteModal{{ instance.id }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Confirm Finish Lab</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body text-start text-wrap">
+                                                    <p>Are you sure you want to force finish the lab <strong>"{{ instance.lab.title }}"</strong> for user <strong>{{ instance.user.username }}</strong>?</p>
+                                                    <p class="text-danger"><small>This will destroy all associated VMs and data immediately.</small></p>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                    <form method="post" action="{% url 'admin_manage_all_labs' %}">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="lab_instance_id" value="{{ instance.id }}">
+                                                        <button type="submit" class="btn btn-danger">Confirm Finish</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <button class="btn btn-sm btn-secondary" disabled>Deleting...</button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <div class="text-muted">
+                                    <i class="fas fa-check-circle fa-3x mb-3 text-success"></i>
+                                    <h4>No labs running</h4>
+                                    <p>There are currently no allocated lab instances in the system.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

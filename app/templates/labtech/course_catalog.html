@@ -1,0 +1,79 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block labtech_title %}Course Catalog{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .catalog-header { border-bottom: 2px solid var(--lt-border); padding-bottom: 15px; margin-bottom: 25px; }
+    .enrollment-section { background-color: var(--lt-surface-muted); border: 1px solid var(--lt-border); border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; }
+    .course-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 25px; }
+    .course-card { background-color: var(--lt-surface); border: 1px solid var(--lt-border); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; transition: box-shadow 0.3s ease; }
+    .course-card:hover { box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    .course-card-img { width: 100%; height: 180px; object-fit: cover; background-color: var(--lt-surface-muted); }
+    .course-card-body { padding: 20px; flex-grow: 1; display: flex; flex-direction: column; }
+    .course-card-title { font-size: 1.25em; font-weight: 600; margin: 0 0 10px 0; }
+    .course-card-desc { font-size: 0.9em; color: var(--lt-muted); flex-grow: 1; margin-bottom: 15px; }
+    .course-card-tags { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.8em; margin-bottom: 20px; }
+    .course-card-tag { background-color: var(--lt-surface-muted); color: var(--lt-text); padding: 5px 10px; border-radius: 15px; }
+    .course-card-footer { padding: 20px; background-color: var(--lt-surface-muted); border-top: 1px solid var(--lt-border); text-align: center; }
+    .btn-course { display: inline-block; padding: 10px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; border: none; font-size: 1em; cursor: pointer; width: 100%; }
+    .btn-enrolled { background-color: var(--lt-success); color: var(--lt-on-accent); }
+    .btn-enroll-open { background-color: var(--lt-primary); color: var(--lt-on-accent); }
+    .status-text { font-weight: bold; color: var(--lt-muted); }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+    <div class="catalog-header">
+        <h1>Course Catalog</h1>
+        <p>Browse available courses or enter a code to enroll.</p>
+    </div>
+
+    <div class="enrollment-section">
+        <h3 class="h5">Have an enrollment code?</h3>
+        <form method="post" action="{% url 'course_catalog' %}">
+            {% csrf_token %}
+            {{ form|crispy }}
+            <div class="d-grid mt-2">
+                <button type="submit" class="btn btn-secondary">Enroll with Code</button>
+            </div>
+        </form>
+    </div>
+
+    <h2>Available Courses</h2>
+    <div class="course-grid">
+        {% for course in courses %}
+            <div class="course-card">
+                <img src="{% if course.thumbnail %}{{ course.thumbnail.url }}{% else %}{% static 'images/default_course_thumbnail.png' %}{% endif %}" alt="{{ course.title }}" class="course-card-img">
+                <div class="course-card-body">
+                    <h3 class="course-card-title">{{ course.title }}</h3>
+                    <p class="course-card-desc">{{ course.description|truncatewords:25 }}</p>
+                    <div class="course-card-tags">
+                        {% if course.category %}
+                            <span class="course-card-tag">{{ course.category.name }}</span>
+                        {% endif %}
+                        <span class="course-card-tag">{{ course.get_difficulty_level_display }}</span>
+                    </div>
+                </div>
+                <div class="course-card-footer">
+                    {% if course.id in enrolled_course_ids %}
+                        <a href="{% url 'course_detail' course_id=course.id %}" class="btn-course btn-enrolled">View Course</a>
+                    
+                    {% elif course.enrollment_type == 'open' %}
+                        <form action="{% url 'enroll_in_course' course_id=course.id %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-course btn-enroll-open">Enroll Now</button>
+                        </form>
+                    
+                    {% else %}
+                        <span class="status-text">Requires Enrollment Code</span>
+                    {% endif %}
+                </div>
+            </div>
+        {% empty %}
+            <p>There are no courses available at this time.</p>
+        {% endfor %}
+    </div>
+{% endblock %}

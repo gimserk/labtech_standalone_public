@@ -1,0 +1,21 @@
+{% extends 'labtech/generic_base.html' %} {# This line correctly extends your base_labtech.html #}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block labtech_content %} {# This block defines where the content goes within base_labtech.html #}
+<div class="container mt-4">
+    <h2>{{ page_title }}</h2>
+    <hr>
+    <div class="alert alert-warning" role="alert">
+        <h4 class="alert-heading">Confirm Deletion</h4>
+        <p>Are you sure you want to delete the Guacamole server connection "<strong>{{ server.name }}</strong>"?</p>
+        <p>This action cannot be undone and will remove the connection details from your system.</p>
+        <hr>
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Delete Guacamole Server</button>
+            <a href="{% url 'labtech_manage_guacamole_servers_list' %}" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock labtech_content %}

@@ -1,0 +1,126 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}Add New Payment Method{% endblock %}
+
+{% block labtech_extra_head %}
+    <!-- 1. Include Square Web Payments SDK -->
+    <script type="text/javascript" src="https://sandbox.web.squarecdn.com/v1/square.js"></script>
+    
+    <style>
+        .payment-form-container {
+            max-width: 500px;
+            margin: 40px auto;
+            padding: 40px;
+            background-color: var(--lt-surface);
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+        }
+        #card-container {
+            border: 1px solid var(--lt-border);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        /* Styles for error messages from the SDK */
+        .card-errors {
+            color: var(--lt-danger);
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+    </style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="payment-form-container">
+    <h2>Add a Payment Method</h2>
+    <p>Your payment details are securely handled by Square and never touch our servers.</p>
+
+    <!-- 2. The form that will contain the Square card element -->
+    <form id="payment-form" action="{% url 'save_card' %}" method="POST">
+        {% csrf_token %}
+        
+        <!-- This div is where the Square card form will be injected -->
+        <div id="card-container"></div>
+        
+        <!-- This button will be enabled by the script once the form is ready -->
+        <button id="card-button" class="btn btn-primary" type="button" disabled>Save Card</button>
+    </form>
+    
+    <div id="payment-status-container" class="card-errors"></div>
+</div>
+{% endblock %}
+
+{% block labtech_extra_body %}
+<script>
+async function initializeCard(square) {
+    const card = await square.card();
+    await card.attach('#card-container');
+    return card;
+}
+
+async function tokenize(card) {
+    const tokenResult = await card.tokenize();
+    if (tokenResult.status === 'OK') {
+        return tokenResult.token;
+    } else {
+        let errorMessage = `Tokenization failed with status: ${tokenResult.status}`;
+        if (tokenResult.errors) {
+            errorMessage += ` and errors: ${JSON.stringify(tokenResult.errors)}`;
+        }
+        throw new Error(errorMessage);
+    }
+}
+
+// This function is called when a token is successfully created.
+// It creates a hidden input and submits the form.
+function sendTokenToServer(token) {
+    const form = document.getElementById('payment-form');
+    
+    const hiddenInput = document.createElement('input');
+    hiddenInput.setAttribute('type', 'hidden');
+    hiddenInput.setAttribute('name', 'source_id');
+    hiddenInput.setAttribute('value', token);
+    
+    form.appendChild(hiddenInput);
+    
+    // Submit the form to your Django backend
+    form.submit();
+}
+
+
+document.addEventListener('DOMContentLoaded', async function() {
+    // These values must be passed from your Django view
+    const SQUARE_APP_ID = "{{ SQUARE_APP_ID }}";
+    const SQUARE_LOCATION_ID = "{{ SQUARE_LOCATION_ID }}";
+    
+    if (!SQUARE_APP_ID || !SQUARE_LOCATION_ID) {
+        console.error("Square App ID or Location ID not found. Make sure they are passed to the template from your view.");
+        return;
+    }
+    
+    const cardButton = document.getElementById('card-button');
+    
+    try {
+        const payments = window.Square.payments(SQUARE_APP_ID, SQUARE_LOCATION_ID);
+        const card = await initializeCard(payments);
+        cardButton.disabled = false; // Enable the button once the card form is ready
+        
+        cardButton.addEventListener('click', async function(event) {
+            event.preventDefault();
+            try {
+                const token = await tokenize(card);
+                sendTokenToServer(token);
+            } catch (e) {
+                const statusContainer = document.getElementById('payment-status-container');
+                statusContainer.textContent = e.message;
+            }
+        });
+    } catch (e) {
+        console.error('Initializing Square failed', e);
+        const statusContainer = document.getElementById('payment-status-container');
+        statusContainer.textContent = "Failed to load payment form. Please try again later.";
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,122 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+    {{ form.media }} {# Crucial for loading CKEditor #}
+    <style>
+        .form-container {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 30px;
+            background-color: var(--lt-surface);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .form-header h2 {
+            margin-top: 0;
+            color: var(--lt-text);
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--lt-border);
+        }
+        .recipient-list {
+            margin-bottom: 25px;
+            padding: 15px;
+            background-color: var(--lt-surface-muted);
+            border: 1px solid var(--lt-border);
+            border-radius: 5px;
+        }
+        .recipient-list p {
+            margin: 0;
+            font-size: 0.95em;
+        }
+        .recipient-list span {
+            display: inline-block;
+            font-size: 0.85em;
+            background-color: var(--lt-surface-muted);
+            padding: 3px 8px;
+            border-radius: 4px;
+            margin-right: 5px;
+            margin-top: 5px;
+        }
+        .form-field {
+            margin-bottom: 20px;
+        }
+        .form-field label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .django-ckeditor-widget {
+            width: 100% !important;
+        }
+        .form-actions {
+            margin-top: 30px;
+            text-align: right;
+            border-top: 1px solid var(--lt-border);
+            padding-top: 20px;
+        }
+        
+        /* Themed Button Styles */
+        .btn {
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 1em;
+            font-weight: 500;
+            cursor: pointer;
+            border: 1px solid transparent;
+            display: inline-block;
+            transition: background-color 0.2s ease;
+        }
+        .btn-primary { background-color: var(--lt-primary); color: var(--lt-on-accent); border-color: var(--lt-primary); }
+        .btn-primary:hover { background-color: var(--lt-primary-hover); border-color: var(--lt-primary); color: var(--lt-on-accent); }
+        .btn-secondary { background-color: var(--lt-secondary); color: var(--lt-on-accent); border-color: var(--lt-border); }
+        .btn-secondary:hover { background-color: var(--lt-secondary-hover); border-color: var(--lt-border); color: var(--lt-on-accent); }
+    </style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="form-container">
+    <div class="form-header">
+        <h2>{{ title }}</h2>
+    </div>
+    
+    <div class="recipient-list">
+        <p>
+            <strong>This message will be sent to {{ description }} ({{ recipients|length }} total):</strong><br>
+            <small>
+            {% for user in recipients|slice:":10" %}
+                <span>{{ user.username }}</span>
+            {% endfor %}
+            {% if recipients|length > 10 %}
+                <span>and {{ recipients|length|add:"-10" }} more...</span>
+            {% endif %}
+            </small>
+        </p>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-field">
+            <label for="{{ form.subject.id_for_label }}">{{ form.subject.label }}</label>
+            {{ form.subject }}
+        </div>
+        <div class="form-field">
+            <label for="{{ form.body.id_for_label }}">{{ form.body.label }}</label>
+            {{ form.body }}
+            {% if form.body.help_text %}
+                <div class="help-text">{{ form.body.help_text|safe }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-actions">
+            <a href="{% url 'instructor_my_courses' %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Send Notification</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

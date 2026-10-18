@@ -1,0 +1,52 @@
+{% extends "labtech/generic_base.html" %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">{{ title }}</h1>
+    <a href="{% url 'add_certificate_template' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Add New Template
+    </a>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover table-nowrap">
+            <thead class="table-light">
+                <tr>
+                    <th>Template Name</th>
+                    <th>Assigned Course</th>
+                    <th>Background Image</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for template in templates %}
+                <tr>
+                    <td>{{ template.name }}</td>
+                    <td>
+                        {% if template.course %}
+                            <span class="badge bg-info">{{ template.course.title }}</span>
+                        {% else %}
+                            <span class="badge bg-success">Default Template</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ template.background_image.url }}" target="_blank">View Image</a>
+                    </td>
+                    <td class="text-end">
+                        <a href="{% url 'edit_certificate_template' template.id %}" class="btn btn-sm btn-neutral">Edit</a>
+                        <a href="{% url 'delete_certificate_template' template.id %}" class="btn btn-sm btn-danger">Delete</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center py-4">No certificate templates have been created yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

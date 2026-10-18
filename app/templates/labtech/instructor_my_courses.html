@@ -1,0 +1,278 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .management-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid var(--lt-border); }
+    
+    .enrollment-code-widget {
+        font-family: 'Courier New', Courier, monospace;
+        background-color: var(--lt-surface-muted);
+        padding: 5px 8px;
+        border-radius: 5px;
+        border: 1px solid var(--lt-border);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .enrollment-code { font-weight: bold; }
+    .code-toggle-btn, .copy-code-btn { background: none; border: none; cursor: pointer; color: var(--lt-muted); }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="management-container">
+    <div class="page-header">
+        <h2 class="h3">{{ title }}</h2>
+        <div>
+            <a href="{% url 'import_course' %}" class="btn btn-outline-primary"><i class="fas fa-upload me-2"></i>Import Course</a>
+            <a href="{% url 'ai_jobs_dashboard' %}" class="btn btn-info"><i class="fas fa-tasks me-2"></i>AI Jobs Queue</a>
+            <a href="{% url 'instructor_add_course' %}" class="btn btn-primary ms-2"><i class="fas fa-plus me-2"></i>Create New Course</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h4 class="mb-0">Active Courses</h4>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover table-nowrap mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Course Title</th>
+                        <th>Status</th>
+                        <th>Students</th>
+                        <th>Enrollment Code</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for course in courses_taught %}
+                    <tr>
+                        <td>
+                            <div class="d-flex flex-column">
+                                <a href="{% url 'labtech_edit_course' course_id=course.id %}" class="fw-bold text-decoration-none">{{ course.title }}</a>
+                                <small class="text-muted">
+                                    {% for instructor in course.instructors.all %}
+                                        {{ instructor.get_full_name|default:instructor.username }}{% if not forloop.last %}, {% endif %}
+                                    {% empty %}
+                                        No instructors assigned
+                                    {% endfor %}
+                                </small>
+                            </div>
+                        </td>
+                        <td>
+                            {% if course.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'instructor_student_list' course_id=course.id %}" class="text-decoration-none">{{ course.student_count }}</a>
+                        </td>
+                        <td>
+                            {% if course.enrollment_code %}
+                            <div class="enrollment-code-widget">
+                                <span class="enrollment-code" data-code="{{ course.enrollment_code }}">********</span>
+                                <button class="code-toggle-btn" title="Show/Hide Code"><i class="fas fa-eye"></i></button>
+                                <button class="copy-code-btn" data-code="{{ course.enrollment_code }}" title="Copy Code"><i class="fas fa-copy"></i></button>
+                            </div>
+                            {% else %}<span class="text-muted">N/A</span>{% endif %}
+                        </td>
+                        <td class="text-end">
+                            <div class="dropstart">
+                                <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">Actions</button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item" href="{% url 'manage_course_content' course_id=course.id %}"><i class="fas fa-edit fa-fw me-2"></i>Manage Content</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'labtech_edit_course' course_id=course.id %}"><i class="fas fa-cog fa-fw me-2"></i>Edit Details</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'instructor_student_list' course_id=course.id %}"><i class="fas fa-users fa-fw me-2"></i>View Students</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'instructor_gradebook' course_id=course.id %}"><i class="fas fa-graduation-cap fa-fw me-2"></i>Gradebook</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'course_detail' course_id=course.id %}" target="_blank"><i class="fas fa-eye fa-fw me-2"></i>Student View</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{% url 'manage_announcements' course_id=course.id %}"><i class="fas fa-bullhorn fa-fw me-2"></i>Announcements</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'manage_course_resources' course_id=course.id %}"><i class="fas fa-paperclip fa-fw me-2"></i>Resources</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'manage_course_backups' course_id=course.id %}"><i class="fas fa-history fa-fw me-2"></i>Backups & Versions</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'instructor_manage_labs' course_id=course.id %}"><i class="fas fa-desktop fa-fw me-2 text-primary"></i>Manage Labs</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{% url 'import_content' course_id=course.id %}"><i class="fas fa-upload fa-fw me-2"></i>Import Content</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'export_course' course.id %}"><i class="fas fa-download fa-fw me-2"></i>Export</a></li>
+                                    <li>
+                                        <a class="dropdown-item" href="#" data-action="clone" data-form-id="clone-form-{{ course.id }}"><i class="fas fa-clone fa-fw me-2"></i>Clone Course</a>
+                                        <form id="clone-form-{{ course.id }}" action="{% url 'clone_course' course_id=course.id %}" method="post" class="d-none">{% csrf_token %}</form>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" href="#" data-action="archive" data-form-id="archive-form-{{ course.id }}"><i class="fas fa-archive fa-fw me-2"></i>Archive Course</a>
+                                        <form id="archive-form-{{ course.id }}" action="{% url 'archive_course' course_id=course.id %}" method="post" class="d-none">{% csrf_token %}</form>
+                                    </li>
+                                    {% if user.is_superuser %}
+                                    <li>
+                                        <a class="dropdown-item text-danger" href="#" data-action="delete" data-form-id="delete-form-{{ course.id }}"><i class="fas fa-trash-alt fa-fw me-2"></i>Delete Course</a>
+                                        <form id="delete-form-{{ course.id }}" action="{% url 'labtech_delete_course' course_id=course.id %}" method="post" class="d-none">{% csrf_token %}</form>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                        <tr><td colspan="5" class="text-center py-4">You have no active courses.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+     
+    {% if archived_courses %}
+    <div class="accordion mt-4" id="archivedCoursesAccordion">
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingArchived">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseArchived" aria-expanded="false" aria-controls="collapseArchived">
+                    View Archived Courses ({{ archived_courses.count }})
+                </button>
+            </h2>
+            <div id="collapseArchived" class="accordion-collapse collapse" aria-labelledby="headingArchived">
+                <div class="accordion-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-nowrap mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Course Title</th>
+                                    <th>Students</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for course in archived_courses %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex flex-column">
+                                            <span class="fw-bold">{{ course.title }}</span>
+                                            <small class="text-muted">
+                                                {% for instructor in course.instructors.all %}
+                                                    {{ instructor.get_full_name|default:instructor.username }}{% if not forloop.last %}, {% endif %}
+                                                {% empty %}
+                                                    No instructors assigned
+                                                {% endfor %}
+                                            </small>
+                                        </div>
+                                    </td>
+                                    <td>{{ course.student_count }}</td>
+                                    <td class="text-end">
+                                        <div class="dropstart">
+                                            <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">Actions</button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li>
+                                                    <a class="dropdown-item" href="#" data-action="unarchive" data-form-id="unarchive-form-{{ course.id }}"><i class="fas fa-inbox fa-fw me-2"></i>Unarchive</a>
+                                                    <form id="unarchive-form-{{ course.id }}" action="{% url 'archive_course' course_id=course.id %}" method="post" class="d-none">{% csrf_token %}</form>
+                                                </li>
+                                                <li><a class="dropdown-item" href="{% url 'manage_course_content' course_id=course.id %}"><i class="fas fa-eye fa-fw me-2"></i>View Content</a></li>
+                                                <li><a class="dropdown-item" href="{% url 'manage_course_backups' course_id=course.id %}"><i class="fas fa-history fa-fw me-2"></i>View Backups</a></li>
+                                                <li>
+                                                    <a class="dropdown-item" href="#" data-action="clone" data-form-id="clone-form-archived-{{ course.id }}"><i class="fas fa-clone fa-fw me-2"></i>Clone Course</a>
+                                                    <form id="clone-form-archived-{{ course.id }}" action="{% url 'clone_course' course_id=course.id %}" method="post" class="d-none">{% csrf_token %}</form>
+                                                </li>
+                                                 {% if user.is_superuser %}
+                                                <li>
+                                                    <a class="dropdown-item text-danger" href="#" data-action="delete" data-form-id="delete-form-archived-{{ course.id }}"><i class="fas fa-trash-alt fa-fw me-2"></i>Delete Course</a>
+                                                    <form id="delete-form-archived-{{ course.id }}" action="{% url 'labtech_delete_course' course_id=course.id %}" method="post" class="d-none">{% csrf_token %}</form>
+                                                </li>
+                                                {% endif %}
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block labtech_extra_body %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle visibility toggle for enrollment codes
+    document.querySelectorAll('.code-toggle-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const codeSpan = this.parentElement.querySelector('.enrollment-code');
+            const icon = this.querySelector('i');
+            
+            if (codeSpan.textContent === '********') {
+                codeSpan.textContent = codeSpan.dataset.code;
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                codeSpan.textContent = '********';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+    });
+
+    // --- UPDATED: Robust copy-to-clipboard function ---
+    document.querySelectorAll('.copy-code-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const codeToCopy = this.dataset.code;
+            const icon = this.querySelector('i');
+            const originalClass = icon.className;
+
+            const showSuccess = () => {
+                icon.className = 'fas fa-check text-success';
+                setTimeout(() => { icon.className = originalClass; }, 2000);
+            };
+
+            // Modern way for secure contexts (HTTPS, localhost)
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(codeToCopy).then(showSuccess).catch(err => console.error('Failed to copy code: ', err));
+            } else {
+                // Fallback for insecure contexts (HTTP)
+                const textArea = document.createElement('textarea');
+                textArea.value = codeToCopy;
+                textArea.style.position = 'absolute';
+                textArea.style.left = '-9999px';
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showSuccess();
+                } catch (err) {
+                    console.error('Fallback copy failed', err);
+                }
+                document.body.removeChild(textArea);
+            }
+        });
+    });
+
+    // Handle all action forms in dropdowns
+    document.querySelectorAll('a[data-form-id]').forEach(link => {
+        link.addEventListener('click', function(event) {
+            event.preventDefault();
+            let action = this.getAttribute('data-action');
+            let confirmationMessage = 'Are you sure?';
+
+            if (action === 'clone') {
+                confirmationMessage = 'Are you sure you want to create a complete copy of this course?';
+            } else if (action === 'archive') {
+                confirmationMessage = 'Are you sure you want to archive this course? It will be hidden from the main list.';
+            } else if (action === 'delete') {
+                confirmationMessage = 'Are you sure you want to PERMANENTLY DELETE this course? This action cannot be undone.';
+            } else if (action === 'unarchive') {
+                document.getElementById(this.getAttribute('data-form-id')).submit();
+                return;
+            }
+
+            if (confirm(confirmationMessage)) {
+                document.getElementById(this.getAttribute('data-form-id')).submit();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

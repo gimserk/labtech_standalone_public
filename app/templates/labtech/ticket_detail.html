@@ -1,0 +1,135 @@
+{% extends "labtech/generic_base.html" %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+    {{ reply_form.media }}
+<style>
+    /* Main Layout & Ticket Details */
+    .ticket-grid { display: grid; grid-template-columns: 1fr 300px; gap: 30px; }
+    .ticket-sidebar { background: var(--lt-surface-muted); padding: 20px; border-radius: 8px; align-self: start; position: -webkit-sticky; position: sticky; top: 20px; }
+    .ticket-initial-post, .reply-card { border: 1px solid var(--lt-border); border-radius: 8px; margin-bottom: 20px; background: var(--lt-surface); overflow: hidden; }
+    .post-body, .reply-body { padding: 20px; line-height: 1.6; }
+    .post-body img, .reply-body img { max-width: 100%; height: auto; border-radius: 5px; }
+    .post-header, .reply-header { background: var(--lt-surface-muted); padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--lt-border); color: var(--lt-muted); }
+    .my-reply { border-left: 4px solid var(--lt-primary); }
+    .support-reply { border-left: 4px solid var(--lt-border); }
+    
+    /* Reply Form Styling */
+    .reply-form { margin-top: 20px; border-top: 2px solid var(--lt-border); padding-top: 20px; }
+    .form-field { margin-bottom: 20px; }
+    .form-field label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--lt-text); }
+    .form-field select, .form-field textarea {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid var(--lt-border);
+        border-radius: 8px;
+        box-sizing: border-box;
+        font-size: 1em;
+        font-family: 'Inter', sans-serif;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .form-field select:focus, .form-field textarea:focus {
+        outline: none;
+        border-color: var(--lt-primary);
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+    }
+    .form-actions { margin-top: 20px; }
+    .btn { padding: 12px 24px; text-decoration: none; border-radius: 8px; font-size: 1em; font-weight: 600; cursor: pointer; border: none; }
+    .btn-primary { background-color: var(--lt-primary); color: var(--lt-on-accent); }
+    .btn-primary:hover { background-color: var(--lt-primary-hover); color: var(--lt-on-accent); }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="back-link">
+    {% if user.is_superuser %}
+        <a href="{% url 'admin_ticket_list' %}">← Back to All Tickets</a>
+    {% else %}
+        <a href="{% url 'help_desk_portal' %}">← Back to Help Desk</a>
+    {% endif %}
+</div>
+
+<div class="page-header">
+    <h2>{{ title }}</h2>
+    
+</div>
+
+<div class="ticket-grid">
+    <main class="ticket-main">
+        <div class="ticket-initial-post">
+            <div class="post-header">
+                <strong>{{ ticket.user.email }}</strong>
+                <small>{{ ticket.created_at|date:"F j, Y, P" }}</small>
+            </div>
+            <div class="post-body">
+                {{ ticket.description|safe }}
+                {% if ticket.attachment %}
+                    <p style="margin-top: 20px;"><strong>Attachment:</strong> <a href="{{ ticket.attachment.url }}" target="_blank">View Attached Image</a></p>
+                {% endif %}
+            </div>
+        </div>
+
+        <hr>
+        <h3>Replies</h3>
+        <div class="ticket-replies">
+            {% for reply in replies %}
+                <div class="reply-card {% if reply.user.is_superuser %}support-reply{% else %}my-reply{% endif %}">
+                    <div class="reply-header">
+                        <strong>{{ reply.user.email }} {% if reply.user.is_superuser %}(Support Staff){% endif %}</strong>
+                        <small>{{ reply.created_at|date:"F j, Y, P" }}</small>
+                    </div>
+                    <div class="reply-body">{{ reply.message|safe }}</div>
+                </div>
+            {% empty %}
+                <p>No replies yet.</p>
+            {% endfor %}
+        </div>
+
+        {% if ticket.status != 'closed' or user.is_superuser %}
+        <div class="reply-form">
+            <h4>Add Your Reply</h4>
+            <form method="post">
+                {% csrf_token %}
+                {{ reply_form.media }} {# For CKEditor #}
+                
+                {# Admin form has extra fields #}
+                {% if user.is_superuser %}
+                    <div class="form-field">
+                        <label for="{{ reply_form.status.id_for_label }}">{{ reply_form.status.label }}</label>
+                        {{ reply_form.status }}
+                    </div>
+                     <div class="form-field">
+                        <label for="{{ reply_form.priority.id_for_label }}">{{ reply_form.priority.label }}</label>
+                        {{ reply_form.priority }}
+                    </div>
+                {% endif %}
+                
+                <div class="form-field">
+                    <label for="{{ reply_form.message.id_for_label }}">{{ reply_form.message.label }}</label>
+                    {{ reply_form.message }}
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Post Reply</button>
+                </div>
+            </form>
+        </div>
+        {% else %}
+        <div class="alert alert-info" style="margin-top: 20px;">
+            This ticket has been closed. To re-open it or for further assistance, please <a href="{% url 'create_ticket' %}">create a new ticket</a>.
+        </div>
+        {% endif %}
+    </main>
+
+    <aside class="ticket-sidebar">
+        <h3>Ticket Details</h3>
+        <p><strong>Status:</strong> {{ ticket.get_status_display }}</p>
+        <p><strong>Category:</strong> {{ ticket.get_category_display }}</p>
+        <p><strong>Priority:</strong> {{ ticket.get_priority_display }}</p>
+        <hr>
+        <p><strong>Submitted:</strong> {{ ticket.created_at|date:"F j, Y" }}</p>
+        <p><strong>Last Update:</strong> {{ ticket.updated_at|timesince }} ago</p>
+    </aside>
+</div>
+{% endblock %}

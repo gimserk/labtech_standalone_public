@@ -1,0 +1,23 @@
+{% extends 'labtech/generic_base.html' %}
+{% block labtech_content %}
+<main class="container py-4">
+  <h1>{% if check %}Edit{% else %}Add{% endif %} VM check</h1>
+  <p>Choose a machine and check type, then fill in the required state. Commands and scripts are managed by LabTech.</p>
+  <form method="get" id="check-selector">
+    <label for="machine-picker">Machine</label>
+    <select id="machine-picker" name="machine"><option value="">Select machine</option>{% for machine in metadata.fields.lab_machine.queryset %}<option value="{{ machine.pk }}" {% if metadata.initial.lab_machine == machine.pk %}selected{% endif %}>{{ machine.name }} ({{ machine.guest_os }})</option>{% endfor %}</select>
+    <label for="type-picker">Check type</label>
+    <select id="type-picker" name="type"><option value="">Select type</option>{% for value,label in metadata.fields.check_type.choices %}<option value="{{ value }}" {% if metadata.initial.check_type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+    <button type="submit" class="btn btn-outline-secondary">Configure</button>
+  </form>
+  {% if config %}
+    <form method="post" class="mt-3">{% csrf_token %}
+      {% for field in metadata %}<div class="mb-3">{{ field.label_tag }} {{ field }} {{ field.errors }}</div>{% endfor %}
+      {% for field in config %}<div class="mb-3">{{ field.label_tag }} {{ field }} {{ field.help_text }} {{ field.errors }}</div>{% endfor %}
+      {{ metadata.non_field_errors }}{{ config.non_field_errors }}
+      <button type="submit" class="btn btn-primary">Save check</button>
+    </form>
+  {% else %}<p class="alert alert-info mt-3">Select a classified Linux or Windows machine and a supported type.</p>{% endif %}
+  <a href="{% url 'manage_step_checks' course.id lab.id step.id %}">Back to checks</a>
+</main>
+{% endblock %}

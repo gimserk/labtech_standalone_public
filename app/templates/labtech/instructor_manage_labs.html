@@ -1,0 +1,180 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}Manage Labs: {{ course.title }}{% endblock %}
+
+{% block labtech_content %}
+<div class="container-fluid mt-4">
+    <a class="btn btn-outline-warning mb-3" href="{% url 'lab_cleanup_dashboard' course_id=course.id %}">Lab Cleanup</a>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-desktop me-2"></i>Manage Labs for {{ course.title }}</h2>
+        <a href="{% url 'instructor_my_courses' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Courses
+        </a>
+    </div>
+
+    <div class="card shadow mb-4 border-primary">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-rocket me-2"></i>Deploy Labs</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" class="row g-3 align-items-end">
+                {% csrf_token %}
+                
+                <div class="col-md-3">
+                    <label for="lab_id" class="form-label fw-bold">Select a Lab:</label>
+                    <select name="lab_id" id="lab_id" class="form-select" required>
+                        <option value="">-- Choose a Lab --</option>
+                        {% for lab in labs %}
+                            <option value="{{ lab.id }}">{{ lab.title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="student_id" class="form-label fw-bold">Select Target:</label>
+                    <select name="student_id" id="student_id" class="form-select">
+                        <option value="ALL">All Enrolled Students</option>
+                        <optgroup label="Individual Students">
+                            {% for student in enrolled_users %}
+                                <option value="{{ student.id }}">{{ student.get_full_name|default:student.username }}</option>
+                            {% endfor %}
+                        </optgroup>
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="delay_minutes" class="form-label fw-bold" title="Wait this many minutes before starting the next student's lab in the loop.">
+                        <i class="fas fa-clock text-muted me-1"></i>Stagger Delay:
+                    </label>
+                    <div class="input-group">
+                        <input type="number" name="delay_minutes" id="delay_minutes" class="form-control" value="0" min="0" required>
+                        <span class="input-group-text">min</span>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <button type="submit" name="action" value="start_all" class="btn btn-primary w-100 mb-2" id="btn-start-all">
+                        <i class="fas fa-users"></i> Start for ALL Students
+                    </button>
+                    <button type="submit" name="action" value="start_single" class="btn btn-outline-primary w-100 d-none" id="btn-start-single">
+                        <i class="fas fa-user"></i> Start for Selected
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-server me-2"></i>Active Student Labs</h5>
+            <button class="btn btn-sm btn-outline-light" onclick="location.reload();">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Student</th>
+                            <th>Lab Title</th>
+                            <th>Status</th>
+                            <th>Started</th>
+                            <th class="text-end">Controls</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for instance in active_instances %}
+                        <tr>
+                            <td class="fw-bold">{{ instance.user.get_full_name|default:instance.user.username }}</td>
+                            <td>{{ instance.lab.title }}</td>
+                            <td>
+                                {% if instance.status == 'building' %}<span class="badge bg-warning text-dark"><i class="fas fa-hammer"></i> Building</span>
+                                {% elif instance.status == 'active' %}<span class="badge bg-success"><i class="fas fa-play"></i> Active</span>
+                                {% elif instance.status == 'deleting' %}<span class="badge bg-danger"><i class="fas fa-trash"></i> Deleting...</span>
+                                {% elif instance.status == 'error' %}<span class="badge bg-danger"><i class="fas fa-exclamation-triangle"></i> Error</span>
+                                {% else %}<span class="badge bg-secondary">{{ instance.status }}</span>{% endif %}
+                            </td>
+                            <td>{{ instance.created_at|date:"M d, H:i" }}</td>
+                            <td class="text-end">
+                                {% if instance.status != 'deleting' %}
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#logsModal{{ instance.id }}">
+                                        <i class="fas fa-file-alt"></i> Logs
+                                    </button>
+                                    
+                                    <form method="POST" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="lab_instance_id" value="{{ instance.id }}">
+                                        
+                                        <button type="submit" name="action" value="stop" class="btn btn-sm btn-warning" title="Stop Machines"><i class="fas fa-stop"></i></button>
+                                        
+                                        <button type="submit" name="action" value="reset" class="btn btn-sm btn-secondary" title="Reset Machines" onclick="return confirm('Hard reset these virtual machines?');"><i class="fas fa-sync"></i></button>
+                                        
+                                        <button type="submit" name="action" value="finish" class="btn btn-sm btn-danger" title="Finish & Delete Lab" onclick="return confirm('Permanently finish and destroy this lab for {{ instance.user.username }}?');"><i class="fas fa-power-off"></i></button>
+                                    </form>
+                                </div>
+
+                                <div class="modal fade" id="logsModal{{ instance.id }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-lg text-start">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Build Logs: {{ instance.user.username }}</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body bg-dark text-light font-monospace" style="max-height: 400px; overflow-y: auto;">
+                                                {% if instance.build_error_message %}
+                                                    <div class="alert alert-danger mb-3 p-2">
+                                                        <strong>Error:</strong> {{ instance.build_error_message }}
+                                                    </div>
+                                                {% endif %}
+                                                <pre class="text-light mb-0" style="white-space: pre-wrap;">{{ instance.build_log|default:"No logs currently available." }}</pre>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% else %}
+                                    <button class="btn btn-sm btn-secondary" disabled>Deleting...</button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5">
+                                <div class="text-muted">
+                                    <i class="fas fa-bed fa-3x mb-3 text-muted"></i>
+                                    <h4>No active labs</h4>
+                                    <p>Use the deployment controls above to start labs for your students.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block labtech_extra_body %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Toggle correct button based on whether "ALL" or a single student is selected
+        const studentSelect = document.getElementById('student_id');
+        const startAllBtn = document.getElementById('btn-start-all');
+        const startSingleBtn = document.getElementById('btn-start-single');
+        
+        studentSelect.addEventListener('change', function() {
+            if (this.value === 'ALL') {
+                startAllBtn.classList.remove('d-none');
+                startSingleBtn.classList.add('d-none');
+            } else {
+                startAllBtn.classList.add('d-none');
+                startSingleBtn.classList.remove('d-none');
+            }
+        });
+    });
+</script>
+{% endblock %}

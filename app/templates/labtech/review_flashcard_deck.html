@@ -1,0 +1,94 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .flashcard-container { perspective: 1000px; height: 400px; cursor: pointer; }
+    .flashcard { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.6s; }
+    .flashcard.is-flipped { transform: rotateY(180deg); }
+    .card-face {
+        position: absolute; width: 100%; height: 100%;
+        backface-visibility: hidden; display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        font-size: 1.5rem; padding: 2rem; border-radius: .5rem;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .card-front { background-color: var(--lt-surface); border: 1px solid var(--lt-border); }
+    .card-back { background-color: var(--lt-surface-muted); border: 1px solid var(--lt-border); transform: rotateY(180deg); }
+    .card-term-image { max-height: 150px; max-width: 100%; margin-bottom: 1rem; }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="container mt-4">
+    <h2 class="mb-3">{{ deck.title }} <span class="badge bg-secondary">Review Mode</span></h2>
+    <hr>
+    <div id="flashcard-app" class="text-center">
+        <div class="flashcard-container mx-auto" style="max-width: 700px;" onclick="app.flipCard()">
+            <div id="flashcard" class="flashcard">
+                <div class="card-face card-front"><div id="card-term-content"></div></div>
+                <div class="card-face card-back"><div id="card-definition-content"></div></div>
+            </div>
+        </div>
+        <div class="mt-4 d-flex justify-content-center align-items-center flex-wrap gap-2">
+            <a href="{% url 'flashcard_deck_hub' course_id=deck.course.id deck_id=deck.id %}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Change Mode</a>
+            <button class="btn btn-secondary" onclick="app.prevCard()">Previous</button>
+            <p id="card-counter" class="text-muted mb-0 mx-3"></p>
+            <button class="btn btn-primary" onclick="app.nextCard()">Next</button>
+            <button class="btn btn-info" onclick="app.shuffleCards()"><i class="fas fa-random"></i> Shuffle</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block labtech_extra_body %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const flashcardApp = {
+        cards: {{ cards_json|safe }},
+        currentIndex: 0,
+        flashcardEl: document.getElementById('flashcard'),
+        termEl: document.getElementById('card-term-content'),
+        definitionEl: document.getElementById('card-definition-content'),
+        counterEl: document.getElementById('card-counter'),
+
+        init() {
+            if (this.cards.length === 0) {
+                this.termEl.innerHTML = '<p>This deck has no cards yet.</p>';
+                return;
+            }
+            this.renderCard();
+        },
+        renderCard() {
+            const card = this.cards[this.currentIndex];
+            let termHTML = card.image_url ? `<img src="${card.image_url}" alt="Term image" class="card-term-image">` : '';
+            termHTML += `<div>${card.term}</div>`;
+            this.termEl.innerHTML = termHTML;
+            this.definitionEl.innerHTML = card.definition;
+            this.counterEl.textContent = `${this.currentIndex + 1} / ${this.cards.length}`;
+            this.flashcardEl.classList.remove('is-flipped');
+        },
+        flipCard() { this.flashcardEl.classList.toggle('is-flipped'); },
+        nextCard() {
+            this.currentIndex = (this.currentIndex + 1) % this.cards.length;
+            this.renderCard();
+        },
+        prevCard() {
+            this.currentIndex = (this.currentIndex - 1 + this.cards.length) % this.cards.length;
+            this.renderCard();
+        },
+        shuffleCards() {
+            for (let i = this.cards.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [this.cards[i], this.cards[j]] = [this.cards[j], this.cards[i]];
+            }
+            this.currentIndex = 0;
+            this.renderCard();
+            alert('Deck has been shuffled!');
+        }
+    };
+    window.app = flashcardApp;
+    window.app.init();
+});
+</script>
+{% endblock %}

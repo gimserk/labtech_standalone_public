@@ -1,0 +1,199 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }} - LabTech{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .grid-container {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    @media (min-width: 992px) {
+        .grid-container {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+    .card {
+        background: var(--lt-surface);
+        border: 1px solid var(--lt-border);
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        margin-bottom: 20px;
+    }
+    .breadcrumb-nav { margin-bottom: 20px; font-size: 0.9rem; }
+    .breadcrumb-nav a { text-decoration: none; color: var(--lt-primary); }
+    .page-header { background-color: var(--lt-surface); padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--lt-border); }
+    .card-header { padding: 15px; border-bottom: 1px solid var(--lt-border); display: flex; justify-content: space-between; align-items: center; }
+    .card-header h3 { margin: 0; font-size: 1.1rem; }
+    .card-body { padding: 15px; }
+    .btn { padding: 6px 12px; border-radius: 5px; text-decoration: none; font-size: 0.85rem; cursor: pointer; border: none; }
+    .btn-primary { background-color: var(--lt-primary); color: var(--lt-on-accent); }
+    .btn-danger { background-color: var(--lt-danger); color: var(--lt-on-accent); }
+    .btn-secondary { background-color: var(--lt-secondary); color: var(--lt-on-accent); }
+    .btn-link { background: none; border: none; color: var(--lt-primary); text-decoration: underline; padding: 0; }
+    .table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    .table th, .table td { padding: 8px 12px; border-bottom: 1px solid var(--lt-border); text-align: left; vertical-align: middle; }
+    .table th { background-color: var(--lt-surface-muted); }
+    .status-active { color: var(--lt-success); font-weight: bold; }
+    .form-section { border: 1px solid var(--lt-border); padding: 15px; margin-bottom: 15px; border-radius: 5px; }
+    .errorlist { list-style-type: none; padding: 0; color: var(--lt-danger); font-weight: bold; }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="breadcrumb-nav">
+    <a href="{% url 'cybercity_dashboard' %}">CyberCity Dashboard</a> &raquo;
+    <a href="{% url 'cybercity_detail' city.id %}">{{ city.name }}</a> &raquo;
+    <a href="{% url 'cybercity_building_detail' city.id building.id %}">{{ building.name }}</a> &raquo;
+    <span>{{ esp32.name }}</span>
+</div>
+
+<div class="page-header">
+    <h1>Manage ESP32: {{ esp32.name }}</h1>
+    <p>MAC Address: {{ esp32.mac_address }}</p>
+    <a href="{% url 'cybercity_building_detail' city.id building.id %}" class="btn btn-secondary">Back to Building</a>
+</div>
+
+<div class="grid-container">
+
+    <div>
+        <div class="card">
+            <div class="card-header">
+                <h3>Device Settings & Pins</h3>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form.non_field_errors }}
+                    {{ form.as_p }}
+                    <hr>
+                    <h4>Pins</h4>
+                    {{ formset.management_form }}
+                    {{ formset.non_form_errors }}
+                    {% for pin_form in formset %}
+                        <div class="form-section">
+                            {{ pin_form.as_p }}
+                        </div>
+                    {% endfor %}
+                    <button type="submit" name="update_settings" class="btn btn-primary">Save Settings & Pins</button>
+                    <a href="{% url 'cybercity_esp32_delete' city.id building.id esp32.id %}" class="btn btn-danger">Delete ESP32 Device</a>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <div class="card">
+            <div class="card-header">
+                <h3>Upload New Firmware Bundle</h3>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="form-section">
+                        <h4>Step 1: Main Firmware File (main.py)</h4>
+                        {{ firmware_form.non_field_errors }}
+                        {{ firmware_form.as_p }}
+                    </div>
+
+                    <div class="form-section">
+                        <h4>Step 2: Add Library Files (Optional)</h4>
+                        <p><small>Provide the full path for the library on the device. The script will create directories like `lib/` automatically.</small></p>
+                        
+                        <div id="library-form-list">
+                            {{ library_formset.management_form }}
+                            {{ library_formset.non_form_errors }}
+                            {% for lib_form in library_formset %}
+                                <div class="library-form">
+                                    {{ lib_form.non_field_errors }}
+                                    {{ lib_form.as_p }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <button type="button" id="add-library-form" class="btn-link">+ Add Another Library</button>
+                    </div>
+                    
+                    <button type="submit" name="upload_firmware" class="btn btn-primary">Upload and Activate Bundle</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3>Firmware Version History</h3>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Version</th>
+                            <th>Description</th>
+                            <th>Libs</th>
+                            <th>Uploaded</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fw in esp32.firmwares.all %}
+                        <tr>
+                            <td>{{ fw.version }}</td>
+                            <td>{{ fw.description|default:"-" }}</td>
+                            <td>{{ fw.libraries.count }}</td>
+                            <td>{{ fw.created_at|date:"Y-m-d H:i" }}</td>
+                            <td>
+                                {% if fw.is_active %}
+                                    <span class="status-active">Active</span>
+                                {% else %}
+                                    Inactive
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'download_firmware_bundle' fw.id %}" class="btn btn-secondary btn-sm" title="Download main.py and all libraries as a .zip file">Bundle</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6">No firmware has been uploaded for this device.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block labtech_extra_body %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const addFormBtn = document.getElementById('add-library-form');
+    const formList = document.getElementById('library-form-list');
+    const totalFormsInput = document.getElementById('id_library-TOTAL_FORMS');
+    
+    // It's safer to grab the template from a script tag to avoid issues with the last form being deleted.
+    const emptyFormHtml = `{{ library_formset.empty_form.as_p }}`;
+
+    addFormBtn.addEventListener('click', function() {
+        const currentFormCount = parseInt(totalFormsInput.value);
+        
+        // Create a new div to hold the form
+        const newFormContainer = document.createElement('div');
+        newFormContainer.classList.add('library-form');
+        
+        // Replace the prefix placeholder in the template with the new form index
+        newFormContainer.innerHTML = emptyFormHtml.replace(/__prefix__/g, currentFormCount);
+        
+        // Insert the new form into the list
+        formList.appendChild(newFormContainer);
+
+        // Increment the total forms count in the management form
+        totalFormsInput.value = currentFormCount + 1;
+    });
+});
+</script>
+{% endblock %}

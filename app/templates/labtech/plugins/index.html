@@ -1,0 +1,29 @@
+{% extends 'labtech/generic_base.html' %}
+{% block labtech_title %}Plugin Marketplace{% endblock %}
+{% block labtech_content %}
+<main class="container py-4">
+  <h1>Plugin Marketplace</h1>
+  {% if error %}<div class="alert alert-warning" role="alert">{{ error }}</div>{% endif %}
+  {% if publisher_key_missing %}<div class="alert alert-warning" role="alert">The publisher public key is missing or invalid. Configure an Ed25519 key with the native installer before installing connectors.</div>{% endif %}
+  <h2>Installed connectors</h2>
+  <ul>{% for connector in installed %}
+    <li>{{ connector.plugin_id }} {{ connector.version }} ({{ connector.state }})
+      {% if connector.enabled %}<form method="post" action="{% url 'plugin_disable' connector.plugin_id %}">{% csrf_token %}<button type="submit">Disable</button></form>{% endif %}
+      {% if connector.state == 'disabled' %}<form method="post" action="{% url 'plugin_enable' connector.plugin_id %}">{% csrf_token %}<button type="submit">Re-enable</button></form>{% endif %}
+    </li>
+  {% empty %}<li>No connectors installed.</li>{% endfor %}</ul>
+  <h2>Available releases</h2>
+  <ul>{% for release in releases %}
+    <li>{{ release.plugin_id }} {{ release.version }}
+      <div>Capabilities: {% for capability in release.capabilities %}{{ capability }}{% if not forloop.last %}, {% endif %}{% empty %}none declared{% endfor %}</div>
+      <div>Outbound HTTPS origins: {% for origin in release.outbound_destinations %}{{ origin }}{% if not forloop.last %}, {% endif %}{% empty %}none declared{% endfor %}</div>
+      {% if release.compatible %}<form method="post" action="{% url 'plugin_install' release.plugin_id release.release_id %}">{% csrf_token %}<button type="submit">Install</button></form>
+      {% else %}<span>Incompatible</span>{% endif %}
+    </li>
+  {% empty %}<li>No releases available.</li>{% endfor %}</ul>
+  <h2>Recent installation jobs</h2>
+  <ul>{% for job in jobs %}
+    <li>{{ job.plugin_id }} {{ job.release_id }}: {{ job.status }}{% if job.error %} — {{ job.error }}{% endif %}</li>
+  {% empty %}<li>No installation jobs yet.</li>{% endfor %}</ul>
+</main>
+{% endblock %}

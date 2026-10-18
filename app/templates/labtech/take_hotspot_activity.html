@@ -1,0 +1,365 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    /* Main Layout - This is now the main positioning parent */
+    .activity-wrapper {
+        position: relative;
+        display: grid;
+        grid-template-columns: 250px 1fr;
+        gap: 30px;
+        align-items: flex-start;
+    }
+
+    /* SVG Layer - Now covers the entire wrapper */
+    #svg-layer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none; /* Allows clicks to pass through */
+        z-index: 10; /* Ensures it's on top */
+    }
+    #svg-layer line {
+        stroke-width: 3;
+        stroke-linecap: round;
+        transition: stroke 0.3s ease;
+    }
+
+    /* Other styles remain mostly the same */
+    .labels-panel, .image-panel {
+        position: relative; /* Needed for z-index to work properly */
+        z-index: 1;
+    }
+    .labels-panel { padding: 15px; border: 1px solid var(--lt-border); border-radius: 8px; background-color: var(--lt-surface-muted); }
+    .label-entry { display: flex; align-items: center; justify-content: space-between; padding: 10px; margin-bottom: 10px; background-color: var(--lt-surface); border-radius: 5px; }
+    .label-text { font-weight: 500; }
+    #hotspot-image { max-width: 100%; height: auto; border: 1px solid var(--lt-border); }
+    .hotspot-zone { position: absolute; border: 2px dashed var(--lt-border); box-sizing: border-box; }
+
+    .connector-dot {
+        width: 16px;
+        height: 16px;
+        background-color: var(--lt-surface);
+        border: 2px solid var(--lt-primary);
+        border-radius: 50%;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        /* Make the dot clickable even with the SVG on top */
+        position: relative;
+        z-index: 20; 
+        pointer-events: auto;
+    }
+    .connector-dot:hover { background-color: var(--lt-primary-hover); color: var(--lt-on-accent); }
+
+    .line-correct { stroke: var(--lt-success); }
+    .line-incorrect { stroke: var(--lt-danger); }
+    /* --- New Styles for Footer Buttons --- */
+.activity-footer-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid var(--lt-border);
+}
+.btn {
+    padding: 12px 28px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+.btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+.btn-primary {
+    background-color: var(--lt-primary);
+    color: var(--lt-on-accent);
+}
+.btn-primary:hover {
+    background-color: var(--lt-primary-hover);
+ color: var(--lt-on-accent); }
+.btn-secondary {
+    background-color: var(--lt-surface-muted);
+    color: var(--lt-text);
+    border: 1px solid var(--lt-border);
+}
+.btn-secondary:hover {
+    background-color: var(--lt-surface-muted);
+    border-color: var(--lt-border);
+}
+#submit-btn:disabled {
+    background-color: var(--lt-success); /* Green when finished */
+    color: var(--lt-on-accent);
+    transform: none;
+    box-shadow: none;
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+/* --- New Styles for the Score Card Result --- */
+.score-card {
+    text-align: center;
+    padding: 30px;
+    background-color: var(--lt-surface);
+    border: 1px solid var(--lt-border);
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    margin-top: 15px;
+}
+.score-card-title {
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: var(--lt-muted);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.score-display {
+    margin-bottom: 15px;
+    line-height: 1;
+}
+.score-display .score-achieved {
+    font-size: 4.5rem;
+    font-weight: 700;
+    color: var(--lt-success); /* Green for success */
+}
+.score-display .score-divider {
+    font-size: 3rem;
+    font-weight: 300;
+    color: var(--lt-muted);
+    margin: 0 15px;
+}
+.score-display .score-total {
+    font-size: 3rem;
+    font-weight: 500;
+    color: var(--lt-text);
+}
+.score-card-footer {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--lt-text);
+}
+    #image-wrapper {
+        position: relative;
+        line-height: 0;
+        display: inline-block; /* <-- ADD THIS LINE */
+    }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<h2>{{ activity.title }}</h2>
+<hr>
+<div class="alert alert-info" id="instructions">
+    {{ activity.scenario|safe }}
+    <p class="mt-2"><strong>Instructions:</strong> Click a blue dot next to a label, then click the dot on the corresponding hotspot on the image to draw a line.</p>
+</div>
+
+<div id="result-alert" class="alert d-none"></div>
+
+<div class="activity-wrapper" id="activity-wrapper">
+    <svg id="svg-layer"></svg>
+
+    <div class="labels-panel">
+        <h4>Labels</h4>
+        {% for label in labels %}
+            <div class="label-entry">
+                <span class="label-text">{{ label.text }}</span>
+                <div class="connector-dot" data-label-id="{{ label.id }}"></div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="image-panel">
+        <div id="image-wrapper" style="line-height: 0;">
+            <img src="{{ activity.background_image.url }}" id="hotspot-image" alt="Activity Background">
+            {% for hotspot in hotspots %}
+                <div class="hotspot-zone" 
+                     style="left: {{ hotspot.x_coord }}%; top: {{ hotspot.y_coord }}%; width: {{ hotspot.width }}%; height: {{ hotspot.height }}%;">
+                    <div class="connector-dot" data-hotspot-id="{{ hotspot.id }}"></div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<hr>
+<div class="activity-footer-actions">
+    <a href="{% url 'course_detail' course_id=activity.course.id %}?content=hotspotactivity&id={{ activity.id }}" class="btn btn-secondary">Back to Course</a>
+    
+    <button id="take-again-btn" class="btn btn-info" style="display: none;">Take Again</button>
+
+    <button id="submit-btn" class="btn btn-primary">Submit Answers</button>
+</div>
+{% endblock %}
+
+{% block labtech_extra_body %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- 1. SETUP: Get all elements and variables ---
+    const activityWrapper = document.getElementById('activity-wrapper');
+    const svgLayer = document.getElementById('svg-layer');
+    const allDots = document.querySelectorAll('.connector-dot');
+    const submitBtn = document.getElementById('submit-btn');
+    const takeAgainBtn = document.getElementById('take-again-btn'); // Get the new button
+    const csrfToken = '{{ csrf_token }}';
+
+    let isDrawing = false;
+    let currentLine = null;
+    let startDot = null;
+    let connections = {};
+    let drawnLines = {};
+
+    // --- 2. HELPER FUNCTIONS ---
+    function getDotCenter(dotElement) {
+        const dotRect = dotElement.getBoundingClientRect();
+        const wrapperRect = activityWrapper.getBoundingClientRect();
+        // Calculate the dot's center relative to the activity wrapper
+        return {
+            x: (dotRect.left + dotRect.width / 2) - wrapperRect.left,
+            y: (dotRect.top + dotRect.height / 2) - wrapperRect.top
+        };
+    }
+
+    function createSvgLine(x1, y1) {
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', x1);
+        line.setAttribute('y1', y1);
+        line.setAttribute('x2', x1);
+        line.setAttribute('y2', y1);
+        line.setAttribute('stroke', 'var(--lt-primary)');
+        return line;
+    }
+
+    function removeExistingConnection(startDotId) {
+        const isLabelStart = !!startDot.dataset.labelId;
+        let labelIdToRemove = isLabelStart ? startDotId : connections[Object.keys(connections).find(key => key === startDotId)];
+        let hotspotIdToRemove = !isLabelStart ? startDotId : Object.keys(connections).find(key => connections[key] === labelIdToRemove);
+
+        if (labelIdToRemove && drawnLines[labelIdToRemove]) {
+            drawnLines[labelIdToRemove].remove();
+            delete drawnLines[labelIdToRemove];
+        }
+        if (hotspotIdToRemove) {
+            delete connections[hotspotIdToRemove];
+        }
+    }
+
+    function showResults(data) {
+        // Hide the submit button and show the "Take Again" button
+        if (submitBtn) submitBtn.style.display = 'none';
+        if (takeAgainBtn) takeAgainBtn.style.display = 'inline-block';
+        
+        document.getElementById('instructions').classList.add('d-none');
+        
+        const resultAlert = document.getElementById('result-alert');
+        let footerMessage = "Good Effort!";
+        const percentage = data.total > 0 ? (data.score / data.total) * 100 : 0;
+        
+        if (percentage >= 95) { footerMessage = "Excellent Work! 🚀"; } 
+        else if (percentage >= 80) { footerMessage = "Great Job!"; }
+
+        resultAlert.innerHTML = `
+            <div class="score-card">
+                <div class="score-card-title">Your Score</div>
+                <div class="score-display">
+                    <span class="score-achieved">${data.score}</span>
+                    <span class="score-divider">/</span>
+                    <span class="score-total">${data.total}</span>
+                </div>
+                <div class="score-card-footer">${footerMessage}</div>
+            </div>
+        `;
+        resultAlert.classList.remove('d-none');
+
+        // Recolor lines based on correctness
+        data.results.forEach(result => {
+            const line = drawnLines[result.label_id];
+            if (line) {
+                line.classList.add(result.is_correct ? 'line-correct' : 'line-incorrect');
+            }
+        });
+    }
+
+    // --- 3. EVENT LISTENERS ---
+    allDots.forEach(dot => {
+        dot.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            if (isDrawing) return;
+            isDrawing = true;
+            startDot = dot;
+            const startId = startDot.dataset.labelId || startDot.dataset.hotspotId;
+            removeExistingConnection(startId);
+            const startPos = getDotCenter(startDot);
+            currentLine = createSvgLine(startPos.x, startPos.y);
+            svgLayer.appendChild(currentLine);
+        });
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isDrawing || !currentLine) return;
+        const wrapperRect = activityWrapper.getBoundingClientRect();
+        const mousePos = { x: e.clientX - wrapperRect.left, y: e.clientY - wrapperRect.top };
+        currentLine.setAttribute('x2', mousePos.x);
+        currentLine.setAttribute('y2', mousePos.y);
+    });
+
+    document.addEventListener('mouseup', (e) => {
+        if (!isDrawing) return;
+        const endDot = e.target.closest('.connector-dot');
+        if (endDot && endDot !== startDot && (startDot.dataset.labelId ? endDot.dataset.hotspotId : endDot.dataset.labelId)) {
+            const endPos = getDotCenter(endDot);
+            currentLine.setAttribute('x2', endPos.x);
+            currentLine.setAttribute('y2', endPos.y);
+            const labelId = startDot.dataset.labelId || endDot.dataset.labelId;
+            const hotspotId = startDot.dataset.hotspotId || endDot.dataset.hotspotId;
+            connections[hotspotId] = labelId;
+            drawnLines[labelId] = currentLine;
+        } else {
+            currentLine.remove();
+        }
+        isDrawing = false;
+        currentLine = null;
+        startDot = null;
+    });
+
+    if (submitBtn) {
+        submitBtn.addEventListener('click', () => {
+            fetch(`{% url 'api_submit_hotspot' activity_id=activity.id %}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                body: JSON.stringify({ answers: connections })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showResults(data);
+                } else {
+                    alert('An error occurred during submission.');
+                }
+            });
+        });
+    }
+
+    if (takeAgainBtn) {
+        takeAgainBtn.addEventListener('click', function() {
+            location.reload();
+        });
+    }
+});
+</script>
+{% endblock %}

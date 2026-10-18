@@ -1,0 +1,183 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .flashcard-container { perspective: 1000px; height: 400px; cursor: pointer; }
+    .flashcard { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.6s; }
+    .flashcard.is-flipped { transform: rotateY(180deg); }
+    .card-face {
+        position: absolute; width: 100%; height: 100%;
+        backface-visibility: hidden; display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        font-size: 1.5rem; padding: 2rem; border-radius: .5rem;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .card-front { background-color: var(--lt-surface); border: 1px solid var(--lt-border); }
+    .card-back { background-color: var(--lt-surface-muted); border: 1px solid var(--lt-border); transform: rotateY(180deg); }
+    .card-term-image { max-height: 150px; max-width: 100%; margin-bottom: 1rem; }
+    .mastery-buttons { display: none; margin-top: 2rem; }
+    .is-flipped .mastery-buttons { display: flex; gap: 1rem; }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="mb-1">{{ deck.title }}</h2>
+            <p class="text-muted">Learn Mode</p>
+        </div>
+        <div class="text-end">
+            <strong>Mastery</strong>
+            <div class="progress" style="width: 150px;" title="{{ mastered_count }} of {{ total_cards_in_deck }} cards mastered">
+                <div id="mastery-progress-bar" class="progress-bar bg-success" role="progressbar" style="width: {% widthratio mastered_count total_cards_in_deck 100 %}%;" aria-valuenow="{{ mastered_count }}" aria-valuemin="0" aria-valuemax="{{ total_cards_in_deck }}"></div>
+            </div>
+            <small id="mastery-progress-text" class="text-muted">{{ mastered_count }} of {{ total_cards_in_deck }} cards mastered</small>
+        </div>
+    </div>
+    <hr>
+
+    <div id="flashcard-app" class="text-center">
+        {% if not cards_json or cards_json == '[]' %}
+            <div class="alert alert-success">
+                <h4>All Cards Mastered!</h4>
+                <p>You've mastered all the cards in this deck. Well done! You can come back later to review them again.</p>
+                <a href="{% url 'course_detail' course_id=deck.course.id %}" class="btn btn-primary">Back to Course</a>
+            </div>
+        {% else %}
+            <div class="flashcard-container mx-auto" style="max-width: 700px;" onclick="app.flipCard()">
+                <div id="flashcard" class="flashcard">
+                    <div class="card-face card-front"><div id="card-term-content"></div></div>
+                    <div class="card-face card-back">
+                        <div id="card-definition-content"></div>
+                        <div class="mastery-buttons">
+                            <button class="btn btn-lg btn-danger" onclick="event.stopPropagation(); app.updateMastery('learning');">Review Again</button>
+                            <button class="btn btn-lg btn-success" onclick="event.stopPropagation(); app.updateMastery('mastered');">I Knew It</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4">
+                <p id="card-counter" class="text-muted"></p>
+                <a href="{% url 'flashcard_deck_hub' course_id=deck.course.id deck_id=deck.id %}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Change Mode</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block labtech_extra_body %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const flashcardApp = {
+        cards: {{ cards_json|safe }},
+        currentIndex: 0,
+        // --- ADDED: Progress bar tracking ---
+        initialMasteredCount: {{ mastered_count }},
+        totalCards: {{ total_cards_in_deck }},
+        newlyMasteredInSession: new Set(),
+        
+        flashcardEl: document.getElementById('flashcard'),
+        termEl: document.getElementById('card-term-content'),
+        definitionEl: document.getElementById('card-definition-content'),
+        counterEl: document.getElementById('card-counter'),
+        progressBarEl: document.getElementById('mastery-progress-bar'),
+        progressTextEl: document.getElementById('mastery-progress-text'),
+
+        init() {
+            if (this.cards.length === 0) return;
+            this.renderCard();
+        },
+
+        renderCard() {
+            if (this.currentIndex >= this.cards.length) {
+                this.showCompletionScreen();
+                return;
+            }
+            const card = this.cards[this.currentIndex];
+            let termHTML = card.image_url ? `<img src="${card.image_url}" alt="Term image" class="card-term-image">` : '';
+            termHTML += `<div>${card.term}</div>`;
+            
+            this.termEl.innerHTML = termHTML;
+            this.definitionEl.innerHTML = card.definition;
+            this.counterEl.textContent = `Card ${this.currentIndex + 1} of ${this.cards.length} in this session`;
+            this.flashcardEl.classList.remove('is-flipped');
+        },
+
+        flipCard() {
+            if (!this.flashcardEl) return;
+            this.flashcardEl.classList.toggle('is-flipped');
+        },
+
+        updateMastery(status) {
+            const card = this.cards[this.currentIndex];
+            const csrfToken = "{{ csrf_token }}";
+            
+            fetch(`/api/flashcards/${card.id}/update_mastery/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                body: JSON.stringify({ status: status })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // --- ADDED: Live progress bar update logic ---
+                    if (status === 'mastered' && card.mastery !== 'mastered') {
+                        this.newlyMasteredInSession.add(card.id);
+                    } else if (status === 'learning' && card.mastery === 'mastered') {
+                        // If a mastered card is marked as learning, remove it from the session count
+                        this.newlyMasteredInSession.delete(card.id);
+                    }
+                    card.mastery = status; // Update local state
+                    this.updateProgressBar();
+                    // --- END OF ADDED LOGIC ---
+                    this.nextCard();
+                } else {
+                    alert('Could not save progress. Please try again.');
+                }
+            });
+        },
+
+        // --- ADDED: New function to update the progress bar ---
+        updateProgressBar() {
+            const currentMastered = this.initialMasteredCount + this.newlyMasteredInSession.size;
+            const percentage = this.totalCards > 0 ? Math.round((currentMastered / this.totalCards) * 100) : 0;
+            
+            if (this.progressBarEl) {
+                this.progressBarEl.style.width = `${percentage}%`;
+                this.progressBarEl.setAttribute('aria-valuenow', currentMastered);
+            }
+            if (this.progressTextEl) {
+                this.progressTextEl.textContent = `${currentMastered} of ${this.totalCards} cards mastered`;
+            }
+        },
+
+        nextCard() {
+            this.currentIndex++;
+            this.renderCard();
+        },
+
+        showCompletionScreen() {
+            const appDiv = document.getElementById('flashcard-app');
+            appDiv.innerHTML = `
+                <div class="alert alert-info">
+                    <h4>Session Complete!</h4>
+                    <p>You've reviewed all the cards for this session. Your progress has been saved.</p>
+                    <a href="{% url 'learn_flashcard_deck' course_id=deck.course.id deck_id=deck.id %}" class="btn btn-primary">Start New Session</a>
+                    <a href="{% url 'course_detail' course_id=deck.course.id %}" class="btn btn-secondary">Back to Course</a>
+                </div>
+            `;
+            const completeForm = new FormData();
+            completeForm.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+            fetch("{% url 'mark_content_complete' course_id=deck.course.id content_type_name='flashcarddeck' object_id=deck.id %}", {
+                method: 'POST', body: completeForm
+            });
+        }
+    };
+
+    window.app = flashcardApp;
+    window.app.init();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends "labtech/generic_base.html" %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .ctf-header {
+        background-color: var(--lt-surface-muted);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+        border: 1px solid var(--lt-border);
+    }
+    .ctf-header h2 { margin-top: 0; }
+    .category-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 20px;
+    }
+    .category-card {
+        border: 1px solid var(--lt-border);
+        border-radius: 8px;
+        background-color: var(--lt-surface);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .category-header {
+        font-size: 1.2rem;
+        font-weight: 600;
+        padding: 12px 15px;
+        background-color: var(--lt-surface-muted);
+        border-bottom: 1px solid var(--lt-border);
+    }
+    .challenge-list { list-style: none; padding: 0; margin: 0; }
+    .challenge-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 15px;
+        border-bottom: 1px solid var(--lt-border);
+    }
+    .challenge-item:last-child { border-bottom: none; }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="page-header">
+    <h2>{{ title }}</h2>
+    <div>
+        <a href="{% url 'ctf_challenge_create' ctf_id=ctf.id %}" class="btn btn-primary">Add New Challenge</a>
+        <a href="{% url 'ctf_dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
+</div>
+
+<div class="ctf-header">
+    <p class="mb-0"><strong>Status:</strong> {{ ctf.status }} | <strong>Visibility:</strong> {{ ctf.get_visibility_display }} | <strong>Teams Allowed:</strong> {{ ctf.allow_teams|yesno:"Yes,No" }}</p>
+    <div class="mt-2">{{ ctf.description|safe }}</div>
+</div>
+
+<h3>Challenges</h3>
+<div class="category-grid">
+    {% for category_name, challenges in challenges_by_category.items %}
+        <div class="category-card">
+            <div class="category-header">{{ category_name }}</div>
+            <ul class="challenge-list">
+                {% for challenge in challenges %}
+                    <li class="challenge-item">
+                        <span>{{ challenge.name }} ({{ challenge.points }} pts)</span>
+                        <span>
+                            <a href="{% url 'ctf_challenge_edit' ctf_id=ctf.id challenge_id=challenge.id %}" class="btn btn-sm btn-info">Edit</a>
+                            <a href="{% url 'ctf_challenge_delete' ctf_id=ctf.id challenge_id=challenge.id %}" class="btn btn-sm btn-danger">Delete</a>
+                        </span>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% empty %}
+        <div class="col-12">
+             <div class="alert alert-info">No challenges have been added to this CTF yet.</div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

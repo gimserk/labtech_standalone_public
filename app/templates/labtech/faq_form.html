@@ -1,0 +1,87 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+    {{ form.media }} {# Crucial for loading CKEditor's JS and CSS #}
+    <style>
+        .form-container { max-width: 900px; margin: 20px auto; padding: 30px; background-color: var(--lt-surface); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .form-header h2 { margin-top: 0; color: var(--lt-text); }
+        .form-field { margin-bottom: 20px; }
+        .form-field label { display: block; margin-bottom: 8px; font-weight: 600; }
+        .form-field input, .form-field select, .form-field textarea, .django-ckeditor-widget {
+            width: 100% !important;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid var(--lt-border);
+            border-radius: 4px;
+        }
+        .form-field-checkboxes { margin-top: 15px; }
+        .form-field-checkboxes p { font-weight: 600; margin-bottom: 10px; }
+        .form-field-checkbox { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .form-field-checkbox label { margin-bottom: 0; font-weight: normal; }
+        .form-actions { margin-top: 30px; text-align: right; border-top: 1px solid var(--lt-border); padding-top: 20px; }
+
+        /* Themed Button Styles */
+        .btn {
+            padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 1em;
+            font-weight: 500; cursor: pointer; border: 1px solid transparent;
+        }
+        .btn-primary { background-color: var(--lt-primary); color: var(--lt-on-accent); border-color: var(--lt-primary); }
+        .btn-primary:hover { background-color: var(--lt-primary-hover); border-color: var(--lt-primary); color: var(--lt-on-accent); }
+        .btn-secondary { background-color: var(--lt-secondary); color: var(--lt-on-accent); border-color: var(--lt-border); }
+        .btn-secondary:hover { background-color: var(--lt-secondary-hover); border-color: var(--lt-border); color: var(--lt-on-accent); }
+    </style>
+{% endblock %}
+
+{% block labtech_content %}
+
+    <div class="form-header">
+        <h2>{{ title }}</h2>
+    </div>
+    
+    <form method="post" novalidate>
+        {% csrf_token %}
+        
+        <div class="form-field">
+            <label for="{{ form.category.id_for_label }}">{{ form.category.label }}</label>
+            {{ form.category }}
+        </div>
+        <div class="form-field">
+            <label for="{{ form.question.id_for_label }}">{{ form.question.label }}</label>
+            {{ form.question }}
+        </div>
+        <div class="form-field">
+            <label for="{{ form.answer.id_for_label }}">{{ form.answer.label }}</label>
+            {{ form.answer }}
+        </div>
+        <div class="form-field">
+            <label for="{{ form.order.id_for_label }}">{{ form.order.label }}</label>
+            {{ form.order }}
+        </div>
+
+        <hr>
+        <div class="form-field-checkboxes">
+            <p>Audience Visibility</p>
+            <div class="form-field-checkbox">
+                {{ form.is_for_students }}
+                <label for="{{ form.is_for_students.id_for_label }}">{{ form.is_for_students.label }}</label>
+            </div>
+            <div class="form-field-checkbox">
+                {{ form.is_for_instructors }}
+                <label for="{{ form.is_for_instructors.id_for_label }}">{{ form.is_for_instructors.label }}</label>
+            </div>
+            <div class="form-field-checkbox">
+                {{ form.is_for_admins }}
+                <label for="{{ form.is_for_admins.id_for_label }}">{{ form.is_for_admins.label }}</label>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a href="{{ request.META.HTTP_REFERER|default:'#' }}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Save FAQ</button>
+        </div>
+    </form>
+
+{% endblock %}

@@ -1,0 +1,137 @@
+{% extends "labtech/generic_base.html" %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+    {{ form.media }}
+    <style>
+        /* Using the styles from your example form for a consistent look */
+        .form-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px;
+            background-color: var(--lt-surface);
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+        }
+        .form-container h2 {
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 1.8em;
+            font-weight: 700;
+            color: var(--lt-text);
+        }
+        .form-container .form-intro {
+            text-align: center;
+            color: var(--lt-muted);
+            margin-bottom: 30px;
+        }
+        .form-field {
+            margin-bottom: 20px;
+        }
+        .form-field label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+        /* Style all inputs consistently */
+        .form-field input[type="text"],
+        .form-field input[type="file"],
+        .form-field select,
+        .form-field textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--lt-border);
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1em;
+            font-family: 'Inter', sans-serif;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .form-field input:focus,
+        .form-field select:focus,
+        .form-field textarea:focus {
+            outline: none;
+            border-color: var(--lt-primary);
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+        }
+        .form-field .helptext {
+            font-size: 0.85em;
+            color: var(--lt-muted);
+            margin-top: 5px;
+        }
+        .form-field .errorlist {
+            list-style: none;
+            padding: 0;
+            margin: 5px 0 0 0;
+            color: var(--lt-danger);
+            font-size: 0.85em;
+        }
+        .form-actions {
+            margin-top: 30px;
+            text-align: right;
+        }
+        .btn {
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.2s ease;
+        }
+        .btn-primary { background-color: var(--lt-primary); color: var(--lt-on-accent); }
+        .btn-primary:hover { background-color: var(--lt-primary-hover); color: var(--lt-on-accent); }
+        .btn-secondary { background-color: var(--lt-secondary); color: var(--lt-on-accent); margin-right: 10px; }
+        .btn-secondary:hover { background-color: var(--lt-secondary-hover); color: var(--lt-on-accent); }
+    </style>
+{% endblock %}
+
+{% block labtech_content %}
+    <h2>{{ title }}</h2>
+    <p class="form-intro">Please provide as much detail as possible so we can assist you effectively.</p>
+
+    <form method="post" enctype="multipart/form-data" class="mt-4" novalidate>
+        {% csrf_token %}
+        
+        {# Display any general form errors (e.g., "Please correct the errors below") #}
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger" role="alert">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        {# Loop through each field to render it #}
+        {% for field in form %}
+            <div class="form-group mb-3">
+                <label for="{{ field.id_for_label }}" class="form-label">
+                    {{ field.label }}
+                    {% if field.field.required %}<span class="text-danger ms-1">*</span>{% endif %}
+                </label>
+                
+                {{ field }}
+                
+                {% if field.help_text %}
+                    <div class="form-text text-muted small mt-1">{{ field.help_text|safe }}</div>
+                {% endif %}
+                
+                {# This block displays field-specific errors, like your file validation #}
+                {% if field.errors %}
+                    <div class="text-danger mt-1">
+                        {% for error in field.errors %}
+                            <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+        
+        <div class="form-actions border-top pt-3 mt-4">
+            <a href="{% url 'help_desk_portal' %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Submit Ticket</button>
+        </div>
+    </form>
+{% endblock %}

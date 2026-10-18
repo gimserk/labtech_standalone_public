@@ -1,0 +1,14 @@
+# robots.txt for the WyoCyberRange LabTech Platform
+
+User-agent: *
+
+# Block all crawlers from all content by default
+Disallow: /
+
+# Explicitly allow the homepage and the login page
+Allow: /$
+Allow: /login/$
+
+Sitemap: https://www.wyocyberrange.com/sitemap.xml
+
+#flag{ASecretPathForRobots}

@@ -1,0 +1,61 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    /* Reusing form styles from other templates */
+    .form-container { max-width: 700px; margin: 20px auto; padding: 30px; background-color: var(--lt-surface); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .form-header h2 { margin-top: 0; color: var(--lt-text); }
+    .form-field { margin-bottom: 15px; }
+    .form-field label { display: block; margin-bottom: 5px; font-weight: bold; }
+    .form-field input[type="text"], .form-field select, .form-field input[type="file"] { width: 100%; padding: 8px; box-sizing: border-box; }
+    .form-field-checkbox { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+    .current-file { font-size: 0.9em; margin-top: 5px; }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="form-container">
+    <div class="form-header">
+        <h2>{{ title }}</h2>
+    </div>
+    
+    <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="form-field">
+            <label for="{{ form.title.id_for_label }}">{{ form.title.label }}</label>
+            {{ form.title }}
+        </div>
+        <div class="form-field">
+            <label for="{{ form.category.id_for_label }}">{{ form.category.label }}</label>
+            {{ form.category }}
+        </div>
+        <div class="form-field">
+            <label for="{{ form.file.id_for_label }}">{{ form.file.label }}</label>
+            {{ form.file }}
+            {% if form.instance.file %}
+            <div class="current-file">
+                Current file: <a href="{{ form.instance.file.url }}" target="_blank">{{ form.instance.file.name }}</a>
+            </div>
+            {% endif %}
+        </div>
+
+        <hr>
+        <p><strong>Visibility Options</strong></p>
+        <div class="form-field-checkbox">
+            {{ form.visible_to_students }}
+            <label for="{{ form.visible_to_students.id_for_label }}">{{ form.visible_to_students.label }}</label>
+        </div>
+        <br>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <a href="{% url 'manage_course_resources' course_id=course.id %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

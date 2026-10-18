@@ -1,0 +1,94 @@
+{% extends 'labtech/generic_base.html' %} {# This line correctly extends your base_labtech.html #}
+{% load static %}
+
+{% block labtech_title %}{{ page_title }}{% endblock %}
+
+{% block labtech_extra_head %}
+{# Include the same styles from your example form template #}
+<style>
+    .form-container { max-width: 900px; margin: 0 auto; padding: 25px; }
+    .form-container h2 { text-align: center; color: var(--lt-text); margin-bottom: 25px; border-bottom: 1px solid var(--lt-border); padding-bottom: 15px; }
+    .form-field { margin-bottom: 20px; }
+    .form-field label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--lt-text); }
+    .form-field input[type="text"],
+    .form-field input[type="number"],
+    .form-field input[type="password"], {# Added password input type #}
+    .form-field input[type="checkbox"],
+    .form-field select,
+    .form-field textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid var(--lt-border);
+        border-radius: 4px;
+        box-sizing: border-box;
+        font-size: 0.95em;
+    }
+    .form-field input[type="checkbox"] { width: auto; margin-right: 5px; vertical-align: middle;}
+    .form-field textarea { min-height: 100px; resize: vertical; }
+    .form-field .helptext { font-size: 0.85em; color: var(--lt-muted); margin-top: 5px; }
+    .form-field .errorlist { list-style: none; padding: 0; margin: 5px 0 0 0; color: var(--lt-danger); font-size: 0.85em; }
+    .form-actions { margin-top: 30px; text-align: right; }
+    .btn { padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 1em; cursor: pointer; border: none; }
+    .btn-primary { background-color: var(--lt-primary); color: var(--lt-on-accent); }
+    .btn-primary:hover { background-color: var(--lt-primary-hover); color: var(--lt-on-accent); }
+    .btn-secondary { background-color: var(--lt-secondary); color: var(--lt-on-accent); margin-right: 10px; }
+    .btn-secondary:hover { background-color: var(--lt-secondary-hover); color: var(--lt-on-accent); }
+</style>
+{% endblock labtech_extra_head %}
+
+{% block labtech_content %}
+<div class="form-container">
+    <h2>{{ page_title }}</h2>
+    
+    {# Removed "Course: <strong>{{ course.title }}</strong>" as it's not relevant here #}
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+        
+        {# Display non-field errors at the top #}
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger" role="alert">
+                <ul class="errorlist">
+                    {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        {% for field in form %}
+            <div class="form-field">
+                <label for="{{ field.id_for_label }}">
+                    {{ field.label }}
+                    {% if field.field.required and field.widget_type != 'checkbox' %}*{% endif %}
+                </label>
+                
+                {# Render the field, including special handling for checkbox type if needed #}
+                {% if field.widget_type == 'checkbox' %}
+                    {{ field }}
+                {% else %}
+                    {{ field }}
+                {% endif %}
+                
+                {% if field.help_text %}
+                    <div class="helptext">{{ field.help_text|safe }}</div>
+                {% endif %}
+                
+                {% if field.errors %}
+                    <ul class="errorlist">
+                        {% for error in field.errors %}<li>{{ error }}</li>{% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        <div class="form-actions">
+            {# The cancel URL now points to the Guacamole server list #}
+            <a href="{% url 'labtech_manage_guacamole_servers_list' %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">
+                {# Dynamically change button text based on whether it's an edit or add operation #}
+                {% if form.instance.pk %}Save Guacamole Server{% else %}Add Guacamole Server{% endif %}
+            </button>
+        </div>
+    </form>
+
+</div>
+{% endblock labtech_content %}

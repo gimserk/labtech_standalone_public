@@ -1,0 +1,68 @@
+{% extends "labtech/generic_base.html" %}
+{% load crispy_forms_tags %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .form-container { 
+        max-width: 900px; 
+        margin: 0 auto;
+    }
+    .thumbnail-preview {
+        max-width: 150px;
+        max-height: 100px;
+        border-radius: .25rem;
+        border: 1px solid var(--lt-border);
+        margin-top: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="form-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">{{ title }}</h2>
+        <a href="{% url 'instructor_my_courses' %}" class="btn btn-secondary">Cancel</a>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                {{ form|crispy }}
+                
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        {% if form.instance.pk %}Save Changes{% else %}Create Course{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block labtech_extra_body %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const enrollmentTypeRadios = document.querySelectorAll('input[name="enrollment_type"]');
+    const codeRow = document.getElementById('div_id_enrollment_code');
+
+    function toggleCodeVisibility() {
+        const selectedType = document.querySelector('input[name="enrollment_type"]:checked').value;
+        if (codeRow) {
+            // Show the code field only if the enrollment type is 'code'
+            codeRow.style.display = (selectedType === 'code') ? 'block' : 'none';
+        }
+    }
+
+    enrollmentTypeRadios.forEach(radio => {
+        radio.addEventListener('change', toggleCodeVisibility);
+    });
+
+    // Run on page load to set the correct initial state
+    toggleCodeVisibility();
+});
+</script>
+{% endblock %}

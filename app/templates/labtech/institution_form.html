@@ -1,0 +1,294 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}
+    {% if form.instance.pk %}
+        Edit {{ form.instance.name }}
+    {% else %}
+        Add New Institution
+    {% endif %}
+{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+        background-color: var(--lt-surface);
+        padding: 25px;
+        border-radius: 8px;
+    }
+    .form-container h2 {
+        text-align: center;
+        color: var(--lt-text);
+        margin-bottom: 25px;
+        border-bottom: 1px solid var(--lt-border);
+        padding-bottom: 15px;
+    }
+    .form-section-header {
+        margin-top: 40px;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--lt-border);
+        font-size: 1.2em;
+        color: var(--lt-text);
+    }
+    .form-field {
+        margin-bottom: 20px;
+    }
+    .form-field label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: var(--lt-text);
+    }
+    .form-field input[type="text"],
+    .form-field input[type="email"],
+    .form-field input[type="tel"],
+    .form-field input[type="number"],
+    .form-field input[type="date"],
+    .form-field select,
+    .form-field textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid var(--lt-border);
+        border-radius: 4px;
+        box-sizing: border-box; 
+        font-size: 0.95em;
+    }
+    .form-field textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+    .form-field .helptext {
+        font-size: 0.85em;
+        color: var(--lt-muted);
+        margin-top: 5px;
+    }
+    .form-field .errorlist {
+        list-style: none;
+        padding: 0;
+        margin: 5px 0 0 0;
+        color: var(--lt-danger);
+        font-size: 0.85em;
+    }
+    .form-field-checkbox {
+        margin-bottom: 15px;
+    }
+    .form-field-checkbox label {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
+        font-weight: normal;
+        cursor: pointer;
+    }
+    .form-field-checkbox input[type="checkbox"] {
+        height: 1.2em;
+        width: 1.2em;
+    }
+    .form-actions {
+        margin-top: 30px;
+        text-align: right;
+    }
+    .btn {
+        padding: 10px 20px;
+        text-decoration: none;
+        border-radius: 5px;
+        font-size: 1em;
+        cursor: pointer;
+        border: none;
+    }
+    .btn-primary {
+        background-color: var(--lt-primary);
+        color: var(--lt-on-accent);
+    }
+    .btn-primary:hover {
+        background-color: var(--lt-primary-hover);
+        color: var(--lt-on-accent);
+    }
+    .btn-secondary {
+        background-color: var(--lt-secondary);
+        color: var(--lt-on-accent);
+        margin-right: 10px;
+    }
+    .btn-secondary:hover {
+        background-color: var(--lt-secondary-hover);
+        color: var(--lt-on-accent);
+    }
+    .form-row {
+        display: flex;
+        gap: 20px;
+    }
+    .form-row .form-field {
+        flex: 1;
+    }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="form-container">
+    <h2>
+        {% if form.instance.pk %}
+            Edit Institution: {{ form.instance.name }}
+        {% else %}
+            Add New Institution
+        {% endif %}
+    </h2>
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        <h3 class="form-section-header">General Information</h3>
+        <div class="form-field">
+            <label for="{{ form.name.id_for_label }}">Institution Name:</label>
+            {{ form.name }}
+            {% if form.name.help_text %}<div class="helptext">{{ form.name.help_text }}</div>{% endif %}
+            {{ form.name.errors }}
+        </div>
+        <div class="form-field">
+            <label for="{{ form.address.id_for_label }}">Address:</label>
+            {{ form.address }}
+            {% if form.address.help_text %}<div class="helptext">{{ form.address.help_text }}</div>{% endif %}
+            {{ form.address.errors }}
+        </div>
+        <div class="form-row">
+            <div class="form-field">
+                <label for="{{ form.contact_person_name.id_for_label }}">Contact Person Name:</label>
+                {{ form.contact_person_name }}
+                {% if form.contact_person_name.help_text %}<div class="helptext">{{ form.contact_person_name.help_text }}</div>{% endif %}
+                {{ form.contact_person_name.errors }}
+            </div>
+            <div class="form-field">
+                <label for="{{ form.contact_email.id_for_label }}">Contact Email:</label>
+                {{ form.contact_email }}
+                {% if form.contact_email.help_text %}<div class="helptext">{{ form.contact_email.help_text }}</div>{% endif %}
+                {{ form.contact_email.errors }}
+            </div>
+            <div class="form-field">
+                <label for="{{ form.contact_phone.id_for_label }}">Contact Phone:</label>
+                {{ form.contact_phone }}
+                {% if form.contact_phone.help_text %}<div class="helptext">{{ form.contact_phone.help_text }}</div>{% endif %}
+                {{ form.contact_phone.errors }}
+            </div>
+        </div>
+        <div class="form-field">
+            <label for="{{ form.instructor_email_domains.id_for_label }}">Instructor Email Domains:</label>
+            {{ form.instructor_email_domains }}
+            {% if form.instructor_email_domains.help_text %}<div class="helptext">{{ form.instructor_email_domains.help_text }}</div>{% endif %}
+            {{ form.instructor_email_domains.errors }}
+        </div>
+        <div class="form-field">
+            <label for="{{ form.student_email_domains.id_for_label }}">Student Email Domains:</label>
+            {{ form.student_email_domains }}
+            {% if form.student_email_domains.help_text %}<div class="helptext">{{ form.student_email_domains.help_text }}</div>{% endif %}
+            {{ form.student_email_domains.errors }}
+        </div>
+
+        <h3 class="form-section-header">Billing &amp; Plan</h3>
+        <div class="form-field">
+            <label for="{{ form.assigned_plan.id_for_label }}">Assigned Billing Plan:</label>
+            {{ form.assigned_plan }}
+            {% if form.assigned_plan.help_text %}<div class="helptext">{{ form.assigned_plan.help_text }}</div>{% endif %}
+            {{ form.assigned_plan.errors }}
+        </div>
+        <div class="form-row">
+            <div class="form-field">
+                <label for="{{ form.plan_start_date.id_for_label }}">Plan Start Date:</label>
+                {{ form.plan_start_date }}
+                {{ form.plan_start_date.errors }}
+            </div>
+            <div class="form-field">
+                <label for="{{ form.plan_end_date.id_for_label }}">Plan End Date:</label>
+                {{ form.plan_end_date }}
+                {{ form.plan_end_date.errors }}
+            </div>
+        </div>
+
+
+        <h3 class="form-section-header">Limits &amp; Quotas</h3>
+        <div class="form-row">
+            <div class="form-field">
+                <label for="{{ form.max_users.id_for_label }}">Maximum Users:</label>
+                {{ form.max_users }}
+                {% if form.max_users.help_text %}<div class="helptext">{{ form.max_users.help_text }}</div>{% endif %}
+                {{ form.max_users.errors }}
+            </div>
+            <div class="form-field">
+                <label for="{{ form.public_course_access_level.id_for_label }}">Public Course Access Level:</label>
+                {{ form.public_course_access_level }}
+                {% if form.public_course_access_level.help_text %}<div class="helptext">{{ form.public_course_access_level.help_text }}</div>{% endif %}
+                {{ form.public_course_access_level.errors }}
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-field">
+                <label for="{{ form.max_monthly_timed_lab_hours.id_for_label }}">Max Monthly Timed Lab Hours:</label>
+                {{ form.max_monthly_timed_lab_hours }}
+                {% if form.max_monthly_timed_lab_hours.help_text %}<div class="helptext">{{ form.max_monthly_timed_lab_hours.help_text }}</div>{% endif %}
+                {{ form.max_monthly_timed_lab_hours.errors }}
+            </div>
+            <div class="form-field">
+                <label for="{{ form.max_monthly_persistent_lab_hours.id_for_label }}">Max Monthly Persistent Lab Hours:</label>
+                {{ form.max_monthly_persistent_lab_hours }}
+                {% if form.max_monthly_persistent_lab_hours.help_text %}<div class="helptext">{{ form.max_monthly_persistent_lab_hours.help_text }}</div>{% endif %}
+                {{ form.max_monthly_persistent_lab_hours.errors }}
+            </div>
+        </div>
+
+        <h3 class="form-section-header">Feature Permissions</h3>
+        <div class="form-field form-field-checkbox">
+            <label for="{{ form.can_create_private_courses.id_for_label }}">
+                {{ form.can_create_private_courses }}
+                <span>Can create private courses</span>
+            </label>
+            {% if form.can_create_private_courses.help_text %}<div class="helptext">{{ form.can_create_private_courses.help_text }}</div>{% endif %}
+            {{ form.can_create_private_courses.errors }}
+        </div>
+        <div class="form-field form-field-checkbox">
+            <label for="{{ form.can_use_private_hardware.id_for_label }}">
+                {{ form.can_use_private_hardware }}
+                <span>Can use private hardware templates</span>
+            </label>
+            {% if form.can_use_private_hardware.help_text %}<div class="helptext">{{ form.can_use_private_hardware.help_text }}</div>{% endif %}
+            {{ form.can_use_private_hardware.errors }}
+        </div>
+        <div class="form-field form-field-checkbox">
+            <label for="{{ form.can_use_cybercity.id_for_label }}">
+                {{ form.can_use_cybercity }}
+                <span>Can use CyberCity platform</span>
+            </label>
+            {% if form.can_use_cybercity.help_text %}<div class="helptext">{{ form.can_use_cybercity.help_text }}</div>{% endif %}
+            {{ form.can_use_cybercity.errors }}
+        </div>
+        <div class="form-field form-field-checkbox">
+            <label for="{{ form.can_use_ctf_platform.id_for_label }}">
+                {{ form.can_use_ctf_platform }}
+                <span>Can use CTF platform</span>
+            </label>
+            {% if form.can_use_ctf_platform.help_text %}<div class="helptext">{{ form.can_use_ctf_platform.help_text }}</div>{% endif %}
+            {{ form.can_use_ctf_platform.errors }}
+        </div>
+        
+        <div class="form-field form-field-checkbox">
+            <label for="{{ form.can_use_ai_assistant.id_for_label }}">
+                {{ form.can_use_ai_assistant }}
+                <span>Can use AI Assistant</span>
+            </label>
+            {% if form.can_use_ai_assistant.help_text %}<div class="helptext">{{ form.can_use_ai_assistant.help_text }}</div>{% endif %}
+            {{ form.can_use_ai_assistant.errors }}
+        </div>
+
+        <div class="form-actions">
+            <a href="{% if form.instance.pk %}{% url 'labtech_manage_single_institution' institution_id=form.instance.pk %}{% else %}{% url 'labtech_manage_institutions_list' %}{% endif %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">
+                {% if form.instance.pk %}
+                    Save Changes
+                {% else %}
+                    Add Institution
+                {% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

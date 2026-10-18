@@ -1,0 +1,41 @@
+<div class="machine-header">
+    <strong>{{ machine.lab_machine_definition.name }}</strong>
+    {# --- MODIFIED: Handle the 'building' and 'error' status --- #}
+    <span class="badge bg-{% if machine.status == 'running' %}success{% elif machine.status == 'building' %}warning text-dark{% elif machine.status == 'error' %}danger{% else %}secondary{% endif %}">
+        {{ machine.status }}
+    </span>
+</div>
+<div class="machine-details my-2">
+    <small class="text-muted">
+        IP: {{ machine.ip_address|default:"N/A" }} | 
+        User: {{ machine.lab_machine_definition.username|default:"N/A" }} | 
+        Pass: {{ machine.lab_machine_definition.password|default:"N/A" }}
+    </small>
+</div>
+<div class="machine-actions">
+    {# --- MODIFIED: Disable all buttons while building --- #}
+    {% if machine.status == 'building' %}
+        <div class="btn-group w-100">
+            <button class="btn btn-primary btn-sm" disabled><span class="spinner-border spinner-border-sm"></span> Building...</button>
+        </div>
+    {% else %}
+        <form action="{% url 'lab_machine_action' course.id machine.id %}" method="post" class="lab-machine-action-form">
+            {% csrf_token %}
+            <div class="btn-group w-100">
+                {% if machine.status == 'running' %}
+                    {% if machine.guacamole_connection_id %}
+                        <a href="{% url 'guacamole_sso_redirect' machine.id %}" target="_blank" class="btn btn-primary btn-sm">Console</a>
+                    {% else %}
+                        <a href="#" class="btn btn-primary btn-sm disabled" title="Console connection not available">Console</a>
+                    {% endif %}
+                    <button type="submit" name="action" value="shutdown" class="btn btn-secondary btn-sm">Shutdown</button>
+                    <button type="submit" name="action" value="reset" class="btn btn-warning btn-sm">Reset</button>
+                    <button type="submit" name="action" value="stop" class="btn btn-danger btn-sm">Stop</button>
+                {% else %}
+                    <a href="#" class="btn btn-primary btn-sm disabled" aria-disabled="true">Console</a>
+                    <button type="submit" name="action" value="start" class="btn btn-success btn-sm">Start</button>
+                {% endif %}
+            </div>
+        </form>
+    {% endif %}
+</div>

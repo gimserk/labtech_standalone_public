@@ -1,0 +1,47 @@
+{% extends "labtech/generic_base.html" %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_content %}
+<div class="container mt-4">
+    <h1>My Achievements</h1>
+    <hr>
+
+    <h2 class="mt-4">Certificates</h2>
+    <div class="row">
+        {% for cert in certificates %}
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ cert.course.title }}</h5>
+                    <p class="card-text">Issued on {{ cert.issued_at|date:"F d, Y" }}</p>
+                    <a href="{% url 'view_certificate' cert.unique_id %}" target="_blank" class="btn btn-primary">View Certificate</a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <p>You haven't earned any certificates yet. Complete a course to get started!</p>
+        {% endfor %}
+    </div>
+
+    <h2 class="mt-4">Badges</h2>
+    <div class="row">
+        {% for user_badge in badges %}
+        <div class="col-md-4 col-lg-3 mb-4 text-center">
+            <div class="card h-100">
+                <div class="card-body">
+                    <img src="{{ user_badge.badge.icon.url }}" alt="{{ user_badge.badge.name }}" width="100" class="mb-3">
+                    <h5 class="card-title">{{ user_badge.badge.name }}</h5>
+                    <p class="card-text small text-muted">{{ user_badge.badge.description }}</p>
+                </div>
+                <div class="card-footer">
+                    <small class="text-muted">Awarded on {{ user_badge.awarded_at|date:"M d, Y" }}</small>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <p>You haven't earned any badges yet.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

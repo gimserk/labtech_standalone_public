@@ -1,0 +1,106 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+    {{ form.media }} {# Essential for loading CKEditor's JavaScript and CSS #}
+{% endblock %}
+
+{% block labtech_content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-10 offset-lg-1">
+            
+            {% if breadcrumbs %}
+                <nav aria-label="breadcrumb" class="mb-4">
+                    <ol class="breadcrumb">
+                        {% for crumb in breadcrumbs %}
+                            {% if not forloop.last %}
+                                <li class="breadcrumb-item"><a href="{{ crumb.url }}">{{ crumb.name }}</a></li>
+                            {% else %}
+                                <li class="breadcrumb-item active" aria-current="page">{{ crumb.name }}</li>
+                            {% endif %}
+                        {% endfor %}
+                    </ol>
+                </nav>
+            {% endif %}
+
+            <h2>{{ title }}</h2>
+            <p class="text-muted">Use this form to define the main details of your drag and drop activity. You will add labels and define the drop zones on the next screen.</p>
+            <hr>
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                <div class="mb-3">
+                    <label for="{{ form.title.id_for_label }}" class="form-label">{{ form.title.label }}</label>
+                    <input type="text" name="{{ form.title.name }}" id="{{ form.title.id_for_label }}" value="{{ form.title.value|default:'' }}" class="form-control">
+                    {% if form.title.help_text %}<small class="form-text text-muted">{{ form.title.help_text }}</small>{% endif %}
+                    {% for error in form.title.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="{{ form.chapter.id_for_label }}" class="form-label">{{ form.chapter.label }}</label>
+                    {{ form.chapter }}
+                    {% if form.chapter.help_text %}<small class="form-text text-muted">{{ form.chapter.help_text }}</small>{% endif %}
+                    {% for error in form.chapter.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="{{ form.scenario.id_for_label }}" class="form-label">{{ form.scenario.label }}</label>
+                    {{ form.scenario }}
+                    {% if form.scenario.help_text %}<small class="form-text text-muted">{{ form.scenario.help_text }}</small>{% endif %}
+                    {% for error in form.scenario.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="{{ form.background_image.id_for_label }}" class="form-label">{{ form.background_image.label }}</label>
+                    <input type="file" name="{{ form.background_image.name }}" id="{{ form.background_image.id_for_label }}" class="form-control">
+                    {% if form.background_image.help_text %}<small class="form-text text-muted">{{ form.background_image.help_text }}</small>{% endif %}
+                    {% for error in form.background_image.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                </div>
+
+                 <div class="mb-3" style="max-width: 150px;">
+                    <label for="{{ form.order.id_for_label }}" class="form-label">{{ form.order.label }}</label>
+                    <input type="number" name="{{ form.order.name }}" id="{{ form.order.id_for_label }}" value="{{ form.order.value|default:0 }}" class="form-control">
+                    {% if form.order.help_text %}<small class="form-text text-muted">{{ form.order.help_text }}</small>{% endif %}
+                    {% for error in form.order.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                </div>
+
+                {% if form.available_from %}
+                    <hr>
+                    <h5>Availability (Optional)</h5>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.available_from.id_for_label }}" class="form-label">{{ form.available_from.label }}</label>
+                            {{ form.available_from }}
+                            {% for error in form.available_from.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.due_date.id_for_label }}" class="form-label">{{ form.due_date.label }}</label>
+                            {{ form.due_date }}
+                            {% for error in form.due_date.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.available_until.id_for_label }}" class="form-label">{{ form.available_until.label }}</label>
+                            {{ form.available_until }}
+                            {% for error in form.available_until.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <hr>
+                <button type="submit" class="btn btn-primary">Save and Manage Drop Zones</button>
+                <a href="{% url 'labtech_manage_course_content' course_id=course.id %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

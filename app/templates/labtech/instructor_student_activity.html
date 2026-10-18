@@ -1,0 +1,77 @@
+{% extends "labtech/generic_base.html" %}
+{% load static course_extras %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .activity-container { max-width: 900px; margin: 0 auto; padding: 20px; }
+    .page-header { margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid var(--lt-border); }
+    .activity-feed .feed-item { display: flex; align-items: flex-start; gap: 1.5rem; border-bottom: 1px solid var(--lt-border); padding: 1.25rem 0; }
+    .activity-feed .feed-item:last-child { border-bottom: none; }
+    .activity-feed .feed-icon { font-size: 1.5rem; color: var(--lt-muted); text-align: center; width: 40px; }
+    .activity-feed .feed-content { font-size: 1rem; }
+    .text-success { color: var(--lt-success) !important; }
+    .text-danger { color: var(--lt-danger) !important; }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="activity-container">
+    <div class="page-header">
+        <p class="text-muted mb-1">
+            <a href="{% url 'instructor_student_list' course_id=course.id %}">&larr; Back to Student List</a>
+        </p>
+        <h2 class="h3 mb-0">{{ title }}</h2>
+        <p class="text-muted mt-1">Viewing activity in course: <strong>{{ course.title }}</strong></p>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="activity-feed">
+                {% for event in activity_feed %}
+                <div class="feed-item">
+                    <div class="feed-icon">
+                        {% if event.event_type == 'quiz_attempt' %}<i class="fas fa-check-circle text-success" title="Quiz Completed"></i>
+                        {% elif event.event_type == 'lab_start' %}<i class="fas fa-flask text-primary" title="Lab Started"></i>
+                        {% elif event.event_type == 'step_answer' %}<i class="fas fa-keyboard text-muted" title="Lab Question Answered"></i>
+                        {% elif event.event_type == 'content_completion' %}
+                            {% if event.content_object|class_name == 'HotspotActivity' %}<span title="Hotspot Activity Completed">📍</span>
+                            {% elif event.content_object|class_name == 'Lab' %}<i class="fas fa-flag-checkered" style="color: purple;" title="Lab Marked Complete"></i>
+                            {% else %}<i class="fas fa-book-reader text-info" title="Item Completed"></i>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                    <div class="feed-content">
+                        <strong>
+                        {% if event.event_type == 'quiz_attempt' %}
+                            Completed Quiz: '{{ event.quiz.title }}' ({{ event.score|floatformat:0 }}%)
+                        {% elif event.event_type == 'content_completion' %}
+                            {% if event.content_object|class_name == 'Lab' %}
+                                Marked Lab as Complete: '{{ event.content_object.title }}'
+                            {% else %}
+                                Completed: '{{ event.content_object.title }}'
+                            {% endif %}
+                        {% elif event.event_type == 'lab_start' %}
+                            Started Lab: '{{ event.lab.title }}'
+                        {% elif event.event_type == 'step_answer' %}
+                            Answered a question in '{{ event.question.step.lab.title }}':<br>
+                            <span class="text-muted fst-italic">"{{ event.question.question_text }}"</span>
+                            {% if event.is_correct %}
+                                <span class="text-success fw-bold">Correct</span>
+                            {% else %}
+                                <span class="text-danger fw-bold">Incorrect</span>
+                            {% endif %}
+                        {% endif %}
+                        </strong>
+                        <div class="text-muted small mt-1">{{ event.event_timestamp|date:"F d, Y, P" }}</div>
+                    </div>
+                </div>
+                {% empty %}
+                    <p class="text-muted m-0">No activity has been recorded for this student in this course.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

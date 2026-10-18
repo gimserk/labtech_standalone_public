@@ -1,0 +1,26 @@
+# robots.txt for the WyoCyberRange LabTech Platform
+
+User-agent: *
+
+Allow: /$
+Allow: /features/
+Allow: /courses/
+Allow: /course/
+Allow: /community/
+Allow: /community/article/
+Allow: /subscription/
+Allow: /support/
+Allow: /signup/
+Allow: /login/
+Allow: /terms-of-service/
+Allow: /privacy-policy/
+Allow: /institution-use/
+Allow: /cyber-city/
+Allow: /ctf-platform/
+Allow: /coursecatalog/
+
+Disallow: /
+
+Sitemap: https://www.wyocyberrange.com/sitemap.xml
+
+flag{ASecretPathForRobots}

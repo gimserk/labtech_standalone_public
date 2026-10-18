@@ -1,0 +1,109 @@
+{% extends "labtech/generic_base.html" %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_content %}
+<div class="container mt-4">
+    <div class="mb-4">
+        <a href="{% url 'course_detail' course_id=activity.course.id %}" class="text-decoration-none text-secondary">
+            <i class="fas fa-arrow-left"></i> Back to {{ activity.course.title }}
+        </a>
+    </div>
+
+    <h2 class="fw-bold mb-4">{{ activity.title }}</h2>
+
+    <div class="row g-4">
+        <!-- Instructions Column -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-light fw-bold">Assignment Instructions</div>
+                <div class="card-body">
+                    {{ activity.instructions|safe }}
+                </div>
+            </div>
+            
+            {% if submission and submission.is_graded %}
+            <div class="card shadow-sm border-success mb-4">
+                <div class="card-header bg-success text-white fw-bold">Instructor Feedback & Grade</div>
+                <div class="card-body">
+                    <h1 class="display-6 fw-bold text-success">{{ submission.score|floatformat:1 }} / {{ activity.max_score }}</h1>
+                    <p class="text-muted small mb-3">Graded on {{ submission.graded_at|date:"M d, Y h:i A" }}</p>
+                    
+                    {% if submission.instructor_feedback %}
+                        <div class="p-3 bg-light rounded border">
+                            <p class="mb-0"><strong>Comments:</strong><br/> {{ submission.instructor_feedback|linebreaksbr }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Submission Column -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white fw-bold">Your Submission</div>
+                <div class="card-body">
+                    {% if submission %}
+                        <div class="alert alert-info py-2 mb-4">
+                            <i class="fas fa-check-circle me-2"></i> File Submitted
+                            <div class="small mt-1 text-muted">On {{ submission.submitted_at|date:"M d, Y h:i A" }}</div>
+                        </div>
+                        <div class="mb-4">
+                            <strong>Current File:</strong><br/>
+                            <a href="{{ submission.file.url }}" class="btn btn-outline-primary btn-sm mt-2" target="_blank">
+                                <i class="fas fa-download me-1"></i> Download Your File
+                            </a>
+                        </div>
+                        <hr>
+                    {% else %}
+                        <div class="alert alert-secondary py-2 mb-4">
+                            <i class="fas fa-info-circle me-2"></i> No file submitted yet.
+                        </div>
+                    {% endif %}
+
+                    {% if can_submit %}
+                        <h6 class="fw-bold">{% if submission %}Update Submission{% else %}Upload Assignment{% endif %}</h6>
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            
+                            <div class="mb-3">
+                                {{ form.file }}
+                                {% if form.file.help_text %}
+                                    <div class="form-text small">{{ form.file.help_text }}</div>
+                                {% endif %}
+                                {% if form.file.errors %}
+                                    <div class="text-danger small mt-1">{{ form.file.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100">
+                                {% if submission %}Overwrite File{% else %}Submit File{% endif %}
+                            </button>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-warning py-2 mb-0">
+                            <i class="fas fa-lock me-2"></i> This assignment is closed for submissions.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    input[type="file"] {
+        display: block;
+        width: 100%;
+        padding: 0.375rem 0.75rem;
+        font-size: 1rem;
+        font-weight: 400;
+        line-height: 1.5;
+        color: var(--lt-text);
+        background-color: var(--lt-surface);
+        border: 1px solid var(--lt-border);
+        border-radius: 0.375rem;
+    }
+</style>
+{% endblock %}

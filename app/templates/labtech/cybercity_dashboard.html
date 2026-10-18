@@ -1,0 +1,184 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}CyberCity Dashboard - {{ block.super }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 20px;
+    }
+    .city-card {
+        background-color: var(--lt-surface);
+        border: 1px solid var(--lt-border);
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        display: flex;
+        flex-direction: column;
+    }
+    .city-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .card-header {
+        padding: 16px;
+        border-bottom: 1px solid var(--lt-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .card-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0;
+    }
+    .card-body {
+        padding: 16px;
+        flex-grow: 1;
+    }
+    .card-footer {
+        padding: 12px 16px;
+        background-color: var(--lt-surface-muted);
+        border-top: 1px solid var(--lt-border);
+        text-align: right;
+    }
+    .info-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        font-size: 0.9rem;
+    }
+    .info-list li {
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .info-list li strong {
+        color: var(--lt-text);
+    }
+    .btn-primary-custom {
+        background-color: var(--lt-primary);
+        color: var(--lt-on-accent);
+        padding: 8px 16px;
+        text-decoration: none;
+        border-radius: 5px;
+        transition: background-color 0.2s;
+    }
+    .btn-primary-custom:hover {
+        background-color: var(--lt-primary);
+        color: var(--lt-on-accent);
+    }
+    .status-light {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-left: 8px;
+        background-color: var(--lt-secondary); /* Default grey */
+        display: inline-block;
+        color: var(--lt-on-accent);
+    }
+    .status-light.online { background-color: var(--lt-success); color: var(--lt-on-accent); } /* Green */
+    .status-light.offline { background-color: var(--lt-danger); color: var(--lt-on-accent); } /* Red */
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h1>CyberCity Dashboard</h1>
+    {% if user.is_superuser %}
+    <a href="{% url 'cybercity_add' %}" class="btn-primary-custom">Add New CyberCity</a>
+    {% endif %}
+</div>
+
+<div class="alert alert-info" role="alert">
+    <h4 class="alert-heading">Welcome, Administrator!</h4>
+    <p>This is your central command for all CyberCity simulations on the platform. From here, you can monitor the status of each city's message broker, see a summary of its assets, and access the detailed management page for each instance.</p>
+    {% if user.is_superuser %}
+    <hr>
+    <p class="mb-0">Use the "Add New CyberCity" button to create new environments.</p>
+    {% endif %}
+</div>
+
+<div class="card-grid">
+    {% for city in cities %}
+    <div class="city-card shadow-sm">
+        <div class="card-header">
+            <h2 class="card-title">{{ city.name }}</h2>
+            {% if city.institution %}
+                <span style="font-size: 0.85em; background-color: var(--lt-info-subtle); color: var(--lt-primary); padding: 4px 8px; border-radius: 4px;">{{ city.institution.name }}</span>
+            {% elif city.is_public %}
+                 <span style="font-size: 0.85em; background-color: var(--lt-success-subtle); color: var(--lt-success); padding: 4px 8px; border-radius: 4px;">Public</span>
+            {% else %}
+                <span style="font-size: 0.85em; background-color: var(--lt-danger-subtle); color: var(--lt-danger); padding: 4px 8px; border-radius: 4px;">Private</span>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <p>{{ city.description|default:"No description provided."|truncatewords:25 }}</p>
+            <ul class="info-list">
+                <li>
+                    <strong>Broker Status</strong>
+                    <span class="status-light" id="status-light-{{ city.id }}" data-city-id="{{ city.id }}" title="Checking status..."></span>
+                </li>
+                <li>
+                    <strong>VPN Access</strong>
+                    <span>
+                        {% if city.vpn_required and city.vpn_profile %}
+                            <span class="badge bg-warning text-dark">Required</span>
+                            <span class="text-muted small">({{ city.vpn_profile.name }})</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Not Required</span>
+                        {% endif %}
+                    </span>
+                </li>
+                <li><strong>Buildings:</strong> <span class="badge bg-primary rounded-pill">{{ city.building_count }}</span></li>
+                <li><strong>Created:</strong> <span class="text-muted">{{ city.created_at|date:"M d, Y" }}</span></li>
+            </ul>
+        </div>
+        <div class="card-footer">
+            <a href="{% url 'cybercity_detail' city.id %}" class="btn-primary-custom">Manage City</a>
+        </div>
+    </div>
+    {% empty %}
+    <div class="alert alert-info" style="grid-column: 1 / -1;">
+        <strong>No CyberCities found.</strong>
+        {% if user.is_superuser %}
+            <a href="{% url 'cybercity_add' %}">Create the first one.</a>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block labtech_extra_body %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const statusLights = document.querySelectorAll('.status-light');
+    
+    statusLights.forEach(light => {
+        const cityId = light.dataset.cityId;
+        if (!cityId) return;
+
+        fetch(`/labtech/cybercity/${cityId}/check-broker-status/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'online') {
+                    light.classList.add('online');
+                    light.title = 'Broker is online.';
+                } else {
+                    light.classList.add('offline');
+                    light.title = `Broker is offline: ${data.message || 'No response'}`;
+                }
+            })
+            .catch(error => {
+                light.classList.add('offline');
+                light.title = 'Failed to check broker status.';
+                console.error('Error checking broker status for city ' + cityId + ':', error);
+            });
+    });
+});
+</script>
+{% endblock %}

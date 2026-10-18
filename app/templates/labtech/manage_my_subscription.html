@@ -1,0 +1,151 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+{% load subscription_extras %}
+
+{% block labtech_title %}My Subscription{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .subscription-container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+    .page-header { margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid var(--lt-border); }
+    .page-header h2 { margin: 0; color: var(--lt-text); font-size: 1.8em; }
+
+    /* --- REVISED CARD STYLES --- */
+    .card, .plan-card {
+        background-color: var(--lt-surface);
+        border: 1px solid var(--lt-border);
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        display: flex;
+        flex-direction: column;
+    }
+    .card-header, .plan-card-header {
+        padding: 20px;
+        background-color: var(--lt-surface-muted);
+        border-bottom: 1px solid var(--lt-border);
+    }
+    .card-header h3, .plan-card-header h3 { font-size: 1.4em; margin: 0; }
+    .card-body, .plan-card-body { padding: 25px; flex-grow: 1; }
+    .card-body p, .plan-card-body p { margin-top: 0; }
+
+    /* Specific style for the current plan display */
+    .current-plan-card {
+        background-color: var(--lt-info-subtle); /* Light blue background */
+        border: 1px solid var(--lt-border);  /* Blue border */
+    }
+    .current-plan-card .card-header {
+        background-color: var(--lt-info-subtle); /* Slightly darker blue for the header */
+    }
+
+    /* Plan Grid Layout */
+    .plan-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 25px;
+        margin-top: 20px;
+    }
+    .plan-card-header p { font-size: 1.8em; font-weight: bold; margin: 10px 0 0 0; color: var(--lt-text); }
+    .plan-card-header span { font-size: 0.9em; color: var(--lt-muted); }
+    
+    .plan-card-body ul { list-style: none; padding: 0; margin: 0 0 20px 0; }
+    .plan-card-body ul li { margin-bottom: 10px; }
+    .plan-card-body ul li::before { content: '✓'; color: var(--lt-success); margin-right: 10px; }
+    
+    .plan-card-footer { padding: 20px; margin-top: auto; }
+    .plan-card-footer .btn { width: 100%; }
+
+    /* Themed Button Styles */
+    .btn {
+        padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 1em;
+        font-weight: 500; cursor: pointer; border: 1px solid transparent; display: inline-block;
+        text-align: center; transition: background-color 0.2s ease;
+    }
+    .btn-primary { background-color: var(--lt-primary); color: var(--lt-on-accent); border-color: var(--lt-primary); }
+    .btn-primary:hover { background-color: var(--lt-primary-hover); border-color: var(--lt-primary); color: var(--lt-on-accent); }
+    .btn-secondary { background-color: var(--lt-secondary); color: var(--lt-on-accent); border-color: var(--lt-border); }
+    .btn-secondary:hover { background-color: var(--lt-secondary-hover); border-color: var(--lt-border); color: var(--lt-on-accent); }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="subscription-container">
+    <div class="page-header">
+        <h2>My Subscription</h2>
+    </div>
+
+    {# --- REVISED HTML STRUCTURE FOR CURRENT PLAN CARD --- #}
+    <div class="card current-plan-card">
+        <div class="card-header">
+            <h3>Your Current Plan</h3>
+        </div>
+        <div class="card-body">
+            {% if active_subscription %}
+                <h4>{{ active_subscription.plan.name }} (Level {{ active_subscription.plan.level }})</h4>
+
+                {% if active_subscription.plan.features_list %}
+                    <div class="plan-card-body" style="padding: 15px 0 20px 0;">
+                        <ul>
+                            {% for feature in active_subscription.plan.features_list|splitlines %}
+                                <li>{{ feature }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+
+                <p>Your subscription is active.{% if active_subscription.end_date %} It will renew or end on {{ active_subscription.end_date|date:"F d, Y" }}.{% endif %}</p>
+                
+                {% if active_subscription.plan.price > 0 %}
+                    <div style="margin-top: 20px;">
+                        <a href="{% url 'customer_portal' %}" class="btn btn-secondary">Manage Billing & Cancellation</a>
+                    </div>
+                {% endif %}
+
+            {% else %}
+                <p>You do not currently have an active subscription. Choose a plan below to get started.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <h2 style="margin-top: 40px;">Available Plans</h2>
+
+    <div class="plan-grid">
+        {% for plan in available_plans %}
+        <div class="plan-card">
+            <div class="plan-card-header">
+                <h3>{{ plan.name }}</h3>
+                <p>
+                    {% if plan.price > 0 %}${{ plan.price|floatformat:2 }}{% else %}Free{% endif %}
+                    {% if plan.billing_cycle_days %}<span>/ {{ plan.billing_cycle_days }} days</span>{% endif %}
+                </p>
+            </div>
+            <div class="plan-card-body">
+                <p>{{ plan.description }}</p>
+
+                {% if plan.features_list %}
+                    <ul>
+                        {% for feature in plan.features_list|splitlines %}
+                            <li>{{ feature }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div style="min-height: 50px;"></div> {# Add empty space to align buttons if no features #}
+                {% endif %}
+            </div>
+            <div class="plan-card-footer">
+                {% if plan.price > 0 %}
+                    <form action="{% url 'create_checkout_session' %}" method="POST" style="margin: 0;">
+                        {% csrf_token %}
+                        <input type="hidden" name="lookup_key" value="{{ plan.stripe_price_lookup_key }}" />
+                        <button type="submit" class="btn btn-primary">Subscribe with Stripe</button>
+                    </form>
+                {% else %}
+                    <a href="{% url 'change_subscription_plan' plan_id=plan.id %}" class="btn btn-secondary">Switch to Free Plan</a>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <p>There are no public subscription plans available at this time.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

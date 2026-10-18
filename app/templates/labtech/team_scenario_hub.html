@@ -1,0 +1,176 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .team-card { border-left-width: 5px; }
+    .blue-team-border { border-left-color: var(--lt-primary); }
+    .red-team-border { border-left-color: var(--lt-danger); }
+    .score { font-size: 2.5rem; font-weight: bold; }
+    .status-up i { color: var(--lt-success); }
+    .status-down i { color: var(--lt-danger); }
+    .status-unknown i { color: var(--lt-muted); }
+    .log-feed { max-height: 400px; overflow-y: auto; font-family: monospace; font-size: 0.9em; background-color: var(--lt-surface-muted); border-radius: 5px;}
+    .log-feed > div { padding: 2px 5px; border-bottom: 1px solid var(--lt-border); }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+    
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="mb-1">{{ scenario.title }}</h1>
+            <p class="lead text-muted">Scenario Dashboard</p>
+        </div>
+        <a href="{% url 'course_detail' course_id=scenario.course.id %}" class="btn btn-outline-secondary">Back to Course</a>
+    </div>
+
+    <hr class="my-4">
+
+    {% if scenario.status != 'active' %}
+        <div class="alert alert-info">This scenario is not currently active. The dashboard will become live once the instructor starts the environment.</div>
+        {# If you have a pre-scenario team joining UI, it can go here #}
+    {% else %}
+    <div class="container-fluid px-0">
+        <div class="row mb-4">
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100 team-card blue-team-border">
+                    <div class="card-header d-flex justify-content-between align-items-center bg-light">
+                        <h4 class="mb-0 text-primary">🔵 Blue Team (Defenders)</h4>
+                        <span class="score text-primary">{{ blue_team.score|default:0 }}</span>
+                    </div>
+                    <div class="card-body">
+                        <h5>Monitored Systems</h5>
+                        {% for machine in blue_machines %}
+                            <div class="mb-3">
+                                <strong><i class="fas fa-server"></i> {{ machine.name }}</strong> ({{ machine.ip_address|default:"No IP" }})
+                                <ul class="list-unstyled ms-3 mt-2">
+                                    {% for service in machine.monitored_services.all %}
+                                        <li class="status-{{ service.status }}">
+                                            <i class="fas fa-circle"></i>
+                                            {{ service.name }} (Port: {{ service.port }})
+                                            <span class="badge bg-success float-end">+{{ service.points_per_minute }}/min</span>
+                                        </li>
+                                    {% empty %}
+                                        <li class="text-muted"><small>No services monitored.</small></li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% empty %}
+                            <p class="text-muted">No machines currently active for Blue Team.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100 team-card red-team-border">
+                    <div class="card-header d-flex justify-content-between align-items-center bg-light">
+                        <h4 class="mb-0 text-danger">🔴 Red Team (Attackers)</h4>
+                        <span class="score text-danger">{{ red_team.score|default:0 }}</span>
+                    </div>
+                    <div class="card-body">
+                        <h5>Objectives</h5>
+                        <ul class="list-group list-group-flush">
+                            {% for objective in objectives %}
+                                <li class="list-group-item px-0">
+                                    {% if objective.is_completed %}
+                                        <p class="mb-1"><i class="fas fa-check-circle text-success"></i> <s>{{ objective.name }}</s> <span class="badge bg-secondary float-end">Captured</span></p>
+                                    {% else %}
+                                        <p class="mb-1"><i class="far fa-circle text-muted"></i> {{ objective.name }} <span class="badge bg-danger float-end">+{{ objective.points }} pts</span></p>
+                                    {% endif %}
+                                    <p class="text-muted small mb-2">{{ objective.description|safe }}</p>
+
+                                    {% if not objective.is_completed and user_team == red_team %}
+                                    <form class="objective-form" data-objective-id="{{ objective.id }}" action="{% url 'submit_scenario_flag' scenario.course.id scenario.id objective.id %}" method="POST">
+                                        {% csrf_token %}
+                                        <div class="input-group input-group-sm">
+                                            <input type="text" class="form-control" name="flag" placeholder="flag{...}" required>
+                                            <button class="btn btn-outline-danger" type="submit">Submit</button>
+                                        </div>
+                                        <div class="form-feedback small mt-1"></div>
+                                    </form>
+                                    {% endif %}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><h5><i class="fas fa-terminal"></i> Live Event Log</h5></div>
+            <div class="card-body p-0"><div class="log-feed p-3">
+                {% for log in logs %}
+                    <div><span class="text-muted">[{{ log.timestamp|date:"H:i:s" }}]</span> <strong class="text-{% if log.team_type == 'blue' %}primary{% elif log.team_type == 'red' %}danger{% else %}dark{% endif %}">[{{ log.get_team_type_display }}]</strong> {{ log.message }}</div>
+                {% empty %}
+                    <div>No events yet.</div>
+                {% endfor %}
+            </div></div>
+        </div>
+    </div>
+    {% endif %}
+{% endblock %}
+
+{% block labtech_extra_body %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Automatically refresh the page every 60 seconds to get new scores and statuses
+    {% if scenario.status == 'active' %}
+    setTimeout(function(){
+       window.location.reload(1);
+    }, 60000);
+    {% endif %}
+
+    // Handle AJAX flag submissions
+    document.querySelectorAll('.objective-form').forEach(form => {
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            const flagInput = form.querySelector('input[name="flag"]');
+            const submitButton = form.querySelector('button[type="submit"]');
+            const feedbackDiv = form.querySelector('.form-feedback');
+            const flagValue = flagInput.value;
+            const url = form.action;
+
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+            feedbackDiv.textContent = '';
+            feedbackDiv.classList.remove('text-success', 'text-danger');
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ flag: flagValue })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    feedbackDiv.textContent = data.message;
+                    feedbackDiv.classList.add('text-success');
+                    // Reload the page on success to show the updated score and objective status
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    feedbackDiv.textContent = data.message;
+                    feedbackDiv.classList.add('text-danger');
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = 'Submit';
+                }
+            })
+            .catch(error => {
+                feedbackDiv.textContent = 'An unexpected error occurred.';
+                feedbackDiv.classList.add('text-danger');
+                submitButton.disabled = false;
+                submitButton.innerHTML = 'Submit';
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

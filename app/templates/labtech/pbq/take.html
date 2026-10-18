@@ -1,0 +1,79 @@
+{% extends 'labtech/generic_base.html' %}{% load static %}
+{% block labtech_title %}{{ activity.title }}{% endblock %}
+{% block labtech_extra_head %}
+<link rel="stylesheet" href="{% static 'labtech/css/pbq-workspace.css' %}">
+<script defer src="{% static 'labtech/pbq.js' %}"></script>
+<script defer src="{% static 'labtech/js/pbq-workspace.js' %}"></script>
+{% endblock %}
+{% block labtech_content %}
+<div class="pbq-workspace" data-pbq-workspace{% if preview %} data-pbq-preview{% endif %}>
+  <header class="pbq-heading">
+    <div><p class="pbq-eyebrow">Performance-based question</p><h2>{{ activity.title }}</h2></div>
+    {% if attempt or preview %}<div class="pbq-progress-summary" data-pbq-enhanced hidden>
+      <p data-pbq-progress role="status" aria-live="polite"></p>
+      <progress data-pbq-progress-bar max="100" value="0" aria-label="Questions completed"></progress>
+    </div>{% endif %}
+  </header>
+  {% if preview %}<p class="alert alert-info">Instructor preview — answers are not saved.</p>{% endif %}
+  {% if error %}<div role="alert" class="alert alert-danger">{{ error }} <a href="{% url 'pbq_take' course.id activity.id %}">Reload saved work</a></div>{% endif %}
+  {% if form.errors %}<div role="alert" class="alert alert-danger" tabindex="-1" id="pbq-errors">Please correct the answer fields below. {{ form.errors }}</div>{% endif %}
+  <section class="pbq-scenario" aria-labelledby="pbq-scenario-heading">
+    <h3 id="pbq-scenario-heading">Your scenario</h3><div class="pbq-rich-text">{{ activity.scenario|safe }}</div>
+  </section>
+  <div class="pbq-layout">
+    <aside class="pbq-panel pbq-evidence" aria-labelledby="pbq-artifacts-heading" data-pbq-tabs="artifacts">
+      <div class="pbq-panel-heading"><h3 id="pbq-artifacts-heading">Artifacts</h3><p>Review the evidence as you answer.</p></div>
+      <div class="pbq-tab-list" role="tablist" aria-label="Artifacts" data-pbq-tablist hidden>
+        {% for artifact in activity.artifacts.all %}<button type="button" class="pbq-tab" role="tab" id="pbq-artifact-tab-{{ forloop.counter }}" aria-controls="pbq-artifact-panel-{{ forloop.counter }}" aria-label="Artifact {{ forloop.counter }}: {{ artifact.title }}" aria-selected="false" tabindex="-1">{{ forloop.counter }}</button>{% endfor %}
+      </div>
+      {% for artifact in activity.artifacts.all %}
+      <section class="pbq-artifact" id="pbq-artifact-panel-{{ forloop.counter }}" role="tabpanel" aria-labelledby="pbq-artifact-tab-{{ forloop.counter }}" tabindex="0" data-pbq-panel data-pbq-artifact>
+        <div class="pbq-item-heading"><div><p class="pbq-eyebrow">Artifact {{ forloop.counter }} of {{ activity.artifacts.count }}</p><h4>{{ artifact.title }}</h4></div><span class="pbq-file-kind">{% if artifact.is_image %}Image{% else %}Text{% endif %}</span></div>
+        {% if artifact.caption %}<p class="pbq-caption">{{ artifact.caption }}</p>{% endif %}
+        {% if artifact.is_image %}
+        <a class="pbq-image-link" href="{% url 'pbq_artifact' course.id activity.id artifact.id %}" target="_blank" rel="noopener"><img src="{% url 'pbq_artifact' course.id activity.id artifact.id %}" alt="{{ artifact.alt_text }}" loading="lazy"><span>Open full-size image <span aria-hidden="true">↗</span></span></a>
+        {% else %}
+        <div data-pbq-text-url="{% url 'pbq_artifact' course.id activity.id artifact.id %}?format=text">
+          <p data-pbq-text-status role="status" hidden></p><pre class="pbq-text-evidence" data-pbq-text hidden tabindex="0" aria-label="{{ artifact.title }} contents"></pre>
+          <button type="button" class="btn btn-outline-secondary" data-pbq-retry hidden>Retry loading text</button>
+        </div>
+        <noscript><iframe class="pbq-text-fallback" src="{% url 'pbq_artifact' course.id activity.id artifact.id %}?format=text" title="{{ artifact.title }} contents" sandbox></iframe></noscript>
+        {% endif %}
+        <p class="pbq-download"><a href="{% url 'pbq_artifact_download' course.id activity.id artifact.id %}">Download {{ artifact.original_filename }}</a></p>
+      </section>
+      {% empty %}<p class="pbq-empty">No supporting artifacts. Use the scenario to answer the questions.</p>{% endfor %}
+    </aside>
+    <section class="pbq-panel pbq-answers" aria-labelledby="pbq-questions-heading">
+      <div class="pbq-panel-heading"><h3 id="pbq-questions-heading">Questions</h3><p>Complete every answer field in each question.</p></div>
+      {% if attempt or preview %}
+      <form method="post" data-pbq-form>{% csrf_token %}
+        <input type="hidden" name="attempt_id" value="{{ attempt.id }}"><input type="hidden" name="revision" value="{{ attempt_revision }}">
+        <div data-pbq-tabs="questions">
+          <div class="pbq-tab-list" role="tablist" aria-label="Questions" data-pbq-tablist hidden>
+            {% for group in form.groups %}<button type="button" class="pbq-tab" role="tab" id="pbq-question-tab-{{ forloop.counter }}" aria-controls="pbq-question-panel-{{ forloop.counter }}" aria-label="Question {{ forloop.counter }}" aria-selected="false" tabindex="-1">{{ forloop.counter }}<span class="pbq-tab-check" data-pbq-tab-status aria-hidden="true"></span></button>{% endfor %}
+          </div>
+          {% for group in form.groups %}
+          <section class="pbq-question" id="pbq-question-panel-{{ forloop.counter }}" role="tabpanel" aria-labelledby="pbq-question-tab-{{ forloop.counter }}" tabindex="0" data-pbq-panel data-pbq-question>
+            <div class="pbq-item-heading"><h4>Question {{ forloop.counter }} <span class="pbq-question-total">of {{ form.groups|length }}</span></h4><span class="pbq-question-status" data-pbq-question-status>Not started</span></div>
+            <div class="pbq-rich-text pbq-prompt">{{ group.prompt|safe }}</div>
+            {% for field in group.fields %}
+            <fieldset class="pbq-answer-field" data-pbq-answer>
+              <legend>{{ field.label }} <small>{{ field.help_text }}</small></legend>
+              {% if field.id_for_label %}<label class="visually-hidden" for="{{ field.id_for_label }}">{{ field.label }}</label>{% endif %}
+              {{ field.errors }}<div>{{ field }}</div>
+            </fieldset>{% endfor %}
+          </section>{% empty %}<p class="pbq-empty">No questions have been added yet.</p>{% endfor %}
+          <div class="pbq-question-navigation" data-pbq-enhanced hidden><button type="button" class="btn btn-outline-secondary" data-pbq-previous>Previous</button><button type="button" class="btn btn-outline-primary" data-pbq-next>Next question</button></div>
+        </div>
+        <div class="pbq-submit-area">
+          <p data-pbq-readiness role="status" aria-live="polite">Answer every question before submitting.</p>
+          <p class="pbq-completion-note">Complete means answered, not graded. You can revise your answers before submitting.</p>
+          {% if not preview %}<div class="pbq-actions"><button type="submit" class="btn btn-outline-secondary" name="action" value="save" formnovalidate>Save progress</button><button type="submit" class="btn btn-primary" name="action" value="submit" data-pbq-submit>Submit PBQ</button></div><p class="pbq-save-state" data-pbq-save-state>Use Save progress to keep your work.</p>{% endif %}
+        </div>
+      </form>
+      {% else %}<div class="pbq-start"><p>Start an attempt to answer these questions. You can save progress and return before the availability cutoff.</p><form method="post">{% csrf_token %}<button name="action" value="start" class="btn btn-primary">Start PBQ</button></form></div>{% endif %}
+    </section>
+  </div>
+  {% if history %}<section class="pbq-history"><h3>Your submissions</h3><ul>{% for item in history %}<li><a href="{% url 'pbq_result' course.id activity.id item.id %}">Attempt {{ item.attempt_number }} — {{ item.get_state_display }}</a></li>{% endfor %}</ul></section>{% endif %}
+</div>
+{% endblock %}

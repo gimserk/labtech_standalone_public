@@ -1,0 +1,72 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .management-container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+    .management-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid var(--lt-border); }
+    .management-header h2 { margin: 0; color: var(--lt-text); font-size: 1.8em; }
+    .btn { padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 1em; cursor: pointer; border: none; display: inline-block; }
+    .btn-primary { background-color: var(--lt-primary); color: var(--lt-on-accent); }
+    .btn-primary:hover { background-color: var(--lt-primary-hover); color: var(--lt-on-accent); }
+    .btn-edit { background-color: var(--lt-warning); color: var(--lt-on-warning); }
+    .btn-edit:hover { background-color: var(--lt-warning-hover); color: var(--lt-on-warning); }
+    .table-responsive { overflow-x: auto; margin-top: 20px; }
+    .styled-table { width: 100%; border-collapse: collapse; font-size: 0.9em; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .styled-table th, .styled-table td { border: 1px solid var(--lt-border); padding: 12px 15px; text-align: left; }
+    .styled-table th { background-color: var(--lt-surface-muted); color: var(--lt-text); font-weight: 600; text-transform: uppercase; font-size: 0.85em; }
+    .styled-table tbody tr:nth-child(even) { background-color: var(--lt-surface-muted); }
+    .styled-table tbody tr:hover { background-color: var(--lt-surface-muted); }
+    .action-links a { margin-right: 8px; text-decoration: none; font-size: 0.9em; padding: 6px 10px; border-radius:4px; }
+    .status-active { color: green; font-weight: bold; }
+    .status-inactive { color: var(--lt-danger); }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="management-container">
+    <div class="management-header">
+        <h2>{{ title }}</h2>
+        <a href="{% url 'labtech_assign_user_subscription' %}" class="btn btn-primary">Assign New User Subscription</a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="styled-table">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Plan</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sub in user_subscriptions %}
+                <tr>
+                    <td>{{ sub.user.username }} ({{ sub.user.email }})</td>
+                    <td>{{ sub.plan.name }}</td>
+                    <td>{{ sub.start_date|date:"Y-m-d H:i" }}</td>
+                    <td>{{ sub.end_date|date:"Y-m-d H:i" }}</td>
+                    <td>
+                        <span class="{% if sub.check_is_active %}status-active{% else %}status-inactive{% endif %}">
+                            {% if sub.check_is_active %}Active{% else %}Inactive{% endif %}
+                        </span>
+                    </td>
+                    <td class="action-links">
+                        <a href="{% url 'labtech_edit_user_subscription' subscription_id=sub.id %}" class="btn btn-edit btn-sm">Edit</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 20px;">No user subscriptions found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_content %}
+<div class="container mt-4">
+    <div class="card border-danger">
+        <div class="card-header bg-danger text-white">
+            <h1 class="h3 mb-0">{{ title }}</h1>
+        </div>
+        <div class="card-body">
+            <p>Are you sure you want to delete the AI assistant "<strong>{{ item_to_delete.name }}</strong>"?</p>
+            <p class="text-muted">This action cannot be undone. This will remove the configuration from LabTech but will not affect your OpenWebUI server.</p>
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Yes, Delete</button>
+                <a href="{{ cancel_url }}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,5 @@
+{% for artifact in activity.artifacts.all %}<figure class="my-3">
+<figcaption><strong>{{ artifact.title }}</strong> {{ artifact.caption }}</figcaption>
+{% if artifact.is_image %}<a href="{% url 'pbq_artifact' course.id activity.id artifact.id %}" target="_blank" rel="noopener"><img src="{% url 'pbq_artifact' course.id activity.id artifact.id %}" alt="{{ artifact.alt_text }}" style="max-width:100%;max-height:300px"></a>
+{% else %}<a href="{% url 'pbq_artifact' course.id activity.id artifact.id %}" target="_blank" rel="noopener">View text (first 100 KiB)</a>{% endif %}
+<a href="{% url 'pbq_artifact_download' course.id activity.id artifact.id %}">Download {{ artifact.original_filename }}</a></figure>{% empty %}<p>No supporting artifacts.</p>{% endfor %}

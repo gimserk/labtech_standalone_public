@@ -1,0 +1,236 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .import-container { max-width: 900px; margin: 0 auto; }
+    .import-instructions {
+        background-color: var(--lt-surface-muted);
+        border: 1px solid var(--lt-border);
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-size: 0.95em;
+    }
+    #content-tree-container {
+        margin-top: 20px;
+        border: 1px solid var(--lt-border);
+        padding: 20px;
+        border-radius: 8px;
+        background: var(--lt-surface-muted);
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    .chapter-node { 
+        margin-bottom: 15px; 
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--lt-border);
+    }
+    .chapter-node:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+    .chapter-node > label { 
+        font-weight: bold; 
+        font-size: 1.1em; 
+        cursor: pointer;
+    }
+    .chapter-node ul { 
+        list-style: none; 
+        padding-left: 25px; 
+        margin-top: 10px; 
+    }
+    .content-item-node { 
+        margin-bottom: 8px; 
+    }
+    .content-item-node label {
+        font-weight: normal;
+        cursor: pointer;
+    }
+    .import-actions { 
+        margin-top: 20px; 
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="import-container">
+    <div class="page-header">
+        <h2>{{ title }}</h2>
+    </div>
+
+    <div class="import-instructions">
+        <p><strong>How to use this tool:</strong></p>
+        <ol>
+            <li>Select a public course from the dropdown menu to load its content.</li>
+            <li>You can either select individual items to import or use the "Copy Entire Course" button for a full clone.</li>
+            <li>(Optional) Check the "override" box if you want to delete all existing content in this course first.</li>
+            <li>Click your desired import button to copy the items into your course.</li>
+        </ol>
+    </div>
+
+    <form id="import-form" method="post">
+        {% csrf_token %}
+        
+        <div class="form-field">
+            <label for="{{ form.source_course.id_for_label }}">{{ form.source_course.label }}</label>
+            {{ form.source_course }}
+        </div>
+
+        <div id="content-tree-container" style="display: none;">
+            <h4>Select Content to Import</h4>
+            <p><small>Select a chapter to automatically select all of its content.</small></p>
+            <div id="content-tree"></div>
+        </div>
+        
+        {{ form.selected_content }}
+
+        <div class="form-field" style="margin-top: 20px;">
+            <label>{{ form.override_content }} {{ form.override_content.label }}</label>
+            <div class="helptext"><strong>Warning:</strong> This will delete all existing chapters and content in this course before importing. This action cannot be undone.</div>
+        </div>
+
+        <div class="import-actions">
+            <a href="{% url 'instructor_my_courses' %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" name="import_selected_submit" class="btn btn-primary" id="submit-import-btn" disabled>Import Selected Content</button>
+            <button type="submit" name="copy_all_submit" class="btn btn-info" id="copy-all-btn" disabled>Copy Entire Course</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block labtech_extra_body %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const sourceCourseSelect = document.getElementById('{{ form.source_course.id_for_label }}');
+    const contentTreeContainer = document.getElementById('content-tree-container');
+    const contentTreeDiv = document.getElementById('content-tree');
+    const hiddenSelectionInput = document.getElementById('{{ form.selected_content.id_for_label }}');
+    const submitBtn = document.getElementById('submit-import-btn');
+    const copyAllBtn = document.getElementById('copy-all-btn');
+
+    async function fetchCourseContent(courseId) {
+        const url = `/api/course-content/${courseId}/`;
+        try {
+            const response = await fetch(url);
+            if (!response.ok) { throw new Error(`HTTP error! status: ${response.status}`); }
+            return await response.json();
+        } catch (error) {
+            console.error("Could not fetch course content:", error);
+            contentTreeDiv.innerHTML = `<p style="color: var(--lt-danger);">Error loading content. Please try again.</p>`;
+            return null;
+        }
+    }
+
+    function buildContentTree(data) {
+        const escapeHTML = value => String(value).replace(/[&<>"']/g, char => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        })[char]);
+        let html = '';
+        if (!data || ((!data.chapters || data.chapters.length === 0) && (!data.unassigned || data.unassigned.length === 0))) {
+            return '<p>This course has no content to import.</p>';
+        }
+        (data.chapters || []).forEach(chapter => {
+            html += `<div class="chapter-node">
+                        <label>
+                            <input type="checkbox" class="chapter-checkbox" value="${chapter.id}" data-chapter-id="${chapter.id}">
+                            <strong>${escapeHTML(chapter.title)}</strong>
+                        </label>
+                        <ul>`;
+            chapter.items.forEach(item => {
+                html += `<li class="content-item-node">
+                            <label>
+                                <input type="checkbox" class="content-checkbox" value="${item.id}" data-type="${item.type}" data-parent-chapter="${chapter.id}">
+                                ${escapeHTML(item.title)} <small>(${escapeHTML(item.type)})</small>
+                            </label>
+                         </li>`;
+            });
+            html += `</ul></div>`;
+        });
+        if (data.unassigned && data.unassigned.length) {
+            html += '<div class="chapter-node"><strong>Uncategorized Audio</strong><ul>';
+            data.unassigned.forEach(item => {
+                html += `<li><label><input type="checkbox" class="content-checkbox" value="${item.id}" data-type="audio">${escapeHTML(item.title)} (audio)</label></li>`;
+            });
+            html += '</ul></div>';
+        }
+        return html;
+    }
+
+    function updateSelection() {
+        // 1. INITIALIZE WITH *ALL* SINGULAR KEYS to match the corrected Python view
+        const selection = {
+            chapters: [],
+            textpage: [],
+            video: [],
+            audio: [],
+            quiz: [],
+            lab: [],
+            hotspotactivity: [],
+            draganddropactivity: [],
+            codingactivity: [],
+            scenarioactivity: [],
+            flashcarddeck: [],
+            pbqactivity: []
+        };
+        
+        document.querySelectorAll('#content-tree input[type="checkbox"]:checked').forEach(checkbox => {
+            if (checkbox.classList.contains('chapter-checkbox')) {
+                selection.chapters.push(checkbox.value);
+            } else if (checkbox.classList.contains('content-checkbox')) {
+                // 2. Use the singular type directly from the data attribute. No more complex pluralization.
+                const typeKey = checkbox.dataset.type;
+                
+                // 3. This check will now succeed for all content types
+                if (selection.hasOwnProperty(typeKey)) {
+                    selection[typeKey].push(checkbox.value);
+                }
+            }
+        });
+
+        hiddenSelectionInput.value = JSON.stringify(selection);
+        
+        const anyCheckboxChecked = document.querySelector('#content-tree input[type="checkbox"]:checked');
+        submitBtn.disabled = !anyCheckboxChecked;
+    }
+
+    sourceCourseSelect.addEventListener('change', async function() {
+        const courseId = this.value;
+        contentTreeContainer.style.display = 'none';
+        contentTreeDiv.innerHTML = '';
+        submitBtn.disabled = true;
+        copyAllBtn.disabled = true;
+
+        if (!courseId) return;
+        
+        copyAllBtn.disabled = false;
+        contentTreeDiv.innerHTML = '<p>Loading content...</p>';
+        contentTreeContainer.style.display = 'block';
+
+        const data = await fetchCourseContent(courseId);
+        if (data) {
+            contentTreeDiv.innerHTML = buildContentTree(data);
+        }
+    });
+
+    contentTreeDiv.addEventListener('change', function(event) {
+        const target = event.target;
+        if (target.type !== 'checkbox') return;
+
+        if (target.classList.contains('chapter-checkbox')) {
+            const chapterId = target.dataset.chapterId;
+            const items = document.querySelectorAll(`.content-checkbox[data-parent-chapter="${chapterId}"]`);
+            items.forEach(item => item.checked = target.checked);
+        }
+        
+        updateSelection();
+    });
+});
+</script>
+{% endblock %}

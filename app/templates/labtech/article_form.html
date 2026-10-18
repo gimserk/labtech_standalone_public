@@ -1,0 +1,90 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .form-container { max-width: 900px; margin: 0 auto; padding: 25px; }
+    .form-container h2 { text-align: center; color: var(--lt-text); margin-bottom: 25px; border-bottom: 1px solid var(--lt-border); padding-bottom: 15px; }
+    .form-field { margin-bottom: 20px; }
+    .form-field label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--lt-text); }
+    .form-field input[type="text"],
+    .form-field input[type="file"],
+    .form-field input[type="datetime-local"],
+    .form-field select,
+    .form-field textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid var(--lt-border);
+        border-radius: 4px;
+        box-sizing: border-box;
+        font-size: 0.95em;
+    }
+    .form-field textarea { min-height: 100px; resize: vertical; }
+    /* CKEditor specific adjustments if needed */
+    .django-ckeditor-widget { width: 100%; }
+    .form-field .helptext { font-size: 0.85em; color: var(--lt-muted); margin-top: 5px; }
+    .form-field .errorlist { list-style: none; padding: 0; margin: 5px 0 0 0; color: var(--lt-danger); font-size: 0.85em; }
+    .form-actions { margin-top: 30px; text-align: right; }
+    .btn { padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 1em; cursor: pointer; border: none; }
+    .btn-primary { background-color: var(--lt-primary); color: var(--lt-on-accent); }
+    .btn-primary:hover { background-color: var(--lt-primary-hover); color: var(--lt-on-accent); }
+    .btn-secondary { background-color: var(--lt-secondary); color: var(--lt-on-accent); margin-right: 10px; }
+    .btn-secondary:hover { background-color: var(--lt-secondary-hover); color: var(--lt-on-accent); }
+    .current-image { max-width: 200px; max-height: 150px; display: block; margin-top: 5px; border-radius: 4px; }
+</style>
+{# This is required for CKEditor to render its widget correctly #}
+{{ form.media }}
+{% endblock %}
+
+{% block labtech_content %}
+<div class="form-container">
+    <h2>{{ title }}</h2>
+
+    <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {% for error in form.non_field_errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% for field in form %}
+            <div class="form-field">
+                <label for="{{ field.id_for_label }}">
+                    {{ field.label }}
+                    {% if field.field.required and field.widget_type != 'checkbox' %}*{% endif %}
+                </label>
+                
+                {{ field }}
+
+                {% if field.name == "image" and form.instance.image %}
+                    <p style="margin-top: 5px;">Current image: <a href="{{ form.instance.image.url }}" target="_blank">{{ form.instance.image.name|cut:"community_articles/images/" }}</a></p>
+                    <img src="{{ form.instance.image.url }}" alt="Current image" class="current-image">
+                    <span style="font-size:0.8em; color:var(--lt-muted);">Check "Clear" to remove current image.</span>
+                {% endif %}
+
+                {% if field.help_text %}
+                    <div class="helptext">{{ field.help_text|safe }}</div>
+                {% endif %}
+                {% if field.errors %}
+                    <ul class="errorlist">
+                        {% for error in field.errors %}<li>{{ error }}</li>{% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        <div class="form-actions">
+            <a href="{% url 'labtech_manage_articles_list' %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">
+                {% if form.instance.pk %}Save Changes{% else %}Create Article{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

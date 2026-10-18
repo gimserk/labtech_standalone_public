@@ -1,0 +1,252 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    /* Main Layout */
+    .manager-container { display: flex; gap: 30px; }
+    .labels-panel { flex: 0 0 400px; }
+    .image-panel { flex-grow: 1; }
+
+    /* Manage Labels Form Styles */
+    #labels-form .input-group input[type="text"] {
+        flex-grow: 1; display: block; padding: .5rem .75rem; font-size: 1rem;
+        border: 1px solid var(--lt-border); border-radius: .375rem;
+        transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+    }
+    #labels-form .input-group input[type="text"]:focus {
+        border-color: var(--lt-primary); outline: 0; box-shadow: 0 0 0 .25rem rgba(13,110,253,.25); z-index: 2;
+    }
+    #labels-form .input-group-append .input-group-text {
+        display: flex; align-items: center; padding: .5rem .75rem; margin-left: -1px;
+        background-color: var(--lt-surface-muted); border: 1px solid var(--lt-border); border-radius: 0 .375rem .375rem 0;
+    }
+    #labels-form .input-group-text label { margin-bottom: 0; font-size: 0.9em; color: var(--lt-text); }
+    
+    /* Label Selector Radio List */
+    .label-item {
+        display: flex; align-items: center; padding: 8px; border: 1px solid var(--lt-border);
+        border-radius: 5px; margin-bottom: 10px; background-color: var(--lt-surface-muted);
+    }
+    .label-item input[type="radio"] { margin-right: 15px; }
+    .label-item.selected { background-color: var(--lt-info-subtle); border-color: var(--lt-border); }
+    .label-item label { margin-bottom: 0; font-weight: 500; }
+
+    /* Image & Hotspot Styles */
+    #hotspot-container {
+        position: relative; display: inline-block; border: 2px solid var(--lt-border); cursor: crosshair;
+    }
+    #hotspot-container img { display: block; max-width: 100%; height: auto; }
+    .hotspot {
+        position: absolute; border: 2px solid; background-color: rgba(255, 255, 255, 0.4);
+        box-sizing: border-box; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+    .hotspot-text {
+        background-color: rgba(0, 0, 0, 0.7); color: var(--lt-nav-text); padding: 2px 8px;
+        font-size: 12px; border-radius: 3px;
+    }
+    #temp-rect { position: absolute; border: 2px dotted var(--lt-danger); visibility: hidden; }
+
+    /* Button Styles */
+    .btn {
+        display: inline-block; font-weight: 600; text-align: center; cursor: pointer;
+        border: 1px solid transparent; padding: 0.5rem 1rem; font-size: 1rem;
+        border-radius: 0.375rem; text-decoration: none; transition: all 0.2s ease-in-out;
+    }
+    .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.875rem; }
+    .btn-info { color: var(--lt-on-accent); background-color: var(--lt-info); border-color: var(--lt-info); }
+    .btn-info:hover { background-color: var(--lt-info-hover); color: var(--lt-on-accent); }
+    .btn-success { color: var(--lt-on-accent); background-color: var(--lt-success); border-color: var(--lt-success); }
+    .btn-success:hover { background-color: var(--lt-success-hover); color: var(--lt-on-accent); }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="container-fluid">
+    <h2>{{ title }}</h2>
+    <p>
+        <strong>Step 1:</strong> Create all possible text labels on the left. <br>
+        <strong>Step 2:</strong> Select a label by clicking its radio button. <br>
+        <strong>Step 3:</strong> Click and drag on the image to draw the hotspot for the selected label.
+    </p>
+    <hr>
+    
+    <div class="manager-container">
+        <div class="labels-panel">
+            <h4>1. Manage Labels</h4>
+            <form method="post" id="labels-form">
+                {% csrf_token %}
+                {{ formset.management_form }}
+                
+                <div id="label-form-list">
+                    {% for form in formset %}
+                        <div class="input-group mb-2 label-form">
+                            {{ form.id }}
+                            {{ form.text }}
+                            {% if form.instance.pk %}
+                            <div class="input-group-append">
+                                <div class="input-group-text">
+                                    {{ form.DELETE }} <label for="{{ form.DELETE.id_for_label }}" class="ms-1">Delete</label>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <button type="button" id="add-label-btn" class="btn btn-sm btn-info mt-2">+ Add Another Label</button>
+                
+                <hr>
+                <button type="submit" class="btn btn-success">Save Labels</button>
+            </form>
+
+            <div id="empty-form-template" style="display: none;">
+                <div class="input-group mb-2 label-form">
+                    {{ formset.empty_form.id }}
+                    {{ formset.empty_form.text }}
+                </div>
+            </div>
+
+            <h4 class="mt-4">2. Select a Label to Draw</h4>
+            <div id="label-selector">
+                {% for label in activity.labels.all %}
+                    <div class="label-item" id="label-item-{{label.id}}">
+                        <input type="radio" name="selected_label" value="{{ label.id }}" id="radio-{{label.id}}">
+                        <label for="radio-{{label.id}}">{{ label.text }}</label>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="image-panel">
+            <h4>3. Define Hotspots on Image</h4>
+            <div id="hotspot-container">
+                <img src="{{ activity.background_image.url }}" id="hotspot-image" alt="Activity Background">
+                <div id="temp-rect"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block labtech_extra_body %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- SHARED SETUP ---
+    const csrfToken = '{{ csrf_token }}';
+
+    // --- LOGIC FOR HOTSPOT DRAWING ---
+    const container = document.getElementById('hotspot-container');
+    const image = document.getElementById('hotspot-image');
+    const tempRect = document.getElementById('temp-rect');
+    const hotspotsData = JSON.parse('{{ hotspots_json|escapejs }}');
+    const labelColors = ['#007bff', '#28a745', '#dc3545', '#ffc107', '#17a2b8', '#6610f2', '#fd7e14'];
+    let isDrawing = false, startX, startY, selectedLabelId = null, selectedLabelText = '';
+
+    function getColorForLabel(labelId) { return labelColors[parseInt(labelId) % labelColors.length]; }
+    
+    document.querySelectorAll('input[name="selected_label"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            selectedLabelId = this.value;
+            selectedLabelText = this.nextElementSibling.innerText;
+            document.querySelectorAll('.label-item').forEach(item => item.classList.remove('selected'));
+            this.parentElement.classList.add('selected');
+        });
+    });
+
+    container.addEventListener('mousedown', (e) => {
+        if (!selectedLabelId) { alert('Please select a label from the list before drawing a hotspot.'); return; }
+        if (e.target.closest('.hotspot')) return;
+        isDrawing = true;
+        startX = e.offsetX;
+        startY = e.offsetY;
+        Object.assign(tempRect.style, {left: startX + 'px', top: startY + 'px', width: '0px', height: '0px', visibility: 'visible'});
+    });
+
+    container.addEventListener('mousemove', (e) => {
+        if (!isDrawing) return;
+        const width = e.offsetX - startX, height = e.offsetY - startY;
+        Object.assign(tempRect.style, {
+            width: Math.abs(width) + 'px', height: Math.abs(height) + 'px',
+            left: (width > 0 ? startX : e.offsetX) + 'px', top: (height > 0 ? startY : e.offsetY) + 'px'
+        });
+    });
+
+    container.addEventListener('mouseup', (e) => {
+        if (!isDrawing) return;
+        isDrawing = false;
+        tempRect.style.visibility = 'hidden';
+        if (parseFloat(tempRect.style.width) < 10 || parseFloat(tempRect.style.height) < 10) return;
+        saveHotspot({
+            label_id: parseInt(selectedLabelId),
+            x_coord: (parseFloat(tempRect.style.left) / image.offsetWidth) * 100,
+            y_coord: (parseFloat(tempRect.style.top) / image.offsetHeight) * 100,
+            width: (parseFloat(tempRect.style.width) / image.offsetWidth) * 100,
+            height: (parseFloat(tempRect.style.height) / image.offsetHeight) * 100
+        });
+    });
+
+    function saveHotspot(data) {
+        fetch(`{% url 'api_save_hotspot' activity_id=activity.id %}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify(data)
+        }).then(res => res.json()).then(result => {
+            if (result.status === 'success') {
+                renderHotspot({...data, id: result.hotspot_id, label_text: selectedLabelText});
+            } else { alert('Error saving hotspot: ' + (result.message || 'Unknown error')); }
+        });
+    }
+
+    function renderHotspot(hotspot) {
+        const div = document.createElement('div');
+        div.className = 'hotspot';
+        div.dataset.id = hotspot.id;
+        Object.assign(div.style, {
+            left: hotspot.x_coord + '%', top: hotspot.y_coord + '%',
+            width: hotspot.width + '%', height: hotspot.height + '%',
+            borderColor: getColorForLabel(hotspot.label_id)
+        });
+        const textSpan = document.createElement('span');
+        textSpan.className = 'hotspot-text';
+        textSpan.innerText = hotspot.label_text;
+        div.appendChild(textSpan);
+        div.addEventListener('click', () => {
+            if (confirm(`Delete hotspot for "${hotspot.label_text}"?`)) deleteHotspot(hotspot.id, div);
+        });
+        container.appendChild(div);
+    }
+    
+    function deleteHotspot(hotspotId, elementToRemove) {
+        fetch(`{% url 'api_delete_hotspot' hotspot_id=0 %}`.replace('0', hotspotId), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken }
+        }).then(res => res.json()).then(result => {
+            if (result.status === 'success') elementToRemove.remove();
+            else alert('Error deleting hotspot: ' + (result.message || 'Unknown error'));
+        });
+    }
+
+    hotspotsData.forEach(hotspot => renderHotspot({
+        id: hotspot.id, x_coord: hotspot.x, y_coord: hotspot.y,
+        width: hotspot.width, height: hotspot.height,
+        label_id: hotspot.label_id, label_text: hotspot.label_text,
+    }));
+    
+    // --- LOGIC FOR DYNAMICALLY ADDING LABEL FORMS ---
+    const addLabelBtn = document.getElementById('add-label-btn');
+    const formList = document.getElementById('label-form-list');
+    const emptyFormTemplate = document.getElementById('empty-form-template').innerHTML;
+    const totalFormsInput = document.querySelector('#id_labels-TOTAL_FORMS'); // Correct ID for the formset management
+
+    addLabelBtn.addEventListener('click', function() {
+        let formIndex = parseInt(totalFormsInput.value);
+        const newFormHtml = emptyFormTemplate.replace(/__prefix__/g, formIndex);
+        formList.insertAdjacentHTML('beforeend', newFormHtml);
+        totalFormsInput.value = formIndex + 1;
+    });
+});
+</script>
+{% endblock %}

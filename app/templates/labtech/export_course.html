@@ -1,0 +1,71 @@
+{% extends "labtech/generic_base.html" %}
+
+{% block labtech_title %}Export {{ course.title }}{% endblock %}
+
+{% block labtech_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Export Course</h1>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Export Options for "{{ course.title }}"</h5>
+    </div>
+    <div class="card-body">
+        <p>Select the course content and resources to include in a <code>.coursepkg</code> file for another LabTech installation. The package does not contain full grade history, student submissions or forum discussions; export those separately if needed.</p>
+        <hr>
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="mb-3">
+                {{ form.export_content.label_tag }}
+                <div class="form-check form-switch">
+                    {{ form.export_content }}
+                    <label class="form-check-label" for="{{ form.export_content.id_for_label }}">{{ form.export_content.help_text }}</label>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                {{ form.export_resources.label_tag }}
+                <div class="form-check form-switch">
+                    {{ form.export_resources }}
+                </div>
+            </div>
+
+            <div class="mb-3">
+                {{ form.export_enrollments.label_tag }}
+                <div class="form-check form-switch">
+                    {{ form.export_enrollments }}
+                    <label class="form-check-label" for="{{ form.export_enrollments.id_for_label }}">{{ form.export_enrollments.help_text }}</label>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                {{ form.export_grades.label_tag }}
+                <div class="form-check form-switch">
+                    {{ form.export_grades }}
+                    <label class="form-check-label" for="{{ form.export_grades.id_for_label }}">{{ form.export_grades.help_text }}</label>
+                </div>
+                 {% if form.export_grades.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.export_grades.errors.as_text }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                {{ form.export_forum.label_tag }}
+                <div class="form-check form-switch">
+                    {{ form.export_forum }}
+                    <label class="form-check-label" for="{{ form.export_forum.id_for_label }}">{{ form.export_forum.help_text }}</label>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <a href="{% url 'instructor_my_courses' %}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-download me-2"></i>Export Course Package</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

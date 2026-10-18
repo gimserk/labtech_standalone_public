@@ -1,0 +1,33 @@
+{% extends 'labtech/generic_base.html' %}
+{% block labtech_content %}
+<main class="container py-4">
+  <h1>Checks for Step {{ step.order }}{% if step.title %}: {{ step.title }}{% endif %}</h1>
+  <p>Every active check is required before students can finish the lab.</p>
+  <a class="btn btn-primary" href="{% url 'create_step_check' course.id lab.id step.id %}">Add check</a>
+  <a class="btn btn-outline-secondary" href="{% url 'lab_check_history' course.id lab.id %}">Attempt history</a>
+  <a class="btn btn-outline-secondary" href="{% url 'labtech_manage_lab_steps' course.id lab.id %}">Back to steps</a>
+  <form method="post" action="{% url 'reorder_step_checks' course.id lab.id step.id %}">
+    {% csrf_token %}
+    <ol class="list-group my-3">
+      {% for check in checks %}
+        <li class="list-group-item">
+          <input type="hidden" name="check_ids" value="{{ check.id }}">
+          <strong>{{ check.student_label }}</strong> — {{ check.lab_machine.name }} ({{ check.lab_machine.guest_os }})
+          <span class="badge bg-secondary">{{ check.check_type }}</span>
+          {% if not check.is_active %}<span class="badge bg-warning text-dark">Inactive</span>{% endif %}
+          <a href="{% url 'edit_step_check' course.id lab.id check.id %}">Edit</a>
+          <button type="submit" class="btn btn-sm btn-outline-secondary" form="toggle-{{ check.id }}">{% if check.is_active %}Deactivate{% else %}Activate{% endif %}</button>
+          {% if check.is_active %}<button type="submit" class="btn btn-sm btn-outline-primary" form="preview-{{ check.id }}">Test on My Lab</button>{% endif %}
+          <button type="submit" class="btn btn-sm btn-outline-danger" form="remove-{{ check.id }}">Remove</button>
+        </li>
+      {% empty %}<li class="list-group-item">No checks configured.</li>{% endfor %}
+    </ol>
+    {% if checks %}<button class="btn btn-outline-primary" type="submit">Save order</button>{% endif %}
+  </form>
+  {% for check in checks %}
+    <form id="toggle-{{ check.id }}" method="post" action="{% url 'deactivate_step_check' course.id lab.id check.id %}">{% csrf_token %}</form>
+    <form id="preview-{{ check.id }}" method="post" action="{% url 'preview_step_check' course.id lab.id check.id %}">{% csrf_token %}</form>
+    <form id="remove-{{ check.id }}" method="post" action="{% url 'remove_step_check' course.id lab.id check.id %}">{% csrf_token %}</form>
+  {% endfor %}
+</main>
+{% endblock %}

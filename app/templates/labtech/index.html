@@ -1,0 +1,62 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}Dashboard{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .view-as-switcher {
+        padding: 0.75rem 1.25rem;
+        margin-bottom: 1.5rem;
+        background-color: var(--lt-surface-muted);
+        border: 1px solid var(--lt-border);
+        border-radius: .375rem;
+        font-size: 0.95rem;
+    }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">Dashboard</h1>
+    </div>
+
+    {# --- 🔄 VIEW AS SWITCHER --- #}
+    {% if active_roles|length > 1 %}
+    <div class="view-as-switcher">
+        <strong>View Dashboard As:</strong>
+        
+        {% if 'superuser' in active_roles %}
+        <a href="{% url 'home' %}" class="{% if dashboard_to_render == 'superuser' %}fw-bold text-decoration-none{% endif %}">
+            Site Admin
+        </a>
+        {% endif %}
+        
+        {% if 'instructor' in active_roles %}
+        {% if 'superuser' in active_roles %}|{% endif %}
+        <a href="{% url 'home' %}?view_as=instructor" class="ms-2 {% if dashboard_to_render == 'instructor' %}fw-bold text-decoration-none{% endif %}">
+            Instructor
+        </a>
+        {% endif %}
+
+        {% if 'student' in active_roles %}
+        {% if 'superuser' in active_roles or 'instructor' in active_roles %}|{% endif %}
+        <a href="{% url 'home' %}?view_as=student" class="ms-2 {% if dashboard_to_render == 'student' %}fw-bold text-decoration-none{% endif %}">
+            Student
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {# --- INCLUDE THE CORRECT DASHBOARD PARTIAL --- #}
+    {% if dashboard_to_render == 'superuser' %}
+        {% include "labtech/partials/superuser_dashboard.html" %}
+    {% elif dashboard_to_render == 'instructor' %}
+        {# You will need to create/update this file for your instructor content #}
+        {% include "labtech/partials/instructor_dashboard.html" %}
+    {% else %}
+        {# You will need to create/update this file for your student content #}
+        {% include "labtech/partials/student_dashboard.html" %}
+    {% endif %}
+
+{% endblock %}

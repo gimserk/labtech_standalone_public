@@ -1,0 +1,48 @@
+name: Native installer tests
+on:
+  pull_request:
+    paths:
+      - 'deploy/**'
+      - '.github/workflows/installer-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'deploy/**'
+jobs:
+  shell:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ShellCheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - name: Bash syntax and ShellCheck
+        run: bash -n deploy/install.sh deploy/tests/test_install.sh && shellcheck deploy/install.sh deploy/tests/test_install.sh
+      - name: Installer safety tests
+        run: bash deploy/tests/test_install.sh
+  django:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install native build dependencies
+        run: sudo apt-get update && sudo apt-get install -y python3-venv python3-dev build-essential pkg-config default-libmysqlclient-dev libldap2-dev libsasl2-dev libssl-dev libxml2-dev libxslt1-dev libjpeg-dev zlib1g-dev libffi-dev
+      - name: Install standalone requirements
+        run: |
+          python3 -m venv /tmp/labtech-installer-ci
+          /tmp/labtech-installer-ci/bin/python -m pip install -r requirements.txt
+          /tmp/labtech-installer-ci/bin/python -m pip check
+      - name: Validate deployment settings and Django imports
+        env:
+          DJANGO_SECRET_KEY: ci-only-not-for-production
+          DJANGO_DEBUG: 'False'
+          DB_NAME: labtech_ci
+          DB_USER: labtech_ci
+          DB_PASSWORD: ci-only-password
+          DB_HOST: localhost
+          DB_PORT: '3306'
+          ALLOWED_HOSTS: localhost
+          SITE_URL: http://localhost
+          CSRF_TRUSTED_ORIGINS: http://localhost
+        run: |
+          LABTECH_INSTALL_TESTING=1 bash -c 'source deploy/install.sh; render_deployment_settings > /tmp/deployment_settings.py'
+          /tmp/labtech-installer-ci/bin/python -m py_compile /tmp/deployment_settings.py
+          PYTHONPATH="/tmp:$PWD" DJANGO_SETTINGS_MODULE=deployment_settings /tmp/labtech-installer-ci/bin/python manage.py check

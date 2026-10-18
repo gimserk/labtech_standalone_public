@@ -1,0 +1,64 @@
+{% extends "labtech/generic_base.html" %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_content %}
+<div class="container" style="max-width: 800px;">
+    <h1 class="h3 mb-4">{{ title }}</h1>
+    <div class="card">
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="{{ form.name.id_for_label }}" class="form-label">Template Name</label>
+                    {{ form.name }}
+                    <small class="form-text text-muted">{{ form.name.help_text }}</small>
+                </div>
+
+                <div class="mb-3">
+                    <label for="{{ form.course.id_for_label }}" class="form-label">Assigned Course</label>
+                    {{ form.course }}
+                    <small class="form-text text-muted">{{ form.course.help_text }}</small>
+                </div>
+
+                <div class="mb-3">
+                    <label for="{{ form.background_image.id_for_label }}" class="form-label">Background Image</label>
+                    {% if form.instance.background_image %}
+                        <p class="mb-2">Current: <a href="{{ form.instance.background_image.url }}" target="_blank">{{ form.instance.background_image.name }}</a></p>
+                    {% endif %}
+                    {{ form.background_image }}
+                    <small class="form-text text-muted">{{ form.background_image.help_text }}</small>
+                </div>
+
+                <hr class="my-4">
+                <h5>Text Placement (in Pixels)</h5>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.student_name_y_coord.id_for_label }}" class="form-label">Student Name (Y-coord)</label>
+                        {{ form.student_name_y_coord }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.course_name_y_coord.id_for_label }}" class="form-label">Course Name (Y-coord)</label>
+                        {{ form.course_name_y_coord }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.completion_date_y_coord.id_for_label }}" class="form-label">Date (Y-coord)</label>
+                        {{ form.completion_date_y_coord }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.font_color.id_for_label }}" class="form-label">Font Color</label>
+                        {{ form.font_color }}
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-primary">Save Template</button>
+                    <a href="{% url 'manage_certificate_templates' %}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

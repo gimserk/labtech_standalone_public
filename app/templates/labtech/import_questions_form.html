@@ -1,0 +1,48 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_content %}
+<div class="container" style="max-width: 900px;">
+    <h2>{{ title }}</h2>
+    <hr>
+    
+    <div class="alert alert-info">
+        <h5>CSV Formatting Instructions</h5>
+        <p>Please ensure your CSV file has the following header row exactly as written:</p>
+        <code>question_text,question_type,points,choice1,choice2,choice3,choice4,choice5,choice6,correct_choice</code>
+        <ul>
+            <li><strong>question_type:</strong> Must be one of `MCQ`, `TF`, or `SA`.</li>
+            <li><strong>MCQ:</strong> Fill in `choice` columns and set `correct_choice` to the number of the correct column (e.g., 1, 2, 3).</li>
+            <li><strong>TF:</strong> Set `correct_choice` to `TRUE` or `FALSE`.</li>
+            <li><strong>SA:</strong> Fill in `choice` columns with all acceptable correct answers.</li>
+        </ul>
+        
+        <p class="mt-3">
+            <a href="{% static 'downloads/sample_quiz_import.csv' %}" class="btn btn-sm btn-outline-secondary" download>
+                Download Sample CSV File
+            </a>
+        </p>
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="{{ form.csv_file.id_for_label }}" class="form-label">{{ form.csv_file.label }}</label>
+            {{ form.csv_file }}
+            <small class="form-text text-muted">{{ form.csv_file.help_text }}</small>
+            {{ form.csv_file.errors }}
+        </div>
+
+        {# --- NEW CHECKBOX --- #}
+        <div class="mb-3 form-check">
+            {{ form.add_to_bank }}
+            <label class="form-check-label" for="{{ form.add_to_bank.id_for_label }}">{{ form.add_to_bank.label }}</label>
+            <small class="form-text text-muted d-block">{{ form.add_to_bank.help_text }}</small>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Import Questions</button>
+        <a href="{% url 'labtech_manage_quiz_questions' course_id=course.id quiz_id=quiz.id %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

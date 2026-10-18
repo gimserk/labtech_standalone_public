@@ -1,0 +1,151 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}Manage Subscription Plans{% endblock %}
+
+{% block labtech_extra_head %}
+    <script src="{% static 'app/js/Sortable.min.js' %}"></script>
+
+    <style>
+        .management-container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--lt-border);
+        }
+        .page-header h2 { margin: 0; color: var(--lt-text); font-size: 1.8em; }
+
+        /* Themed Button Styles */
+        .btn {
+            padding: 8px 15px; text-decoration: none; border-radius: 5px; font-size: 0.9em;
+            cursor: pointer; border: none; display: inline-block; margin-left: 10px;
+        }
+        .btn-primary { background-color: var(--lt-primary); color: var(--lt-on-accent); }
+        .btn-primary:hover { background-color: var(--lt-primary-hover); color: var(--lt-on-accent); }
+        .btn-edit { background-color: var(--lt-warning); color: var(--lt-on-warning); }
+        .btn-edit:hover { background-color: var(--lt-warning-hover); color: var(--lt-on-warning); }
+        .btn-sm { font-size: 0.8em; padding: 5px 10px; }
+
+        /* Themed Table Styles */
+        .table-responsive { overflow-x: auto; margin-top: 20px; }
+        .styled-table { width: 100%; border-collapse: collapse; font-size: 0.9em; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .styled-table th, .styled-table td { border: 1px solid var(--lt-border); padding: 12px 15px; text-align: left; vertical-align: middle; }
+        .styled-table th { background-color: var(--lt-surface-muted); color: var(--lt-text); font-weight: 600; text-transform: uppercase; font-size: 0.85em; }
+        .styled-table tbody tr:nth-child(even) { background-color: var(--lt-surface-muted); }
+        .styled-table tbody tr:hover { background-color: var(--lt-surface-muted); }
+        
+        /* Drag and Drop Specific Styles */
+        .drag-handle {
+            cursor: grab;
+            text-align: center;
+            color: var(--lt-muted);
+            width: 30px;
+            font-size: 1.2em;
+        }
+        tr.sortable-ghost {
+            opacity: 0.4;
+            background-color: var(--lt-info-subtle);
+        }
+        tr.sortable-chosen {
+            background-color: var(--lt-info-subtle);
+        }
+    </style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="management-container">
+    <div class="page-header">
+        <h2>Manage Subscription Plans</h2>
+        <a href="{% url 'labtech_add_subscription_plan' %}" class="btn btn-primary">Add New Plan</a>
+    </div>
+
+    <p>Drag and drop the rows to reorder the plan hierarchy. The top item is Level 1.</p>
+
+    <div class="table-responsive">
+        <table class="styled-table">
+    <thead>
+        <tr>
+            <th></th>
+            <th>Plan Name</th>
+            <th>Level</th>
+            <th>Price</th>
+            <th>Stripe Key</th> <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody id="sortable-plans">
+        {% for plan in subscription_plans %}
+            <tr data-id="{{ plan.id }}">
+                <td class="drag-handle">✥</td>
+                <td>{{ plan.name }}</td>
+                <td class="plan-level">{{ plan.level }}</td>
+                <td>${{ plan.price }}</td>
+                <td><code>{{ plan.stripe_price_lookup_key|default:"Not Set" }}</code></td>
+                <td>
+                    <a href="{% url 'labtech_edit_subscription_plan' plan_id=plan.id %}" class="btn btn-sm btn-edit">Edit</a>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+    </div>
+</div>
+{% endblock %}
+
+{% block labtech_extra_body %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const sortableList = document.getElementById('sortable-plans');
+    const url = "{% url 'labtech_update_plan_order' %}";
+    const csrfToken = "{{ csrf_token }}";
+
+    new Sortable(sortableList, {
+        animation: 150,
+        handle: '.drag-handle', // Specify the drag handle
+        ghostClass: 'sortable-ghost',
+        chosenClass: 'sortable-chosen',
+        
+        // This function is called when the user finishes dragging an item
+        onEnd: function (evt) {
+            // 1. Get all the rows in their new order
+            const planRows = sortableList.querySelectorAll('tr');
+            
+            // 2. Create an array of the plan IDs in the new order
+            const newOrder = Array.from(planRows).map(row => row.dataset.id);
+
+            // 3. Update the "Level" column on the frontend immediately for feedback
+            planRows.forEach((row, index) => {
+                row.querySelector('.plan-level').textContent = index + 1;
+            });
+
+            // 4. Send the new order to the backend
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: JSON.stringify({ new_order: newOrder }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // You could show a success message here if you want
+                    console.log('Order saved successfully!');
+                } else {
+                    // Handle errors, maybe revert the list or show an alert
+                    console.error('Failed to save order:', data.message);
+                    alert('An error occurred while saving the new order.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('A network error occurred.');
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

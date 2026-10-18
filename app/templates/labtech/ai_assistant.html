@@ -1,0 +1,212 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    #chat-container {
+        display: flex;
+        flex-direction: column;
+        height: 75vh; /* Adjusted height for better viewing */
+        border: 1px solid var(--lt-border);
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+    #chat-messages {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding: 1rem;
+    }
+    .message {
+        margin-bottom: 1rem;
+        display: flex;
+        max-width: 85%;
+        word-wrap: break-word; /* Ensure long words break */
+    }
+    .message .content {
+        padding: 0.75rem 1rem;
+        border-radius: 1rem;
+        line-height: 1.5;
+    }
+    .message.user {
+        justify-content: flex-end;
+        align-self: flex-end; /* Align the whole container to the right */
+        margin-left: auto;
+    }
+    .message.user .content {
+        background-color: var(--lt-primary);
+        color: var(--lt-on-accent);
+        border-bottom-right-radius: 0.25rem;
+    }
+    .message.assistant {
+        justify-content: flex-start;
+        align-self: flex-start; /* Align the whole container to the left */
+    }
+    .message.assistant .content {
+        background-color: var(--lt-surface-muted);
+        color: var(--lt-text);
+        border-bottom-left-radius: 0.25rem;
+    }
+    [data-bs-theme="dark"] .message.assistant .content {
+        background-color: var(--lt-surface-muted);
+        color: var(--lt-text);
+    }
+    .message-error {
+        color: var(--lt-danger);
+        font-style: italic;
+        text-align: center;
+        padding: 1rem;
+    }
+    #chat-form {
+        border-top: 1px solid var(--lt-border);
+        padding: 1rem;
+    }
+
+    /* Bouncing Loader Animation */
+    .bouncing-loader {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 0; /* Match message padding */
+    }
+    .bouncing-loader div {
+        width: 8px;
+        height: 8px;
+        margin: 0 3px;
+        background-color: var(--lt-secondary);
+        border-radius: 50%;
+        animation: bouncing-loader 0.6s infinite alternate;
+        color: var(--lt-on-accent);
+    }
+    .bouncing-loader div:nth-child(2) { animation-delay: 0.2s; }
+    .bouncing-loader div:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bouncing-loader {
+        to {
+            opacity: 0.3;
+            transform: translateY(-8px);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="container mt-4">
+    <h1 class="mb-3"><i class="fas fa-robot me-2"></i>AI Tutor: {{ assistant.name }}</h1>
+    <label for="tutor-course" class="form-label">Use material from a course</label>
+    <select id="tutor-course" class="form-select mb-3" {% if not assistant.tutor_grounding_enabled %}disabled{% endif %}>
+        <option value="">General tutoring</option>
+        {% for course in courses %}<option value="{{ course.pk }}">{{ course.title }}</option>{% endfor %}
+    </select>
+    {% if assistant.tutor_grounding_enabled %}
+    <p class="text-muted">Choose a course for material-based answers. The tutor cites matching source titles when available.</p>
+    {% else %}<p class="text-muted">Course material search is currently off. A site administrator can enable it in AI Tutor settings.</p>{% endif %}
+    
+    <div id="chat-container" class="bg-white shadow-sm">
+        <div id="chat-messages">
+            <div class="message assistant">
+                <div class="content">
+                    Hello! I am {{ assistant.name }}. How can I help you today?
+                </div>
+            </div>
+        </div>
+        <form id="chat-form" class="bg-light">
+             {% csrf_token %}
+            <div class="input-group">
+                <input type="text" id="message-input" class="form-control form-control-lg" placeholder="Type your message here..." autocomplete="off" required>
+                <button type="submit" class="btn btn-primary" id="send-button">
+                    <i class="fas fa-paper-plane"></i> Send
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block labtech_extra_body %}
+<script src="{% static 'labtech/js/ai_stream.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const chatForm = document.getElementById('chat-form');
+    const messageInput = document.getElementById('message-input');
+    const sendButton = document.getElementById('send-button');
+    const chatMessages = document.getElementById('chat-messages');
+    const courseSelect = document.getElementById('tutor-course');
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    let conversationHistory = [];
+    courseSelect.addEventListener('change', function () {
+        conversationHistory = [];
+        chatMessages.replaceChildren();
+        addMessage('assistant', 'Course changed. Ask a new question to start a fresh conversation.');
+    });
+
+    function addMessage(role, text = '', isLoading = false) {
+        const messageContainer = document.createElement('div');
+        messageContainer.className = `message ${role}`;
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'content';
+
+        if (isLoading) {
+             contentDiv.innerHTML = `<div class="bouncing-loader"><div></div><div></div><div></div></div>`;
+        } else {
+            contentDiv.innerText = text;
+        }
+        
+        messageContainer.appendChild(contentDiv);
+        chatMessages.appendChild(messageContainer);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        return contentDiv;
+    }
+
+    chatForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const userMessage = messageInput.value.trim();
+        if (!userMessage) return;
+
+        addMessage('user', userMessage);
+        conversationHistory.push({ role: 'user', content: userMessage });
+        messageInput.value = '';
+        sendButton.disabled = true;
+        courseSelect.disabled = true;
+
+        const assistantMessageContent = addMessage('assistant', '', true);
+
+        try {
+            const response = await fetch("{% url 'ai_assistant_proxy' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    messages: conversationHistory,
+                    course_id: courseSelect.value || null
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `Server error! Status: ${response.status}`);
+            }
+
+            assistantMessageContent.innerHTML = '';
+            const fullResponse = await LabTechAIStream.consume(response, text => {
+                assistantMessageContent.textContent = text;
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            });
+            conversationHistory.push({ role: 'assistant', content: fullResponse });
+
+        } catch (error) {
+            console.error('Error communicating with AI tutor:', error);
+            assistantMessageContent.textContent = `Sorry, an error occurred: ${error.message}`;
+            conversationHistory.pop();
+        } finally {
+            sendButton.disabled = false;
+            courseSelect.disabled = {{ assistant.tutor_grounding_enabled|yesno:'false,true' }};
+            messageInput.focus();
+        }
+    });
+});
+</script>
+{% endblock %}

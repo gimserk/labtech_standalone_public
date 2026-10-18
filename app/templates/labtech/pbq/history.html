@@ -1,0 +1,6 @@
+{% extends 'labtech/generic_base.html' %}
+{% block labtech_content %}
+<h1>{{ activity.title }}</h1><p>This PBQ is closed for new work. Your submitted attempts remain available.</p>
+<ul>{% for attempt in history %}<li><a href="{% url 'pbq_result' course.id activity.id attempt.id %}">Attempt {{ attempt.attempt_number }} — {{ attempt.get_state_display }}</a></li>{% endfor %}</ul>
+<a href="{% url 'course_detail' course.id %}">Back to course</a>
+{% endblock %}

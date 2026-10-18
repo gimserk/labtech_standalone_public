@@ -1,0 +1,165 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    /* Styles to match your other forms */
+    .form-container {
+        padding: 25px;
+        background-color: var(--lt-surface);
+        border: 1px solid var(--lt-border);
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    }
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    .form-label {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+    /* Targets the input/select/textarea fields rendered by Django */
+    .form-group input[type="text"],
+    .form-group input[type="file"],
+    .form-group input[type="number"],
+    .form-group input[type="datetime-local"],
+    .form-group select {
+        display: block;
+        width: 100%;
+        padding: .575rem .75rem;
+        font-size: 1rem;
+        line-height: 1.5;
+        color: var(--lt-text);
+        background-color: var(--lt-surface);
+        border: 1px solid var(--lt-border);
+        border-radius: .375rem;
+        transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+    }
+    .form-group input:focus, .form-group select:focus {
+        border-color: var(--lt-primary);
+        outline: 0;
+        box-shadow: 0 0 0 .25rem rgba(13,110,253,.25);
+    }
+    .form-text {
+        font-size: .875em;
+        color: var(--lt-muted);
+    }
+    .btn-container {
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--lt-border);
+    }
+    /* --- Add these styles for the buttons --- */
+.btn {
+    display: inline-block;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    border: 1px solid transparent;
+    padding: 0.6rem 1.2rem;
+    font-size: 1rem;
+    border-radius: 0.375rem;
+    text-decoration: none;
+    transition: all 0.2s ease-in-out;
+}
+.btn-primary {
+    color: var(--lt-on-accent);
+    background-color: var(--lt-primary);
+    border-color: var(--lt-primary);
+}
+.btn-primary:hover {
+    background-color: var(--lt-primary-hover);
+    border-color: var(--lt-primary);
+ color: var(--lt-on-accent); }
+.btn-secondary {
+    color: var(--lt-on-accent);
+    background-color: var(--lt-secondary);
+    border-color: var(--lt-border);
+}
+.btn-secondary:hover {
+    background-color: var(--lt-secondary-hover);
+    border-color: var(--lt-border);
+ color: var(--lt-on-accent); }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="form-container">
+    <h2>{{ title }}</h2>
+    <hr>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="{{ form.title.id_for_label }}" class="form-label">Title</label>
+            {{ form.title }}
+            {{ form.title.errors }}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.chapter.id_for_label }}" class="form-label">Chapter (Optional)</label>
+            {{ form.chapter }}
+            {{ form.chapter.errors }}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.order.id_for_label }}" class="form-label">Order</label>
+            {{ form.order }}
+            {{ form.order.errors }}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.scenario.id_for_label }}" class="form-label">Scenario / Instructions</label>
+            {{ form.scenario.media }}
+            {{ form.scenario }}
+            {{ form.scenario.errors }}
+        </div>
+        
+        <div class="form-group">
+            <label for="{{ form.background_image.id_for_label }}" class="form-label">Background Image</label>
+            <p class="form-text mt-0">Upload the image students will interact with.</p>
+            {{ form.background_image }}
+            {{ form.background_image.errors }}
+            {% if form.instance.background_image %}
+                <p class="mt-2">Current image:</p>
+                <img src="{{ form.instance.background_image.url }}" alt="Current background" style="max-width: 300px; height: auto; border: 1px solid var(--lt-border); padding: 5px;">
+            {% endif %}
+        </div>
+
+        {% if course.institution %}
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="{{ form.available_from.id_for_label }}" class="form-label">Available From</label>
+                        {{ form.available_from }}
+                        {{ form.available_from.errors }}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="{{ form.due_date.id_for_label }}" class="form-label">Due Date</label>
+                        {{ form.due_date }}
+                        {{ form.due_date.errors }}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                     <div class="form-group">
+                        <label for="{{ form.available_until.id_for_label }}" class="form-label">Available Until</label>
+                        {{ form.available_until }}
+                        {{ form.available_until.errors }}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="btn-container">
+            <button type="submit" class="btn btn-primary">Save and Continue</button>
+            <a href="{% url 'labtech_manage_course_content' course_id=course.id %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

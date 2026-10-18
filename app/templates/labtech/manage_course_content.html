@@ -1,0 +1,267 @@
+{% extends "labtech/generic_base.html" %}
+{% load static course_extras %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<style>
+    .management-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid var(--lt-border); }
+    .page-header h2 { margin: 0; color: var(--lt-text); font-size: 1.8em; }
+    
+    .card-header { cursor: pointer; }
+    .card-header h5 { margin-bottom: 0; font-size: 1.2rem; }
+    .card-body { display: none; } /* Chapters start collapsed by default */
+    .card-header.active + .card-body { display: block; }
+    
+    .toggle-icon { font-size: 1em; transition: transform 0.3s ease; }
+    .card-header.active .toggle-icon { transform: rotate(180deg); }
+
+    .add-content-links { margin-bottom: 15px; padding-top: 5px; }
+    .add-content-links a { margin-right: 15px; font-weight: 500; text-decoration: none; color: var(--lt-primary); font-size: 0.9em; }
+    .add-content-links a:hover { text-decoration: underline; }
+
+    .content-table th { font-weight: 600; }
+    .content-table td { vertical-align: middle; }
+    
+    /* Styles for both drag handles */
+    .drag-handle, .chapter-drag-handle { cursor: grab; color: var(--lt-muted); font-size: 1.5em; }
+    .content-table .drag-handle { padding-right: 10px; }
+    .chapter-drag-handle { margin-right: 15px; }
+
+    .sortable-ghost { opacity: 0.4; background: var(--lt-info-subtle); }
+    .item-title { font-weight: 500; }
+
+    .btn-sm-actions {
+        --bs-btn-padding-y: .25rem; --bs-btn-padding-x: .5rem;
+        --bs-btn-font-size: .875rem; --bs-btn-border-radius: .2rem;
+    }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="management-container">
+    <div class="page-header">
+        <h2>{{ title }}</h2>
+        <div>
+            {% if can_edit_content %}
+                <a href="{% url 'manage_course_backups' course_id=course.id %}" class="btn btn-outline-secondary">Backups & Versions</a>
+                <a href="{% url 'bulk_update_content_dates' course_id=course.id %}" class="btn btn-info">Bulk Edit Dates</a>
+                <a href="{% url 'add_chapter' course_id=course.id %}" class="btn btn-primary">Add New Chapter</a>
+            {% endif %}
+            <a href="{% url 'instructor_my_courses' %}" class="btn btn-secondary">Back to Courses</a>
+        </div>
+    </div>
+    <p>Manage chapters and content for "<strong>{{ course.title }}</strong>". {% if can_edit_content %}Click a chapter to expand it, then drag and drop content or chapters to reorder.{% endif %}</p>
+
+    {% if is_read_only %}
+    <div class="alert alert-warning" role="alert">
+        <i class="fas fa-archive me-2"></i>
+        <strong>This course is archived.</strong> All content is in read-only mode. To make changes, please unarchive the course first.
+    </div>
+    {% endif %}
+
+    <div id="chapter-list">
+    {% for chapter in chapters %}
+    <div class="card mb-3" data-id="{{ chapter.id }}">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+                {% if can_edit_content %}<span class="chapter-drag-handle">✥</span>{% endif %}
+                <h5 class="mb-0">{{ chapter.title }}</h5>
+            </div>
+            <div class="d-flex align-items-center">
+                {% if can_edit_content %}
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle me-3" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Chapter Actions
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{% url 'edit_chapter' course_id=course.id chapter_id=chapter.id %}">Edit Details</a></li>
+                        <li><a class="dropdown-item text-danger" href="{% url 'delete_chapter' course_id=course.id chapter_id=chapter.id %}">Delete Chapter</a></li>
+                    </ul>
+                </div>
+                {% endif %}
+                <span class="toggle-icon fas fa-chevron-down"></span>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if can_edit_content %}
+            <div class="add-content-links">
+                <a href="{% url 'pbq_create' course.id %}?chapter={{ chapter.id }}">+ PBQ</a>
+                <a href="{% url 'labtech_add_text_page' course_id=course.id %}?chapter={{ chapter.id }}">+ Text Page</a>
+                <a href="{% url 'labtech_add_video' course_id=course.id %}?chapter={{ chapter.id }}">+ Video</a>
+                <a href="{% url 'labtech_add_audio' course_id=course.id %}?chapter={{ chapter.id }}">+ Audio</a>
+                <a href="{% url 'add_file_submission' course_id=course.id %}?chapter={{ chapter.id }}">+ File Submission</a>
+                <a href="{% url 'labtech_add_quiz' course_id=course.id %}?chapter={{ chapter.id }}">+ Quiz</a>
+                <a href="{% url 'labtech_add_lab' course_id=course.id %}?chapter={{ chapter.id }}">+ Lab</a>
+                <a href="{% url 'add_flashcard_deck' course_id=course.id %}?chapter={{ chapter.id }}">+ Flashcard Deck</a>
+                <a href="{% url 'labtech_add_hotspot' course_id=course.id %}?chapter={{ chapter.id }}">+ Hotspot</a>
+                <a href="{% url 'labtech_add_drag_and_drop' course_id=course.id %}?chapter={{ chapter.id }}">+ Drag & Drop</a>
+                <a href="{% url 'labtech_add_coding_activity' course_id=course.id %}?chapter={{ chapter.id }}">+ Coding Activity</a>
+                <a href="{% url 'add_scenario_activity' course_id=course.id %}?chapter={{ chapter.id }}">+ Scenario</a>
+            </div>
+            {% endif %}
+            <div class="table-responsive">
+                <table class="table table-hover content-table">
+                    <tbody class="sortable-content-tbody">
+                        {% for item in chapter.sorted_content %}
+                        <tr data-id="{{ item.id }}" data-type="{{ item|class_name|lower }}">
+                            <td style="width: 40px;">
+                                {% if can_edit_content %}<span class="drag-handle">✥</span>{% endif %}
+                            </td>
+                            <td>
+                                <span class="item-title">
+                                    {% with item_model_name=item|class_name|lower %}
+                                        {% if item_model_name == 'textpage' %}📖
+                                        {% elif item_model_name == 'video' %}▶️
+                                        {% elif item_model_name == 'audio' %}🎧
+                                        {% elif item_model_name == 'filesubmissionactivity' %}📁
+                                        {% elif item_model_name == 'quiz' %}❓
+                                        {% elif item_model_name == 'pbqactivity' %}<span role="img" aria-label="Performance-based question">🧩</span>
+                                        {% elif item_model_name == 'lab' %}🔬
+                                        {% elif item_model_name == 'flashcarddeck' %}🗂️
+                                        {% elif item_model_name == 'teamscenario' %}🛡️
+                                        {% elif item_model_name == 'hotspotactivity' %}📍
+                                        {% elif item_model_name == 'draganddropactivity' %}🤏
+                                        {% elif item_model_name == 'codingactivity' %}💻
+                                        {% elif item_model_name == 'scenarioactivity' %}💬
+                                        {% endif %}
+                                        {{ item.title }}
+                                    {% endwith %}
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                {% if can_edit_content %}
+                                    {% include "labtech/partials/content_item_actions.html" with item=item %}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center py-4 text-muted">No content in this chapter yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    </div>
+
+    {% if all_unassigned_content %}
+    <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center active">
+            <h5 class="mb-0">Uncategorized Content</h5>
+            <span class="toggle-icon fas fa-chevron-down"></span>
+        </div>
+        <div class="card-body" style="display: block;">
+            <p class="text-muted small">The following content has not been assigned to a chapter. {% if can_edit_content %}Edit an item to assign it.{% endif %}</p>
+            <div class="table-responsive">
+                <table class="table table-hover content-table">
+                    <tbody>
+                    {% for item in all_unassigned_content %}
+                        <tr>
+                            <td style="width: 40px;"></td> {# No drag handle for uncategorized #}
+                            <td>
+                                <span class="item-title">
+                                    {% with item_model_name=item|class_name|lower %}
+                                        {% if item_model_name == 'textpage' %}📖
+                                        {% elif item_model_name == 'video' %}▶️
+                                        {% elif item_model_name == 'audio' %}🎧
+                                        {% elif item_model_name == 'quiz' %}❓
+                                        {% elif item_model_name == 'pbqactivity' %}<span role="img" aria-label="Performance-based question">🧩</span>
+                                        {% elif item_model_name == 'lab' %}🔬
+                                        {% elif item_model_name == 'flashcarddeck' %}🗂️
+                                        {% elif item_model_name == 'teamscenario' %}🛡️
+                                        {% elif item_model_name == 'hotspotactivity' %}📍
+                                        {% elif item_model_name == 'draganddropactivity' %}🤏
+                                        {% elif item_model_name == 'codingactivity' %}💻
+                                        {% elif item_model_name == 'scenarioactivity' %}💬
+                                        {% endif %}
+                                        {{ item.title }}
+                                    {% endwith %}
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                {% if can_edit_content %}
+                                    {% include "labtech/partials/content_item_actions.html" with item=item %}
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block labtech_extra_body %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Logic for Collapsible Chapters
+    document.querySelectorAll('.card-header').forEach(header => {
+        header.addEventListener('click', function(event) {
+            // Do not collapse if the user is clicking a button, dropdown, or drag handle
+            if (event.target.closest('.dropdown, .dropdown-item, .btn, .chapter-drag-handle')) {
+                return;
+            }
+            this.classList.toggle('active');
+        });
+    });
+
+    {% if can_edit_content %}
+    const csrfToken = "{{ csrf_token }}";
+
+    // --- NEW: Logic for Chapter Reordering ---
+    const chapterList = document.getElementById('chapter-list');
+    if (chapterList) {
+        new Sortable(chapterList, {
+            animation: 150,
+            handle: '.chapter-drag-handle',
+            ghostClass: 'sortable-ghost',
+            onEnd: function(evt) {
+                const chapterOrder = Array.from(chapterList.children).map(ch => ch.dataset.id);
+                fetch("{% url 'update_chapter_order' course.id %}", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                    body: JSON.stringify({ new_order: chapterOrder })
+                }).then(response => {
+                    if (!response.ok) alert('Error: Could not save the new chapter order.');
+                });
+            }
+        });
+    }
+
+    // --- EXISTING: Logic for Content Item Reordering ---
+    document.querySelectorAll('.sortable-content-tbody').forEach(tbody => {
+        new Sortable(tbody, {
+            animation: 150,
+            handle: '.drag-handle',
+            ghostClass: 'sortable-ghost',
+            onEnd: function(evt) {
+                const allItems = document.querySelectorAll('tr[data-id]');
+                const newOrder = Array.from(allItems).map(item => ({
+                    id: item.dataset.id,
+                    type: item.dataset.type
+                }));
+                
+                fetch("{% url 'update_content_order' course_id=course.id %}", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                    body: JSON.stringify({ new_order: newOrder })
+                }).then(response => {
+                    if (!response.ok) alert('Error: Could not save the new content order.');
+                });
+            }
+        });
+    });
+    {% endif %}
+});
+</script>
+{% endblock %}

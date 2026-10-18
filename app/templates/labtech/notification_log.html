@@ -1,0 +1,125 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .management-container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid var(--lt-border);
+    }
+    .page-header h2 { margin: 0; color: var(--lt-text); font-size: 1.8em; }
+
+    /* --- ADDED: Search Form Styles --- */
+    .search-form {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 25px;
+    }
+    .search-form input[type="search"] {
+        flex-grow: 1;
+        padding: 10px;
+        border: 1px solid var(--lt-border);
+        border-radius: 5px;
+    }
+
+    /* Accordion Styles */
+    .accordion-item { border: 1px solid var(--lt-border); border-radius: 8px; margin-bottom: 10px; overflow: hidden; }
+    .accordion-header { background-color: var(--lt-surface-muted); padding: 15px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background-color 0.2s ease; }
+    .accordion-header:hover { background-color: var(--lt-surface-muted); }
+    .accordion-header.active { border-bottom: 1px solid var(--lt-border); }
+    .accordion-header h3 { font-size: 1.2em; font-weight: 600; margin: 0; }
+    .accordion-header .meta { font-size: 0.9em; color: var(--lt-muted); }
+    .accordion-header .toggle-icon { font-size: 1.2em; font-weight: bold; transition: transform 0.3s ease; }
+    .accordion-header.active .toggle-icon { transform: rotate(180deg); }
+
+    .accordion-body { padding: 20px; background-color: var(--lt-surface); display: none; border-top: 1px solid var(--lt-border); }
+    .accordion-body h4 { margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid var(--lt-border); padding-bottom: 10px; }
+    .email-body-preview { border: 1px solid var(--lt-border); padding: 15px; border-radius: 5px; background-color: var(--lt-surface-muted); max-height: 400px; overflow-y: auto; }
+    .recipient-tag-list { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 0; }
+    .recipient-tag { font-size: 0.85em; background-color: var(--lt-surface-muted); padding: 4px 10px; border-radius: 5px; }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="management-container">
+    <div class="page-header">
+        <h2>{{ title }}</h2>
+        <a href="{% url 'instructor_my_courses' %}" class="btn btn-secondary">Back to My Courses</a>
+    </div>
+
+    <form class="search-form" method="get">
+        <input type="search" name="q" value="{{ search_query|default:'' }}" placeholder="Search by subject, body, or recipient...">
+        <button type="submit" class="btn btn-primary">Search</button>
+    </form>
+
+    <div class="accordion-container">
+        {% for log in logs %}
+            <div class="accordion-item">
+                <div class="accordion-header">
+                    <div>
+                        <h3>{{ log.subject }}</h3>
+                        <span class="meta">
+                            Sent by {{ log.sender.username|default:"N/A" }} on {{ log.sent_at|date:"M d, Y" }}
+                            to
+                            {% if log.recipients.count == 1 %}
+                                <strong>{{ log.recipients.first.username }}</strong>
+                            {% else %}
+                                <strong>{{ log.recipients.count }} students</strong>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <div class="accordion-body">
+                    <h4>Recipients ({{ log.recipients.count }})</h4>
+                    <div class="recipient-tag-list">
+                        {% for user in log.recipients.all %}
+                            <span class="recipient-tag">{{ user.username }}</span>
+                        {% endfor %}
+                    </div>
+                    
+                    <h4 style="margin-top: 20px;">Message Body</h4>
+                    <div class="email-body-preview">
+                        {{ log.body|safe }}
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="alert alert-info">
+                {% if search_query %}
+                    No notifications found matching your search for "{{ search_query }}".
+                {% else %}
+                    No notifications have been sent for this course yet.
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block labtech_extra_body %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const accordionHeaders = document.querySelectorAll('.accordion-header');
+
+    accordionHeaders.forEach(header => {
+        header.addEventListener('click', function() {
+            this.classList.toggle('active');
+            const body = this.nextElementSibling;
+            if (body.style.display === "block") {
+                body.style.display = "none";
+            } else {
+                body.style.display = "block";
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

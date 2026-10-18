@@ -1,0 +1,6 @@
+<div class="content-body">
+    {{ content.description|safe }}
+    <hr>
+    <p>This is a hands-on lab environment.</p>
+    <a href="{% url 'view_lab' course.id content.id %}" class="btn btn-primary btn-lg mt-3">Enter Lab Environment</a>
+</div>

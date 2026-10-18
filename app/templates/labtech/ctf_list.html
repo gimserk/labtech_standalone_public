@@ -1,0 +1,153 @@
+{% extends "labtech/generic_base.html" %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .ctf-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 25px;
+    }
+    .ctf-card {
+        display: flex;
+        flex-direction: column;
+        border: 1px solid var(--lt-border);
+        border-radius: 8px;
+        background-color: var(--lt-surface);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .ctf-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .ctf-card-header { padding: 20px; border-bottom: 1px solid var(--lt-border); }
+    .ctf-card-header h3 { margin: 0; font-size: 1.3rem; }
+    .ctf-card-body { padding: 20px; flex-grow: 1; color: var(--lt-muted); }
+    .ctf-card-footer {
+        padding: 15px 20px;
+        background-color: var(--lt-surface-muted);
+        border-top: 1px solid var(--lt-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .status-badge {
+        padding: 5px 10px; border-radius: 15px; font-size: 0.8em;
+        font-weight: 600; color: var(--lt-on-accent); text-transform: uppercase;
+    }
+    .status-active { background-color: var(--lt-success); color: var(--lt-on-accent); }
+    .status-upcoming { background-color: var(--lt-warning); color: var(--lt-on-warning); }
+    .status-finished { background-color: var(--lt-secondary); color: var(--lt-on-accent); }
+
+    /* Ensure modal content with images doesn't overflow */
+    #descriptionModalBody img {
+        max-width: 100%;
+        height: auto;
+    }
+    .ctf-details {
+    font-size: 0.9em;
+    color: var(--lt-text);
+    border-top: 1px solid var(--lt-border);
+    margin-top: auto; /* Pushes details to the bottom of the card body */
+    padding-top: 15px;
+}
+.ctf-details p {
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+}
+.ctf-details strong {
+    margin-left: 8px;
+}
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="page-header">
+    <h2>{{ title }}</h2>
+</div>
+
+<div class="ctf-grid">
+    {% for ctf in ctf_campaigns %}
+        <div class="ctf-card">
+            <div class="ctf-card-header">
+                <h3>{{ ctf.name }}</h3>
+            </div>
+            <div class="ctf-card-body">
+ <p>{{ ctf.description|truncatewords_html:20|safe }}</p>
+
+    <div class="ctf-details">
+        <p>🌐 <strong>Visibility:</strong> {{ ctf.get_visibility_display }}</p>
+        <p>📅 <strong>Active:</strong> {{ ctf.start_time|date:"M d, Y" }} - {{ ctf.end_time|date:"M d, Y" }}</p>
+    </div>
+
+    <div class="full-description" style="display: none;">{{ ctf.description|safe }}</div>
+</div>
+            <div class="ctf-card-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#descriptionModal">
+                    Read More
+                </button>
+                
+                {% if ctf.is_enrolled %}
+                    <a href="{% url 'ctf_detail' ctf_id=ctf.id %}" class="btn btn-secondary btn-sm">View Competition</a>
+                {% else %}
+                    <form action="{% url 'ctf_enroll' ctf_id=ctf.id %}" method="post" style="margin: 0;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary btn-sm">Enroll Now</button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-12">
+             <p>There are currently no CTF competitions available for you to join.</p>
+        </div>
+    {% endfor %}
+</div>
+
+<div class="modal fade" id="descriptionModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="descriptionModalLabel">CTF Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="descriptionModalBody">
+        </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+
+{% block labtech_extra_body %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const descriptionModal = document.getElementById('descriptionModal');
+    // This event fires whenever the modal is about to be shown
+    descriptionModal.addEventListener('show.bs.modal', function (event) {
+        // Button that triggered the modal
+        const button = event.relatedTarget;
+        
+        // Find the parent card of the button that was clicked
+        const card = button.closest('.ctf-card');
+        
+        // Get the title from the card's header
+        const title = card.querySelector('.ctf-card-header h3').textContent;
+        
+        // Get the full HTML content from the hidden div inside the card
+        const content = card.querySelector('.full-description').innerHTML;
+        
+        // Get the elements inside the modal to update
+        const modalTitle = descriptionModal.querySelector('.modal-title');
+        const modalBody = descriptionModal.querySelector('.modal-body');
+        
+        // Update the modal's content
+        modalTitle.textContent = title;
+        modalBody.innerHTML = content;
+    });
+});
+</script>
+{% endblock %}

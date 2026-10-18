@@ -1,0 +1,153 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/theme/material-darker.min.css">
+<style>
+    .coding-wrapper {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        min-height: 70vh;
+    }
+    .panel { padding: 20px; border: 1px solid var(--lt-border); border-radius: 5px; }
+    .CodeMirror { border: 1px solid var(--lt-border); height: 500px; font-size: 14px; }
+    .results-panel h4 { border-bottom: 1px solid var(--lt-border); padding-bottom: 10px; }
+    .test-result { margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid var(--lt-border); }
+    .test-result:last-child { border-bottom: none; }
+    .test-result h5 { font-size: 1.1rem; }
+    .pass { color: var(--lt-success); }
+    .fail { color: var(--lt-danger); }
+    .output-box {
+        background-color: var(--lt-surface-muted);
+        border: 1px solid var(--lt-border);
+        padding: 10px;
+        margin-top: 10px;
+        border-radius: 4px;
+        font-family: monospace;
+        white-space: pre-wrap;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<h2>{{ activity.title }}</h2>
+<hr>
+
+<div class="coding-wrapper">
+    <div class="problem-panel">
+        <h4>Problem Description</h4>
+        {{ activity.description|safe }}
+        <h4 class="mt-4">Code Editor</h4>
+        <textarea id="code-editor">{{ activity.starter_code }}</textarea>
+        <button id="run-btn" class="btn btn-primary mt-3">Run Tests</button>
+    </div>
+    <div class="results-panel">
+        <h4>Test Results</h4>
+        <div id="results-container">
+            <p class="text-muted">Click "Run Tests" to see the results of your code.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block labtech_extra_body %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/mode/python/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/mode/shell/shell.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/mode/powershell/powershell.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const languageMap = {
+        'python': 'python',
+        'bash': 'shell',
+        'powershell': 'powershell'
+    };
+    const activityLanguage = "{{ activity.language }}";
+    const editorMode = languageMap[activityLanguage] || 'python';
+
+    const editor = CodeMirror.fromTextArea(document.getElementById('code-editor'), {
+        lineNumbers: true,
+        mode: editorMode,
+        theme: 'material-darker',
+        indentUnit: 4
+    });
+
+    const runBtn = document.getElementById('run-btn');
+    const resultsContainer = document.getElementById('results-container');
+    const csrfToken = '{{ csrf_token }}';
+
+    runBtn.addEventListener('click', () => {
+        const code = editor.getValue();
+        runBtn.disabled = true;
+        runBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Running...';
+        resultsContainer.innerHTML = '<p class="text-muted">Running tests...</p>';
+
+        fetch("{% url 'api_run_code' activity_id=activity.id %}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({ code: code })
+        })
+        .then(response => {
+            // START: IMPROVEMENT - Check if the response was successful
+            if (!response.ok) {
+                // If not, try to get the error message from the server
+                return response.json().then(err => { 
+                    throw new Error(err.error || 'Server returned an error.'); 
+                });
+            }
+            return response.json();
+            // END: IMPROVEMENT
+        })
+        .then(data => {
+            renderResults(data);
+        })
+        .catch(error => {
+            // Display the specific error message from the server
+            resultsContainer.innerHTML = `<div class="alert alert-danger">${escapeHtml(error.message)}</div>`;
+            console.error('Error:', error);
+        })
+        .finally(() => {
+            runBtn.disabled = false;
+            runBtn.textContent = 'Run Tests';
+        });
+    });
+
+    function renderResults(data) {
+        resultsContainer.innerHTML = '';
+        if (data.passed_all) {
+            resultsContainer.innerHTML += '<div class="alert alert-success">🎉 Congratulations! All tests passed! This activity has been marked as complete.</div>';
+        }
+
+        data.results.forEach(res => {
+            let resultHtml = `<div class="test-result">`;
+            resultHtml += `<h5>${res.name} <span class="${res.passed ? 'pass' : 'fail'}">${res.passed ? '✓ Passed' : '✗ Failed'}</span></h5>`;
+            
+            if (!res.is_hidden) {
+                if(res.actual_output) {
+                    resultHtml += `<h6>Your Output:</h6><div class="output-box">${escapeHtml(res.actual_output)}</div>`;
+                }
+                if(!res.passed && res.expected_output) {
+                    resultHtml += `<h6>Expected Output:</h6><div class="output-box">${escapeHtml(res.expected_output)}</div>`;
+                }
+                 if(res.error_output) {
+                    resultHtml += `<h6>Error:</h6><div class="output-box text-danger">${escapeHtml(res.error_output)}</div>`;
+                }
+            }
+            resultHtml += `</div>`;
+            resultsContainer.innerHTML += resultHtml;
+        });
+    }
+
+    function escapeHtml(text) {
+        if (typeof text !== 'string') return '';
+        return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+});
+</script>
+{% endblock %}

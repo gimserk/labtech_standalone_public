@@ -1,0 +1,11 @@
+.content-editor { max-width: 900px; margin: 0 auto; padding: 25px; }
+.content-editor h2 { text-align: center; color: var(--lt-text); margin-bottom: 25px; border-bottom: 1px solid var(--lt-border); padding-bottom: 15px; }
+.content-editor .form-field { margin-bottom: 20px; }
+.content-editor .form-field label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--lt-text); }
+.content-editor .form-field input:not([type="checkbox"]),
+.content-editor .form-field select,
+.content-editor .form-field textarea { width: 100%; padding: 10px; border: 1px solid var(--lt-border); border-radius: 4px; box-sizing: border-box; }
+.content-editor .form-field textarea { min-height: 120px; }
+.content-editor .helptext { font-size: .85em; color: var(--lt-muted); margin-top: 5px; }
+.content-editor .errorlist { list-style: none; padding: 0; margin: 5px 0 0; color: var(--lt-danger); }
+.content-editor .form-actions { margin-top: 30px; text-align: right; }

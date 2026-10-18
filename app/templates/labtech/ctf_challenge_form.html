@@ -1,0 +1,129 @@
+{% extends "labtech/generic_base.html" %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .form-container { max-width: 900px; margin: 0 auto; padding: 25px; background-color: var(--lt-surface); border: 1px solid var(--lt-border); border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
+    .form-group { margin-bottom: 1.5rem; }
+    .form-label { font-weight: 600; margin-bottom: .5rem; display: block; }
+    .form-group input[type="text"], .form-group input[type="number"], .form-group input[type="url"], .form-group select, .form-group textarea {
+        display: block; width: 100%; padding: .575rem .75rem; font-size: 1rem; border: 1px solid var(--lt-border); border-radius: .375rem;
+    }
+    .form-text { font-size: .875em; color: var(--lt-muted); }
+    .btn-container { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--lt-border); }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="form-container">
+    <h2>{{ title }}</h2>
+    <hr>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.media }}
+        
+        <div class="row">
+            <div class="col-md-8 form-group">
+                <label for="{{ form.name.id_for_label }}" class="form-label">Challenge Name</label>
+                {{ form.name }}
+                {{ form.name.errors }}
+            </div>
+            <div class="col-md-4 form-group">
+                <label for="{{ form.points.id_for_label }}" class="form-label">Points</label>
+                {{ form.points }}
+                {{ form.points.errors }}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 form-group">
+                <label for="{{ form.category.id_for_label }}" class="form-label">Category</label>
+                {{ form.category }}
+                {{ form.category.errors }}
+            </div>
+            <div class="col-md-6 form-group">
+                <label for="{{ form.new_category.id_for_label }}" class="form-label">{{ form.new_category.label }}</label>
+                {{ form.new_category }}
+                <small class="form-text">{{ form.new_category.help_text }}</small>
+                {{ form.new_category.errors }}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.description.id_for_label }}" class="form-label">Description / Prompt</label>
+            {{ form.description }}
+            {{ form.description.errors }}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.flag.id_for_label }}" class="form-label">Flag</label>
+            {{ form.flag }}
+            <small class="form-text">The exact string students must submit to solve the challenge.</small>
+            {{ form.flag.errors }}
+        </div>
+
+        <hr>
+        <h4>Challenge Resources (Optional)</h4>
+
+        <div class="form-group">
+            <label for="{{ form.attached_file.id_for_label }}" class="form-label">Attach File</label>
+            {{ form.attached_file }}
+            <small class="form-text">{{ form.attached_file.help_text }}</small>
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.external_link.id_for_label }}" class="form-label">Link to External Site</label>
+            {{ form.external_link }}
+            <small class="form-text">{{ form.external_link.help_text }}</small>
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.linked_lab.id_for_label }}" class="form-label">Link to Live Lab</label>
+            {{ form.linked_lab }}
+            <small class="form-text">{{ form.linked_lab.help_text }}</small>
+        </div>
+
+        <div class="form-group">
+            {{ form.is_visible }}
+            <label for="{{ form.is_visible.id_for_label }}" class="form-check-label">Make this challenge visible to participants</label>
+        </div>
+<hr>
+        <h4>Manage Hints</h4>
+        <div id="hint-forms-container">
+            {{ hint_formset.management_form }}
+            {% for form in hint_formset %}
+            <div class="card card-body bg-light mb-3">
+                {{ form.id }}
+                <div class="row">
+                    <div class="col-md-8 form-group">
+                        <label>Hint Text</label>
+                        {{ form.text }}
+                    </div>
+                    <div class="col-md-2 form-group">
+                        <label>Point Cost</label>
+                        {{ form.cost }}
+                    </div>
+                     <div class="col-md-2 form-group">
+                        <label>Order</label>
+                        {{ form.order }}
+                    </div>
+                </div>
+                 {% if form.instance.pk %}
+                    <div class="form-check mt-2">
+                        {{ form.DELETE }}
+                        <label for="{{ form.DELETE.id_for_label }}" class="form-check-label">Delete this hint</label>
+                    </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+<div class="btn-container">
+    <button type="submit" class="btn btn-primary">
+        {% if form.instance.pk %}Update Challenge{% else %}Add Challenge{% endif %}
+    </button>
+    <a href="{% url 'ctf_manage' ctf_id=ctf.id %}" class="btn btn-secondary">Cancel</a>
+</div>
+    </form>
+</div>
+{% endblock %}

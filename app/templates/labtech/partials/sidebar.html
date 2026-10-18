@@ -1,0 +1,80 @@
+{% load static %}
+{% load account %}
+
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+    <div class="container-fluid">
+        <a href="{% url 'home' %}" class="navbar-brand">LabTech</a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'home' %}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                </li>
+
+                {% if is_student_role %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="studentMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user-graduate"></i> Student
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="studentMenu">
+                        <li><a class="dropdown-item" href="{% url 'my_courses' %}"><i class="fas fa-chalkboard fa-fw"></i> My Courses</a></li>
+                        <li><a class="dropdown-item" href="{% url 'course_catalog' %}"><i class="fas fa-book-open fa-fw"></i> Course Catalog</a></li>
+                        <li><a class="dropdown-item" href="{% url 'ctf_list' %}"><i class="fas fa-flag fa-fw"></i> CTF Competitions</a></li>
+                        <li><a class="dropdown-item" href="{% url 'student_cybercity_list' %}"><i class="fas fa-city fa-fw"></i> CyberCity</a></li>
+                    </ul>
+                </li>
+                {% endif %}
+
+                {% if is_instructor_role %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="instructorMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-chalkboard-teacher"></i> Instructor
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="instructorMenu">
+                        <li><a class="dropdown-item" href="{% url 'instructor_my_courses' %}"><i class="fas fa-chalkboard-teacher fa-fw"></i> My Teaching</a></li>
+                    </ul>
+                </li>
+                {% endif %}
+
+                {% if is_site_admin_role %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="siteAdminMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user-shield"></i> Site Admin
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="siteAdminMenu">
+                        <li><a class="dropdown-item" href="{% url 'labtech_manage_proxmox_servers_list' %}">Proxmox Servers</a></li>
+                        <li><a class="dropdown-item" href="{% url 'labtech_manage_guacamole_servers_list' %}">Guacamole Servers</a></li>
+                        <li><a class="dropdown-item" href="{% url 'manage_assistants' %}">AI Tutor &amp; Providers</a></li>
+                        {% if user.is_superuser %}<li><a class="dropdown-item" href="{% url 'plugin_index' %}">Plugin Marketplace</a></li>{% endif %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{% url 'instructor_my_courses' %}">Manage All Courses</a></li>
+                        <li><a class="dropdown-item" href="{% url 'ctf_dashboard' %}">Manage CTFs</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{% url 'admin:index' %}">Django Admin</a></li>
+                    </ul>
+                </li>
+                {% endif %}
+            </ul>
+
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userProfileMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <img src="{{ user.profile.profile_picture.url }}" alt="Profile" class="profile-pic me-2">
+                        {% user_display user %}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userProfileMenu">
+                        <li><a class="dropdown-item" href="{% url 'profile_detail' user.id %}"><i class="fas fa-user-circle fa-fw"></i> My Profile</a></li>
+                        <li><a class="dropdown-item" href="{% url 'profile_edit' %}"><i class="fas fa-adjust fa-fw"></i> Appearance &amp; Accessibility</a></li>
+                        <li><a class="dropdown-item" href="{% url 'help_desk_portal' %}"><i class="fas fa-question-circle fa-fw"></i> Help & Support</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{% url 'account_logout' %}"><i class="fas fa-sign-out-alt fa-fw"></i> Logout</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>

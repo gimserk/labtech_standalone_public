@@ -1,0 +1,34 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_content %}
+<div class="container mt-4">
+    <h2>Bulk Start Labs for: {{ course.title }}</h2>
+    <p class="text-muted">
+        Use this page to queue lab instances for all enrolled students in the course. 
+        The jobs will be sent to Celery to be processed one at a time by your background workers.
+    </p>
+
+    <div class="card mt-4">
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="lab_id" class="form-label">Select a Lab to Deploy:</label>
+                    <select name="lab_id" id="lab_id" class="form-select" required>
+                        <option value="">-- Choose a Lab --</option>
+                        {% for lab in labs %}
+                            <option value="{{ lab.id }}">{{ lab.title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" onclick="return confirm('Are you sure you want to queue this lab for ALL enrolled students?');">
+                    <i class="fas fa-play"></i> Start Lab for All Students
+                </button>
+                <a href="{% url 'instructor_student_list' course.id %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

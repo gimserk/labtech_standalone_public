@@ -1,0 +1,159 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+{% load static course_extras %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .management-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid var(--lt-border);
+    }
+    .page-header h2 { margin: 0; color: var(--lt-text); font-size: 1.8em; }
+    .page-header .header-actions { display: flex; gap: 10px; }
+
+    /* Table & Actions Styles */
+    .table-actions { margin-bottom: 20px; }
+    .student-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    .student-table th, .student-table td { padding: 12px 15px; border: 1px solid var(--lt-border); text-align: left; vertical-align: middle; }
+    .student-table thead { background-color: var(--lt-surface-muted); }
+    .student-table th { font-weight: 600; color: var(--lt-text); }
+    .student-table tbody tr:nth-child(even) { background-color: var(--lt-surface-muted); }
+    .student-table th:first-child, .student-table td:first-child { width: 40px; text-align: center; } /* For checkbox */
+    .actions-cell { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    /* Themed Button Styles */
+    .btn {
+        padding: 8px 16px; text-decoration: none; border-radius: 5px; font-size: 0.9em;
+        font-weight: 500; cursor: pointer; border: 1px solid transparent; display: inline-block;
+        text-align: center; transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    }
+    .btn-sm { padding: 5px 10px; font-size: 0.8em; }
+    .btn-primary { background-color: var(--lt-primary); color: var(--lt-on-accent); border-color: var(--lt-primary); }
+    .btn-primary:hover { background-color: var(--lt-primary-hover); border-color: var(--lt-primary); color: var(--lt-on-accent); }
+    .btn-secondary { background-color: var(--lt-secondary); color: var(--lt-on-accent); border-color: var(--lt-border); }
+    .btn-secondary:hover { background-color: var(--lt-secondary-hover); border-color: var(--lt-border); color: var(--lt-on-accent); }
+    .btn-danger { background-color: var(--lt-danger); color: var(--lt-on-accent); border-color: var(--lt-danger); }
+    .btn-danger:hover { background-color: var(--lt-danger-hover); border-color: var(--lt-danger); color: var(--lt-on-accent); }
+    .btn-info { background-color: var(--lt-info); color: var(--lt-on-accent); border-color: var(--lt-info); }
+    .btn-info:hover { background-color: var(--lt-info-hover); border-color: var(--lt-info); color: var(--lt-on-accent); }
+        .avatar.avatar-sm {
+        width: 36px;
+        height: 36px;
+        object-fit: cover; /* Ensures the image covers the area without distortion */
+    }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <p class="text-muted mb-0">Course</p>
+        <h1 class="h3 mb-0">{{ course.title }}</h1>
+    </div>
+    <a href="{% url 'instructor_enroll_student' course_id=course.id %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Enroll New Student
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h4 class="card-title mb-0">Enrolled Students</h4>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover table-nowrap">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">Enrolled</th>
+                    <th scope="col">Status / Active Lab</th>
+                    <th scope="col" class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for enrollment in student_enrollments %}
+                <tr>
+                    <td>
+                        <img src="{{ enrollment.user.profile.profile_picture.url }}" alt="..." class="avatar avatar-sm rounded-circle me-2">
+                        <a class="text-heading font-semibold" href="{% url 'profile_detail' user_id=enrollment.user.id %}">
+                            {{ enrollment.user.get_full_name|default:enrollment.user.username }}
+                        </a>
+                    </td>
+                    <td>{{ enrollment.user.email }}</td>
+                    <td>{{ enrollment.enrollment_date|date:"M d, Y" }}</td>
+                    <td>
+                        {% with student_lab=active_labs_dict|get_item:enrollment.user.id %}
+                            {% if student_lab %}
+                                <span class="badge bg-success">Active</span>
+                                <div class="mt-1">
+                                    <small class="d-block text-muted">{{ student_lab.lab.title }}</small>
+                                    {% for machine in student_lab.machines.all %}
+                                        <a href="{% url 'guacamole_sso_redirect' machine.id %}" target="_blank" class="btn btn-sm btn-outline-secondary py-0 px-1" title="View Console for {{ machine.name }}">
+                                            <i class="fas fa-desktop"></i> {{ machine.name }}
+                                        </a>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                            {% endif %}
+                        {% endwith %}
+                    </td>
+                    <td class="text-end">
+                        {# --- UPDATED LINK --- #}
+                        <a href="{% url 'new_conversation_with_student' course_id=course.id recipient_id=enrollment.user.id %}" class="btn btn-sm btn-neutral" title="Message Student"><i class="fas fa-envelope"></i></a>
+                        <a href="{% url 'instructor_gradebook' course_id=course.id %}?student_id={{ enrollment.user.id }}" class="btn btn-sm btn-neutral" title="View Grades"><i class="fas fa-graduation-cap"></i></a>
+                        <a href="{% url 'instructor_student_activity' course_id=course.id user_id=enrollment.user.id %}" class="btn btn-sm btn-neutral" title="View Recent Activity"><i class="fas fa-history"></i></a>
+                        <a href="{% url 'remove_student_from_course' enrollment_id=enrollment.id %}" class="btn btn-sm btn-danger" title="Remove Student"><i class="fas fa-trash-alt"></i></a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center py-4">No students are currently enrolled in this course.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block labtech_extra_body %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    const studentCheckboxes = document.querySelectorAll('.student-checkbox');
+    const emailSelectedBtn = document.getElementById('emailSelectedBtn');
+
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            studentCheckboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+        });
+    }
+
+    if (emailSelectedBtn) {
+        emailSelectedBtn.addEventListener('click', function() {
+            const selectedIds = Array.from(studentCheckboxes)
+                                   .filter(checkbox => checkbox.checked)
+                                   .map(checkbox => checkbox.value);
+
+            if (selectedIds.length === 0) {
+                alert('Please select at least one student to email.');
+                return;
+            }
+
+            const baseUrl = "{% url 'compose_notification' course_id=course.id %}";
+            window.location.href = `${baseUrl}?target=multiple&user_ids=${selectedIds.join(',')}`;
+        });
+    }
+});
+</script>
+{% endblock %}

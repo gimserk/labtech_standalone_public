@@ -1,0 +1,67 @@
+{% load static course_extras %}
+
+{% if not lab.machines.all and lab_session %}
+    <div class="alert alert-info">
+        <h4>No Machine Lab</h4>
+        <p>This lab has no virtual machines. Please work through the scenario instructions on your own system. Good luck!</p>
+    </div>
+{% endif %}
+
+<h2>Lab Instructions</h2>
+
+{% for step in steps %}
+    {% with vm_check_states=check_context.by_step|get_item:step.pk %}
+    <div class="step-block" id="step-{{ step.pk }}">
+        <div class="step-header"><h3>Step {{ step.order }}: {% if step.title %}{{ step.title }}{% endif %}</h3></div>
+        <div class="step-content">
+            {{ step.content|safe }}
+            {% for question in step.questions.all %}
+                <div id="question-block-{{ question.id }}">
+                    <form class="step-question-form" data-question-id="{{ question.id }}" action="{% url 'check_step_answer' question_id=question.id %}" method="POST">
+                        {% csrf_token %}
+                        <span class="question-text">{{ question.question_text }}</span>
+                        {% with previous_correct_answer=correct_answers_dict|get_item:question.id %}
+                        <input type="text" name="answer" class="form-control form-control-sm question-input" placeholder="{{ question.hint }}" value="{{ previous_correct_answer|default:'' }}" {% if previous_correct_answer or is_expired or cleanup_job %}readonly{% endif %} required>
+                        {% if not previous_correct_answer and not is_expired and not cleanup_job %}<button type="submit" class="btn btn-primary btn-sm">Check</button>{% endif %}
+                        {% endwith %}
+                        <span class="question-feedback"></span>
+                    </form>
+                </div>
+            {% endfor %}
+            {% if vm_check_states %}
+              <section class="card mt-3" aria-label="VM checks for step {{ step.order }}">
+                <div class="card-body">
+                  <h4 class="h6">Check Work</h4>
+                  <ul class="list-unstyled" id="check-list-{{ step.pk }}">
+                    {% for item in vm_check_states %}
+                    <li data-check-id="{{ item.check.pk }}"><strong>{{ item.check.student_label }}</strong> —
+                      <span class="check-outcome">{{ item.outcome|default:'Not checked' }}</span>
+                      {% if item.outcome == 'fail' %}<span class="check-hint">{{ item.check.failure_hint }}</span>{% endif %}
+                    </li>
+                    {% endfor %}
+                  </ul>
+                  {% if lab_session and lab_session.status == 'active' and not is_expired and not cleanup_job %}
+                  <button type="button" class="btn btn-outline-primary lab-check-work" data-url="{% url 'run_lab_step_checks' course.id lab_session.id step.id %}">Check Work</button>
+                  {% endif %}
+                  <p class="check-feedback" role="status" aria-live="polite"></p>
+                </div>
+              </section>
+            {% endif %}
+        </div>
+    </div>
+    {% endwith %}
+{% empty %}
+    <p>There are no instructional steps for this lab yet.</p>
+{% endfor %}
+<!--<div class="completion-action-area mt-4">
+    <form class="mark-complete-form" action="{% url 'mark_content_complete' course_id=lab.course.id content_type_name='lab' object_id=lab.id %}" method="POST">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-success btn-lg mark-complete-btn">Mark Lab as Complete</button>
+    </form>
+</div> -->
+<div class="text-center mt-5 mb-3">
+    <hr>
+    <a href="{% url 'course_detail' course_id=course.id %}?content=lab&id={{ lab.id }}" class="btn btn-outline-secondary">
+        ← Back to Course Curriculum
+    </a>
+</div>

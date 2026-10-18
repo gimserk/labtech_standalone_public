@@ -1,0 +1,339 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }} - LabTech{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    /* Main Layout & Theme */
+    .btn {
+        padding: 6px 14px;
+        border: none;
+        border-radius: 5px;
+        text-decoration: none;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: background-color 0.2s, box-shadow 0.2s;
+        margin-right: 8px;
+        display: inline-block;
+        font-weight: 500;
+    }
+    .btn:hover {
+        box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    }
+    .btn-primary { background-color: var(--lt-primary); color: var(--lt-on-accent); }
+    .btn-secondary { background-color: var(--lt-secondary); color: var(--lt-on-accent); }
+    .btn-danger { background-color: var(--lt-danger); color: var(--lt-on-accent); }
+    .btn-info { background-color: var(--lt-primary); color: var(--lt-on-accent); }
+    .btn-success { background-color: var(--lt-success); color: var(--lt-on-accent); }
+    .btn-warning { background-color: var(--lt-warning); color: var(--lt-on-warning); }
+
+    /* Page Header */
+    .city-header {
+        background-color: var(--lt-surface);
+        padding: 25px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        border: 1px solid var(--lt-border);
+    }
+    .city-header h1 {
+        margin-top: 0;
+        margin-bottom: 8px;
+        font-size: 2.2rem;
+        font-weight: 600;
+    }
+    .city-header p {
+        font-size: 1.1rem;
+        color: var(--lt-muted);
+        margin-bottom: 20px;
+    }
+
+    /* Two-Column Layout */
+    .main-grid {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 25px;
+    }
+    .main-content-area {
+        grid-column: span 12;
+    }
+    .sidebar-area {
+        grid-column: span 12;
+    }
+    @media (min-width: 992px) {
+        .main-content-area {
+            grid-column: span 8;
+        }
+        .sidebar-area {
+            grid-column: span 4;
+        }
+    }
+
+    /* Card Styling */
+    .card {
+        border: 1px solid var(--lt-border);
+        border-radius: 8px;
+        margin-bottom: 25px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .card-header {
+        padding: 12px 20px;
+        background-color: var(--lt-surface-muted);
+        border-bottom: 1px solid var(--lt-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .card-header h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+    .card-body {
+        padding: 20px;
+    }
+
+    /* Specific Section Styling */
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .section-header h2 {
+        margin: 0;
+        font-size: 1.5rem;
+    }
+    
+    .list-group-item {
+        padding: 15px 20px;
+    }
+
+    /* Status Badges */
+    .status-badge {
+        padding: 0.25em 0.6em;
+        font-size: 0.75em;
+        font-weight: 700;
+        line-height: 1;
+        color: var(--lt-on-accent);
+        text-align: center;
+        white-space: nowrap;
+        vertical-align: baseline;
+        border-radius: 0.375rem;
+        text-transform: capitalize;
+    }
+    .status-badge.status-online, .status-badge.status-running { background-color: var(--lt-success); color: var(--lt-on-accent); } /* green */
+    .status-badge.status-offline, .status-badge.status-stopped { background-color: var(--lt-secondary); color: var(--lt-on-accent); } /* gray */
+    .status-badge.status-error { background-color: var(--lt-danger); color: var(--lt-on-accent); } /* red */
+
+    /* Video Feed Styling */
+    .video-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    .video-card-header {
+        padding: 10px 15px;
+        border-bottom: 1px solid var(--lt-border);
+        font-weight: bold;
+    }
+    .video-player-container {
+        position: relative;
+        padding-top: 56.25%; /* 16:9 Aspect Ratio */
+        background-color: #000;
+    }
+    .video-player-container iframe,
+    .video-player-container video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+    }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="breadcrumb-nav">
+    <a href="{% url 'cybercity_dashboard' %}">CyberCity Dashboard</a> »
+    <span>{{ city.name }}</span>
+</div>
+
+<div class="city-header">
+    <h1>{{ city.name }}</h1>
+    <p>{{ city.description|default:"This city has no description." }}</p>
+    <div>
+        <a href="{% url 'cybercity_edit' city.id %}" class="btn btn-secondary">Edit Settings</a>
+        <a href="{% url 'cybercity_visualizer' city.id %}" class="btn btn-info">Visualizer</a>
+        <a href="{% url 'cybercity_delete' city.id %}" class="btn btn-danger" onclick="return confirm('Are you sure you want to permanently delete this city and all its assets? This cannot be undone.')">Delete City</a>
+    </div>
+</div>
+
+<div class="main-grid">
+    <div class="main-content-area">
+        <div class="buildings-section">
+            <div class="section-header">
+                <h2>Buildings</h2>
+                <a href="{% url 'cybercity_building_add' city.id %}" class="btn btn-primary">Add Building</a>
+            </div>
+            <div class="building-list">
+                {% for building in buildings %}
+                <div class="card">
+                    <div class="card-body">
+                        <h3 class="h5">{{ building.name }}</h3>
+                        <p class="text-muted">{{ building.description|truncatewords:30 }}</p>
+                        <hr>
+                        <p>
+                            <strong>Machines:</strong> {{ building.machines.count }} |
+                            <strong>Monitors:</strong> {{ building.attack_monitors.count }} |
+                            <strong>ESP32s:</strong> {{ building.esp32s.count }}
+                        </p>
+                        <a href="{% url 'cybercity_building_detail' city.id building.id %}" class="btn btn-secondary btn-sm">Manage Building</a>
+                        <a href="{% url 'cybercity_building_edit' city.id building.id %}" class="btn btn-info btn-sm">Edit Building</a>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="alert alert-info">There are no buildings in this city yet.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="sidebar-area">
+        <div class="card">
+            <div class="card-header">
+                <h3>City Services</h3>
+            </div>
+            <div class="list-group list-group-flush">
+                <div class="list-group-item">
+                    <strong>MQTT Broker</strong><br>
+                    <span id="broker-status-badge" class="status-badge">Checking...</span>
+                    <small id="broker-status-message" class="text-muted ms-2"></small>
+                </div>
+                <div class="list-group-item">
+                    <strong>Firewall (pfSense)</strong><br>
+                    <span class="status-badge status-{{ city.pfsense_status|lower }}">{{ city.pfsense_status|capfirst }}</span>
+                    {% if city.pfsense_vmid %}<small class="text-muted ms-2">VMID: {{ city.pfsense_vmid }}</small>{% endif %}
+                    {% if city.pfsense_backup_snapshot_name %}<br><small class="text-success">Backup available</small>{% endif %}
+                    <div class="mt-2">
+                        <form method="post" class="d-inline">
+                            {% csrf_token %}
+                            {% if city.pfsense_status == 'running' %}
+                                <a href="{% url 'cybercity_guacamole_sso_redirect' city_id=city.id machine_type='pfsense' %}" target="_blank" rel="noopener noreferrer" class="btn btn-info btn-sm">Console</a>
+                                <button type="submit" formaction="{% url 'cybercity_utility_action' city.id 'pfsense' 'backup' %}" class="btn btn-secondary btn-sm" onclick="return confirm('This will overwrite any existing backup. Continue?')">Backup</button>
+                                {% if city.pfsense_backup_snapshot_name %}
+                                    <button type="submit" formaction="{% url 'cybercity_utility_action' city.id 'pfsense' 'restore' %}" class="btn btn-info btn-sm" onclick="return confirm('Are you sure you want to restore? The VM will be rolled back and restarted.')">Restore</button>
+                                {% else %}
+                                    <button class="btn btn-info btn-sm" disabled title="No backup available to restore.">Restore</button>
+                                {% endif %}
+                                <button type="submit" formaction="{% url 'cybercity_utility_action' city.id 'pfsense' 'stop' %}" class="btn btn-warning btn-sm" onclick="return confirm('Are you sure you want to stop and destroy the firewall VM?')">Stop</button>
+                            {% else %}
+                                <button type="submit" formaction="{% url 'cybercity_utility_action' city.id 'pfsense' 'start' %}" class="btn btn-success btn-sm" {% if not city.pfsense_template %}disabled title="No firewall template is configured for this city."{% endif %}>Start</button>
+                            {% endif %}
+                        </form>
+                    </div>
+                </div>
+                <div class="list-group-item">
+                    <strong>Management VM</strong><br>
+                    <span class="status-badge status-{{ city.management_status|lower }}">{{ city.management_status|capfirst }}</span>
+                    {% if city.management_vmid %}<small class="text-muted ms-2">VMID: {{ city.management_vmid }}</small>{% endif %}
+                     <div class="mt-2">
+                        <form method="post" class="d-inline">
+                            {% csrf_token %}
+                            {% if city.management_status == 'running' %}
+                                <a href="{% url 'cybercity_guacamole_sso_redirect' city_id=city.id machine_type='management' %}" target="_blank" rel="noopener noreferrer" class="btn btn-info btn-sm">Console</a>
+                                <button type="submit" formaction="{% url 'cybercity_utility_action' city.id 'management' 'stop' %}" class="btn btn-warning btn-sm" onclick="return confirm('Are you sure you want to stop and destroy the management VM?')">Stop</button>
+                            {% else %}
+                                <button type="submit" formaction="{% url 'cybercity_utility_action' city.id 'management' 'start' %}" class="btn btn-success btn-sm" {% if not city.management_vm_template %}disabled title="No management VM template is configured for this city."{% endif %}>Start</button>
+                            {% endif %}
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="video-feeds-section">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Live Feeds</h3>
+                    <a href="{% url 'cybercity_manage_feeds' city.id %}" class="btn btn-secondary btn-sm">Manage Feeds</a>
+                </div>
+                {% if video_feeds %}
+                <div class="card-body p-0">
+                    <div class="video-grid">
+                        {% for feed in video_feeds %}
+                        <div class="video-card m-2">
+                            <div class="video-card-header">
+                                {{ feed.name }}
+                            </div>
+                            <div class="video-player-container">
+                                {% if feed.feed_type == 'youtube' %}
+                                    <iframe src="https://www.youtube.com/embed/{{ feed.video_id_or_url }}?autoplay=1&mute=1&loop=1&playlist={{ feed.video_id_or_url }}" title="{{ feed.name }}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                                {% elif feed.feed_type == 'hls' %}
+                                    <video id="hls-player-{{ feed.id }}" class="video-js" controls preload="auto" width="100%" height="100%"></video>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="card-body">
+                    <p class="text-muted mb-0">No live feeds have been configured for this city.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block labtech_extra_body %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // HLS Player Initialization
+    {% for feed in video_feeds %}
+        {% if feed.feed_type == 'hls' %}
+            if (typeof Hls !== 'undefined' && Hls.isSupported()) {
+                var video_{{ feed.id }} = document.getElementById('hls-player-{{ feed.id }}');
+                var hls_url = '{{ feed.video_id_or_url }}';
+                var hls = new Hls();
+                hls.loadSource(hls_url);
+                hls.attachMedia(video_{{ feed.id }});
+                hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                    video_{{ feed.id }}.muted = true;
+                    video_{{ feed.id }}.play().catch(e => console.error("Autoplay was blocked for HLS video:", e));
+                });
+            }
+        {% endif %}
+    {% endfor %}
+
+    // MQTT Broker Status Check
+    const statusBadge = document.getElementById('broker-status-badge');
+    const statusMessage = document.getElementById('broker-status-message');
+    const checkUrl = "{% url 'cybercity_check_broker_status' city.id %}";
+
+    fetch(checkUrl)
+        .then(response => response.json())
+        .then(data => {
+            statusBadge.classList.remove('status-running', 'status-stopped', 'status-error');
+            if (data.status === 'online') {
+                statusBadge.textContent = 'Online';
+                statusBadge.classList.add('status-online');
+                statusMessage.textContent = 'Connection successful.';
+            } else {
+                statusBadge.textContent = 'Offline';
+                statusBadge.classList.add('status-offline');
+                statusMessage.textContent = data.message || 'Could not connect.';
+            }
+        })
+        .catch(error => {
+            console.error('Error checking broker status:', error);
+            statusBadge.textContent = 'Error';
+            statusBadge.classList.add('status-error');
+            statusMessage.textContent = 'Failed to fetch status.';
+        });
+});
+</script>
+{% endblock %}

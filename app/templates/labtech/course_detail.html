@@ -1,0 +1,489 @@
+{% extends "labtech/generic_base.html" %}
+{% load static course_extras %}
+
+{% block labtech_title %}{{ course.title }} - {{ block.super }}{% endblock %}
+
+{% block labtech_extra_head %}
+<link rel="stylesheet" href="{% static 'labtech/css/audio-player.css' %}">
+<script src="{% static 'labtech/js/audio-player.js' %}" defer></script>
+<style>
+    :root {
+        --panel-width: 320px; /* Width of the slide-out panel */
+        --navbar-height: 70px; /* Height of the top navbar from generic_base.html */
+    }
+    body {
+        transition: margin-right 0.35s ease-in-out;
+    }
+    
+    /* --- SLIDE-OUT PANEL STYLES --- */
+    .course-sidebar {
+        position: fixed;
+        top: var(--navbar-height); /* Position below the top navbar */
+        right: 0;
+        height: calc(100vh - var(--navbar-height)); /* Adjust height for the navbar */
+        width: var(--panel-width);
+        background-color: var(--navbar-bg); /* Use navbar's dark color */
+        color: var(--lt-nav-text);
+        box-shadow: -4px 0 15px rgba(0,0,0,0.1);
+        z-index: 1040;
+        transform: translateX(100%);
+        transition: transform 0.35s ease-in-out;
+        display: flex;
+        flex-direction: column;
+    }
+    .course-sidebar.is-open {
+        transform: translateX(0);
+    }
+    .sidebar-content-wrapper {
+        padding: 0;
+        overflow-y: auto;
+        flex-grow: 1;
+    }
+    .sidebar-content-wrapper > .progress-info,
+    .sidebar-content-wrapper > h3,
+    .sidebar-content-wrapper > .sidebar-action-area {
+        padding: 20px;
+    }
+    .sidebar-content-wrapper > h3 {
+        padding-bottom: 10px;
+        color: var(--lt-nav-text);
+        border-bottom: 1px solid var(--lt-nav-border);
+    }
+    .panel-toggle-btn {
+        position: absolute;
+        top: 50%;
+        left: -30px;
+        transform: translateY(-50%);
+        width: 30px;
+        height: 60px;
+        background-color: var(--navbar-bg);
+        color: var(--lt-nav-text);
+        border: 1px solid var(--lt-nav-border);
+        border-right: none;
+        border-radius: 5px 0 0 5px;
+        cursor: pointer;
+        font-size: 1.5em;
+    }
+    @media (min-width: 992px) {
+        body.panel-is-open {
+            margin-right: var(--panel-width);
+        }
+    }
+    
+    /* --- DARK THEME FOR CURRICULUM ACCORDION --- */
+    .course-sidebar .chapter-accordion .chapter-header {
+        background-color: transparent;
+        padding: 12px 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .course-sidebar .chapter-accordion .chapter-header h3 {
+        color: var(--lt-nav-text);
+        font-size: 1.1em;
+        flex-grow: 1;
+    }
+    .course-sidebar .chapter-accordion .chapter-header:hover,
+    .course-sidebar .chapter-accordion .chapter-header.open {
+        background-color: var(--lt-nav-hover);
+    }
+    .course-sidebar .chapter-accordion .chapter-body {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        display: none;
+        background-color: var(--navbar-bg);
+    }
+    .course-sidebar .chapter-accordion .chapter-body.open {
+        display: block;
+    }
+
+    /* Dark theme for content items */
+    .course-sidebar .content-list { list-style: none; padding: 0; margin: 0; }
+    .course-sidebar .content-item a {
+        color: var(--lt-nav-text);
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 10px 20px 10px 30px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .course-sidebar .chapter-body ul > li:first-child a {
+        border-top: none;
+    }
+    .course-sidebar .content-item a:hover {
+        background-color: var(--lt-nav-hover);
+        color: var(--lt-nav-text);
+    }
+    .course-sidebar .content-item .content-details h4 {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: inherit;
+    }
+    .course-sidebar .content-item .due-date {
+        color: var(--lt-nav-text);
+        font-size: 0.8em;
+        margin-top: 2px;
+    }
+    .course-sidebar .content-item.completed {
+        background-color: rgba(40, 167, 69, 0.3);
+    }
+    .course-sidebar .content-item.completed a {
+        color: var(--lt-nav-text);
+    }
+    .course-sidebar .content-item.completed .content-details h4 {
+        text-decoration: line-through;
+    }
+    .course-sidebar .content-item.completed .content-icon::before {
+        content: '✓';
+        color: var(--lt-nav-success);
+        font-weight: bold;
+    }
+    .course-sidebar .content-item.completed.active .content-icon::before { color: inherit; }
+    .course-sidebar .content-item.active a {
+        background-color: var(--lt-primary);
+        color: var(--lt-on-accent);
+    }
+    
+    .progress-info { margin-bottom: 20px; }
+    .progress-text {
+        font-size: 0.9em;
+        color: var(--lt-nav-text);
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+    }
+    .progress-container {
+        width: 100%;
+        background-color: var(--lt-nav-hover);
+        border-radius: 5px;
+        height: 12px;
+        overflow: hidden;
+    }
+    .progress-bar {
+        background-color: var(--lt-nav-success);
+        height: 100%;
+        border-radius: 5px;
+        transition: width 0.4s ease;
+        color: var(--lt-on-accent);
+    }
+    
+    /* General Page Styles */
+    .course-header { border-bottom: 2px solid var(--lt-border); padding-bottom: 15px; margin-bottom: 25px; }
+    .content-nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid var(--lt-border);
+        gap: 15px;
+    }
+    @media (max-width: 575.98px) {
+        .content-nav {
+            flex-wrap: wrap;
+        }
+    }
+    .content-date-info {
+        text-align: center;
+        margin-top: -10px;
+        margin-bottom: 20px;
+        color: var(--lt-muted);
+        font-size: 0.9rem;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 20px;
+    }
+    .content-date-info .due-date { color: var(--lt-danger); font-weight: 500; }
+    .announcement-alert {
+        padding: 0.75rem 1.25rem;
+        margin: 0 20px 20px 20px;
+        background-color: var(--lt-nav-hover);
+        border: 1px solid var(--lt-nav-border);
+        border-radius: .375rem;
+        text-align: center;
+    }
+    .announcement-alert a {
+        color: var(--lt-nav-text);
+        font-weight: 600;
+        text-decoration: none;
+    }
+    .announcement-alert a:hover { text-decoration: underline; }
+    .modal-body .announcement-item:last-child { margin-bottom: 0 !important; }
+    .content-date-info i { margin-right: 5px; }
+    .course-overview-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; }
+    @media (min-width: 768px) { .course-overview-grid { grid-template-columns: 1fr 300px; } }
+    .info-card { background-color: var(--lt-surface); border: 1px solid var(--lt-border); border-radius: 8px; padding: 1.5rem; }
+    .info-card h4 { font-size: 1.2rem; border-bottom: 1px solid var(--lt-border); padding-bottom: 0.75rem; margin-top: 0; margin-bottom: 1rem; }
+    .info-card ul { list-style: none; padding: 0; margin: 0; color: var(--lt-text); }
+    .info-card ul li { display: flex; align-items: center; margin-bottom: 0.75rem; font-size: 0.95rem; }
+    .info-card ul li i { margin-right: 10px; width: 20px; text-align: center; color: var(--lt-muted); }
+    .instructor-list-item { display: flex; align-items: center; margin-bottom: 1rem; }
+    .instructor-list-item img { width: 45px; height: 45px; border-radius: 50%; margin-right: 15px; object-fit: cover; }
+    .instructor-list-item a { color: var(--lt-text); text-decoration: none; font-weight: 600; }
+    .instructor-list-item a:hover { text-decoration: underline; }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+    <div class="course-header">
+        <h1>{{ course.title }}</h1>
+    </div>
+
+    <aside class="course-sidebar" id="course-curriculum-panel">
+        <button id="panel-toggle-btn" class="panel-toggle-btn" title="Toggle Curriculum Panel">&lsaquo;</button>
+        <div class="sidebar-content-wrapper">
+            <div class="progress-info">
+                <div class="progress-text">
+                    <span>Progress</span>
+                    <span id="progress-percentage-display">{{ completion_percentage }}%</span>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar" style="width: {{ completion_percentage }}%;"></div>
+                </div>
+            </div>
+            {% if announcements %}
+            <div class="announcement-alert">
+                <a href="#" data-bs-toggle="modal" data-bs-target="#announcementsModal">
+                    <i class="fas fa-bullhorn"></i> View Announcements
+                </a>
+            </div>
+            {% endif %}
+            <h3>Course Curriculum</h3>
+            <div class="chapter-accordion">
+                {% for chapter_data in structured_content %}
+                    <div class="chapter-header" data-chapter-id="{{ chapter_data.chapter.id }}">
+                        <h3>{% if chapter_data.chapter %}{{ chapter_data.chapter.title }}{% else %}Uncategorized Content{% endif %}</h3>
+                        <div class="header-icons">
+                            <span class="toggle-icon"></span>
+                        </div>
+                    </div>
+                    <div class="chapter-body">
+                        <ul class="content-list">
+							{% for item in chapter_data.items %}
+								<li class="content-item {% if not item.is_available %}locked{% endif %} {% if item.is_completed %}completed{% endif %} {% if focused_content and focused_content.id == item.id and focused_content|class_name|lower == item|class_name|lower %}active{% endif %}">
+									<a href="{% url 'course_detail' course_id=course.id %}?content={{ item|class_name|lower }}&id={{ item.id }}">
+										<div class="content-icon">
+											{% if not item.is_completed and item.is_available %}
+												{% if item|class_name == 'TextPage' %}📖
+												{% elif item|class_name == 'Video' %}▶️
+												{% elif item|class_name == 'Audio' %}🎧
+												{% elif item|class_name == 'Quiz' %}❓
+												{% elif item|class_name == 'PBQActivity' %}<span role="img" aria-label="Performance-based question">🧩</span>
+												{% elif item|class_name == 'Lab' %}🔬
+												{% elif item|class_name == 'HotspotActivity' %}📍
+												{% elif item|class_name == 'DragAndDropActivity' %}🤏 
+												{% elif item|class_name == 'CodingActivity' %}💻
+                                                {% elif item|class_name == 'ScenarioActivity' %}💬
+                                                {% elif item|class_name == 'FlashcardDeck' %}🗂️
+                                                {% elif item|class_name == 'TeamScenario' %}🚩
+                                                {% elif item|class_name == 'FileSubmissionActivity' %}📁
+                                                {% endif %}
+											{% endif %}
+										</div>
+										<div class="content-details">
+											<h4>{{ item.title }}</h4>
+											{% with effective_due_date=item.due_date|default:item.course.due_date %}
+												{% if effective_due_date %}<div class="due-date">Due: {{ effective_due_date|date:"M d, P" }}</div>{% endif %}
+											{% endwith %}
+										</div>
+									</a>
+								</li>
+							{% endfor %}
+                        </ul>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <div class="sidebar-action-area">
+                <a href="{% url 'course_forum' course_id=course.id %}" class="btn btn-outline-light w-100">
+                    <i class="fas fa-comments"></i> Discussion Forum
+                </a>
+                
+                <a href="{% url 'new_conversation' course_id=course.id %}" class="btn btn-info w-100 mt-2">
+                    <i class="fas fa-envelope"></i> Message Instructors
+                </a>
+
+                {% if resources_by_category %}
+                    <a href="#" class="btn btn-outline-light w-100 mt-2" data-bs-toggle="modal" data-bs-target="#resourcesModal">
+                        <i class="fas fa-paperclip"></i> View Course Resources
+                    </a>
+                {% endif %}
+                <a href="{% url 'unenroll_from_course' course_id=course.id %}" class="btn btn-danger w-100 mt-2">Unenroll from Course</a>
+            </div>
+        </div>
+    </aside>
+
+    <div class="course-main-content">
+        {% include "labtech/partials/course_main_content.html" %}
+    </div>
+
+    {% if announcements %}
+    <div class="modal fade" id="announcementsModal" tabindex="-1" aria-labelledby="announcementsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="announcementsModalLabel"><i class="fas fa-bullhorn me-2"></i> Course Announcements</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    {% for announcement in announcements %}
+                    <div class="announcement-item {% if announcement.is_pinned %}pinned{% endif %}">
+                        <div class="announcement-header">
+                            <h4 class="announcement-title">
+                                 {% if announcement.is_pinned %}<span class="announcement-pin-icon" title="Pinned">📌</span>{% endif %}{{ announcement.title }}
+                            </h4>
+                            <span class="announcement-meta">{{ announcement.created_at|date:"F j, Y" }}</span>
+                        </div>
+                        <div class="announcement-body">
+                            {{ announcement.body|safe }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if resources_by_category %}
+    <div class="modal fade" id="resourcesModal" tabindex="-1" aria-labelledby="resourcesModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="resourcesModalLabel">Course Resources</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    {% for category_name, resources in resources_by_category.items %}
+                        <h4 class="resource-category-title">{{ category_name }}</h4>
+                        <ul class="resource-list">
+                            {% for resource in resources %}
+                                <li class="resource-list-item">
+                                    <a href="{{ resource.file.url }}" target="_blank" download>📄 {{ resource.title }}</a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endblock %}
+
+{% block labtech_extra_body %}
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- PANEL TOGGLE SCRIPT ---
+        const panel = document.getElementById('course-curriculum-panel');
+        const toggleBtn = document.getElementById('panel-toggle-btn');
+        if (panel && toggleBtn) {
+            function togglePanel() {
+                panel.classList.toggle('is-open');
+                document.body.classList.toggle('panel-is-open');
+                toggleBtn.innerHTML = panel.classList.contains('is-open') ? '&rsaquo;' : '&lsaquo;';
+            }
+            toggleBtn.addEventListener('click', togglePanel);
+            if (window.innerWidth >= 992) { togglePanel(); }
+        }
+        {% if announcements %}
+            const announcementsModalElement = document.getElementById('announcementsModal');
+            if (announcementsModalElement) {
+                const announcementsModal = new bootstrap.Modal(announcementsModalElement);
+                const sessionKey = `seenAnnouncementsForCourse{{ course.id }}`;
+
+                if (!sessionStorage.getItem(sessionKey)) {
+                    announcementsModal.show();
+                    sessionStorage.setItem(sessionKey, 'true');
+                }
+            }
+        {% endif %}
+        // --- ACCORDION & DEFAULT OPEN SCRIPTS ---
+        const accordionHeaders = document.querySelectorAll('.chapter-accordion .chapter-header');
+        accordionHeaders.forEach(header => {
+            header.addEventListener('click', function() {
+                this.classList.toggle('open');
+                this.nextElementSibling.classList.toggle('open');
+            });
+        });
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('content')) {
+            const activeLink = document.querySelector(`a[href*="${window.location.search}"]`);
+            if (activeLink) {
+                const chapterBody = activeLink.closest('.chapter-body');
+                if (chapterBody) {
+                    chapterBody.classList.add('open');
+                    chapterBody.previousElementSibling.classList.add('open');
+                }
+            }
+        } else {
+            const defaultOpenChapterId = {{ first_incomplete_chapter_id|default:'null' }};
+            if (defaultOpenChapterId) {
+                const headerToOpen = document.querySelector(`.chapter-header[data-chapter-id="${defaultOpenChapterId}"]`);
+                if(headerToOpen) {
+                    headerToOpen.classList.add('open');
+                    headerToOpen.nextElementSibling.classList.add('open');
+                }
+            }
+        }
+
+        // --- PROGRESS BAR & MARK COMPLETE LOGIC ---
+        const completedCountElement = document.getElementById('progress-counter-display');
+        let completedCount = completedCountElement ? parseInt(completedCountElement.textContent.split(' ')[0]) : 0;
+        const totalItems = {{ total_items }};
+        const progressBar = document.querySelector('.progress-bar');
+        const progressPercentageDisplay = document.getElementById('progress-percentage-display');
+        
+        function updateCourseProgress() {
+            if (totalItems > 0 && progressBar) {
+                const percentage = Math.round((completedCount / totalItems) * 100);
+                progressBar.style.width = percentage + '%';
+                if(progressPercentageDisplay) progressPercentageDisplay.textContent = percentage + '%';
+                if(completedCountElement) completedCountElement.textContent = `${completedCount} of ${totalItems} items completed`;
+            }
+        }
+
+        document.querySelectorAll('.mark-complete-form').forEach(form => {
+            form.addEventListener('submit', function(event) {
+                event.preventDefault();
+                const button = form.querySelector('.mark-complete-btn');
+                button.disabled = true;
+                button.innerHTML = '<span class="spinner-border-sm" role="status"></span> Saving...';
+                fetch(form.action, {
+                    method: 'POST',
+                    body: new FormData(form),
+                    headers: { 'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value, 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        button.innerHTML = '✓ Completed';
+                        button.classList.remove('btn-success');
+                        button.classList.add('btn-outline-success');
+                        const activeLink = document.querySelector(`a[href*="${window.location.search}"]`);
+                        if (activeLink) {
+                            const listItem = activeLink.closest('.content-item');
+                            if(listItem && !listItem.classList.contains('completed')) {
+                                listItem.classList.add('completed');
+                                listItem.querySelector('.content-icon').innerHTML = '';
+                                completedCount++;
+                                updateCourseProgress();
+                            }
+                        }
+                    } else {
+                        alert(data.message || 'An error occurred.');
+                        button.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred.');
+                    button.disabled = false;
+                });
+            });
+        });
+    });
+    </script>
+{% endblock %}

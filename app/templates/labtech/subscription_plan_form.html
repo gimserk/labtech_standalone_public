@@ -1,0 +1,102 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title|default:"Manage Subscription Plan" }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .form-container { max-width: 800px; margin: 20px auto; padding: 30px; background-color: var(--lt-surface); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .form-header h2 { margin-top: 0; color: var(--lt-text); }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .form-field { margin-bottom: 20px; }
+    .form-field.full-width { grid-column: 1 / -1; }
+    .form-field label { display: block; margin-bottom: 8px; font-weight: 600; }
+    .form-field input, .form-field select, .form-field textarea { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid var(--lt-border); border-radius: 4px; }
+    .form-field-checkbox { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+    .form-actions { margin-top: 30px; text-align: right; border-top: 1px solid var(--lt-border); padding-top: 20px; }
+    .help-text { font-size: 0.9em; color: var(--lt-muted); margin-top: 5px; }
+    .form-errors { color: var(--lt-danger); background-color: var(--lt-danger-subtle); border: 1px solid var(--lt-border); padding: 10px 15px; border-radius: 4px; margin-top: 10px; list-style: none; padding-left: 0; }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="form-container">
+    <div class="form-header">
+        <h2>{{ title|default:"Manage Subscription Plan" }}</h2>
+    </div>
+    
+    <form method="post" novalidate>
+        {% csrf_token %}
+        
+        {% if form.non_field_errors %}
+            <ul class="form-errors">
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        <div class="form-grid">
+            <div class="form-field full-width">
+                <label for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+                {{ form.name }}
+                {% if form.name.errors %}<ul class="form-errors">{% for error in form.name.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+
+            <div class="form-field">
+                <label for="{{ form.level.id_for_label }}">{{ form.level.label }}</label>
+                {{ form.level }}
+                {% if form.level.errors %}<ul class="form-errors">{% for error in form.level.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+
+            <div class="form-field">
+                <label for="{{ form.price.id_for_label }}">{{ form.price.label }}</label>
+                {{ form.price }}
+                {% if form.price.errors %}<ul class="form-errors">{% for error in form.price.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+
+            <div class="form-field full-width">
+                <label for="{{ form.stripe_price_lookup_key.id_for_label }}">{{ form.stripe_price_lookup_key.label }}</label>
+                {{ form.stripe_price_lookup_key }}
+                {% if form.stripe_price_lookup_key.help_text %}<p class="help-text">{{ form.stripe_price_lookup_key.help_text|safe }}</p>{% endif %}
+                {% if form.stripe_price_lookup_key.errors %}<ul class="form-errors">{% for error in form.stripe_price_lookup_key.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+
+            <div class="form-field full-width">
+                <label for="{{ form.description.id_for_label }}">{{ form.description.label }}</label>
+                {{ form.description }}
+                {% if form.description.errors %}<ul class="form-errors">{% for error in form.description.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+
+            <div class="form-field">
+                <label for="{{ form.billing_cycle_days.id_for_label }}">{{ form.billing_cycle_days.label }}</label>
+                {{ form.billing_cycle_days }}
+                {% if form.billing_cycle_days.errors %}<ul class="form-errors">{% for error in form.billing_cycle_days.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+        </div>
+        
+        <hr>
+        <p><strong>Features & Status</strong></p>
+        <div class="form-field full-width">
+            <label for="{{ form.features_list.id_for_label }}">{{ form.features_list.label }}</label>
+            {{ form.features_list }}
+            {% if form.features_list.errors %}<ul class="form-errors">{% for error in form.features_list.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+        </div>
+
+        <div class="form-field-checkbox">
+            {{ form.is_active }} <label for="{{ form.is_active.id_for_label }}">{{ form.is_active.label }}</label>
+        </div>
+        <div class="form-field-checkbox">
+            {{ form.is_public }} <label for="{{ form.is_public.id_for_label }}">{{ form.is_public.label }}</label>
+        </div>
+        <div class="form-field-checkbox">
+            {{ form.is_default }} <label for="{{ form.is_default.id_for_label }}">{{ form.is_default.label }}</label>
+        </div>
+
+        <div class="form-actions">
+            <a href="{% url 'labtech_manage_subscription_plans_list' %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Save Plan</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,29 @@
+name: Audio course content tests
+on:
+  pull_request:
+    paths:
+      - 'app/**'
+      - 'requirements.txt'
+      - '.github/workflows/audio-content-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - 'requirements.txt'
+      - '.github/workflows/audio-content-tests.yml'
+jobs:
+  django:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install native build dependencies
+        run: sudo apt-get update && sudo apt-get install -y python3-venv python3-dev build-essential pkg-config default-libmysqlclient-dev libldap2-dev libsasl2-dev libssl-dev libxml2-dev libxslt1-dev libjpeg-dev zlib1g-dev libffi-dev
+      - name: Install Python requirements
+        run: |
+          python3 -m venv /tmp/labtech-audio-ci
+          /tmp/labtech-audio-ci/bin/python -m pip install -r requirements.txt
+      - name: Run gradebook, course package, audio, lab cleanup, and guest-agent checks
+        run: |
+          /tmp/labtech-audio-ci/bin/python manage.py test app.test_gradebook_policy app.test_gradebook_scoring app.test_gradebook_views app.test_gradebook_export app.test_gradebook_copy app.test_course_packages app.test_audio app.test_lab_cleanup app.test_lab_checks app.test_scenario_management app.test_ai_tutor --settings=app.test_settings
+          /tmp/labtech-audio-ci/bin/python manage.py check --settings=app.test_settings
+          /tmp/labtech-audio-ci/bin/python manage.py makemigrations --check --dry-run --settings=app.test_settings

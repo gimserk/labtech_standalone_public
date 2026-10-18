@@ -1,0 +1,126 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .form-container { max-width: 900px; margin: 0 auto; padding: 25px; }
+    .form-container h2 { text-align: center; color: var(--lt-text); margin-bottom: 25px; border-bottom: 1px solid var(--lt-border); padding-bottom: 15px; }
+    .form-section-header { font-size: 1.2em; font-weight: 600; color: var(--lt-text); margin-top: 30px; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--lt-border); }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+    .form-field { margin-bottom: 20px; }
+    .form-field.full-width { grid-column: 1 / -1; }
+    .form-field label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--lt-text); }
+    .form-field input[type="text"],
+    .form-field input[type="number"],
+    .form-field select,
+    .form-field textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid var(--lt-border);
+        border-radius: 4px;
+        box-sizing: border-box;
+        font-size: 0.95em;
+    }
+    .form-field-checkbox { display: flex; align-items: center; gap: 10px; margin-top: 15px; }
+    .form-field-checkbox input[type="checkbox"] { width: auto; }
+    .form-field-checkbox label { margin: 0; font-weight: normal; }
+    .form-field textarea { min-height: 100px; resize: vertical; }
+    .form-field .helptext { font-size: 0.85em; color: var(--lt-muted); margin-top: 5px; }
+    .form-field .errorlist { list-style: none; padding: 0; margin: 5px 0 0 0; color: var(--lt-danger); font-size: 0.85em; }
+    .form-actions { margin-top: 30px; text-align: right; }
+    .btn { padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 1em; cursor: pointer; border: none; }
+    .btn-primary { background-color: var(--lt-primary); color: var(--lt-on-accent); }
+    .btn-primary:hover { background-color: var(--lt-primary-hover); color: var(--lt-on-accent); }
+    .btn-secondary { background-color: var(--lt-secondary); color: var(--lt-on-accent); margin-right: 10px; }
+    .btn-secondary:hover { background-color: var(--lt-secondary-hover); color: var(--lt-on-accent); }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="form-container">
+    <h2>{{ title }}</h2>
+    <p>Course: <strong>{{ course.title }}</strong></p>
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+        
+        <h3 class="form-section-header">Basic Information</h3>
+        <div class="form-field">
+            <label for="{{ form.title.id_for_label }}">{{ form.title.label }}</label>
+            {{ form.title }}
+        </div>
+        <div class="form-field">
+            <label for="{{ form.chapter.id_for_label }}">{{ form.chapter.label }}</label>
+            {{ form.chapter }}
+            <div class="helptext">{{ form.chapter.help_text|safe }}</div>
+        </div>
+        <div class="form-field">
+            <label for="{{ form.description.id_for_label }}">{{ form.description.label }}</label>
+            {{ form.description }}
+        </div>
+        <div class="form-field">
+            <label for="{{ form.order.id_for_label }}">{{ form.order.label }}</label>
+            {{ form.order }}
+            <div class="helptext">{{ form.order.help_text|safe }}</div>
+        </div>
+
+        <h3 class="form-section-header">Quiz Settings</h3>
+        <div class="form-grid">
+            <div class="form-field">
+                <label for="{{ form.pass_mark_percentage.id_for_label }}">{{ form.pass_mark_percentage.label }}</label>
+                {{ form.pass_mark_percentage }}
+                <div class="helptext">{{ form.pass_mark_percentage.help_text|safe }}</div>
+            </div>
+            <div class="form-field">
+                <label for="{{ form.max_attempts.id_for_label }}">{{ form.max_attempts.label }}</label>
+                {{ form.max_attempts }}
+                <div class="helptext">{{ form.max_attempts.help_text|safe }}</div>
+            </div>
+        </div>
+        <div class="form-field">
+            <label for="{{ form.show_answers_after.id_for_label }}">{{ form.show_answers_after.label }}</label>
+            {{ form.show_answers_after }}
+            <div class="helptext">{{ form.show_answers_after.help_text|safe }}</div>
+        </div>
+
+        <div class="form-field-checkbox">
+            {{ form.shuffle_questions }}
+            <label for="{{ form.shuffle_questions.id_for_label }}">{{ form.shuffle_questions.label }}</label>
+        </div>
+        <div class="form-field-checkbox">
+            {{ form.shuffle_answers }}
+            <label for="{{ form.shuffle_answers.id_for_label }}">{{ form.shuffle_answers.label }}</label>
+        </div>
+         <div class="form-field-checkbox">
+            {{ form.is_published }}
+            <label for="{{ form.is_published.id_for_label }}">{{ form.is_published.label }}</label>
+        </div>
+{# --- ADDED: Section for date fields --- #}
+        {% if form.available_from %} {# This check prevents the section from showing for non-institutional courses #}
+            <h3 class="form-section-header">Availability & Deadlines</h3>
+            <div class="form-grid">
+                <div class="form-field">
+                    <label for="{{ form.available_from.id_for_label }}">{{ form.available_from.label }}</label>
+                    {{ form.available_from }}
+                </div>
+                <div class="form-field">
+                    <label for="{{ form.due_date.id_for_label }}">{{ form.due_date.label }}</label>
+                    {{ form.due_date }}
+                </div>
+            </div>
+            <div class="form-field">
+                <label for="{{ form.available_until.id_for_label }}">{{ form.available_until.label }}</label>
+                {{ form.available_until }}
+            </div>
+        {% endif %}
+        <div class="form-actions">
+            <a href="{% url 'manage_course_content' course_id=course.id %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">
+                {% if form.instance.pk %}Save and Manage Questions{% else %}Create Quiz and Add Questions{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

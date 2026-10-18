@@ -1,0 +1,221 @@
+{% extends "labtech/generic_base.html" %}
+{% load course_extras %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    .summary-card {
+        background-color: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 1.25rem;
+        text-align: center;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .summary-card h5 { margin-bottom: 0.5rem; color: #555; font-size: 1rem; font-weight: 500; }
+    .summary-card .stat { font-size: 2.25rem; font-weight: 700; color: #0056b3; }
+    .summary-card .stat.overall { color: #28a745; }
+    .summary-card .details { font-size: 0.85rem; color: #777; margin-top: 0.25rem; }
+    
+    .grade-cell {
+        font-weight: 600;
+        padding: 0.75rem !important;
+        text-align: center;
+        vertical-align: middle;
+    }
+    .grade-good { background-color: #d4edda !important; color: #155724; }
+    .grade-ok { background-color: #fff3cd !important; color: #856404; }
+    .grade-fail { background-color: #f8d7da !important; color: #721c24; }
+    .grade-complete { background-color: #d1ecf1 !important; color: #0c5460; }
+    .grade-incomplete { color: #6c757d; }
+
+    .filter-controls {
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+    }
+    th.sortable {
+        cursor: pointer;
+        position: relative;
+    }
+    th.sortable:hover {
+        background-color: #e9ecef;
+    }
+    th.sortable .sort-icon {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #adb5bd;
+        font-size: 0.9em;
+    }
+    th.sort-asc .sort-icon::after { content: "▲"; }
+    th.sort-desc .sort-icon::after { content: "▼"; }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="course-header mb-4">
+    <p><a href="{% url 'course_detail' course_id=course.id %}">← Back to {{ course.title }}</a></p>
+    <h1>{{ title }}</h1>
+</div>
+
+<h2>Course Summary</h2>
+<div class="summary-grid">
+    <div class="summary-card">
+        <h5>Overall Completion</h5>
+        <div class="stat overall">{{ stats.overall_grade|floatformat:0 }}%</div>
+        <div class="details">{{ my_grades|length }} total items</div>
+    </div>
+    <div class="summary-card">
+        <h5>Reading Progress</h5>
+        <div class="stat">{{ stats.reading_progress|floatformat:0 }}%</div>
+        <div class="details">{{ summary.reading.completed }} of {{ summary.reading.total }} items</div>
+    </div>
+    <div class="summary-card">
+        <h5>Quiz Average</h5>
+        <div class="stat">{{ stats.quiz_avg|floatformat:0 }}%</div>
+        <div class="details">{{ summary.quiz.scores|length }} of {{ summary.quiz.total }} taken</div>
+    </div>
+    <div class="summary-card">
+        <h5>Lab Average</h5>
+        <div class="stat">{{ stats.lab_avg|floatformat:0 }}%</div>
+        <div class="details">{{ summary.lab.scores|length }} of {{ summary.lab.total }} completed</div>
+    </div>
+    <div class="summary-card">
+        <h5>Flashcard Mastery</h5>
+        <div class="stat">{{ stats.flashcard_avg|floatformat:0 }}%</div>
+        <div class="details">{{ summary.flashcard.scores|length }} of {{ summary.flashcard.total }} decks</div>
+    </div>
+    <div class="summary-card">
+        <h5>Interactive Average</h5>
+        <div class="stat">{{ stats.hotspot_avg|floatformat:0 }}%</div>
+        <div class="details">{{ summary.hotspot.scores|length }} of {{ summary.hotspot.total }} activities</div>
+    </div>
+    <div class="summary-card">
+        <h5>Coding Average</h5>
+        <div class="stat">{{ stats.coding_avg|floatformat:0 }}%</div>
+        <div class="details">{{ summary.coding.scores|length }} of {{ summary.coding.total }} activities</div>
+    </div>
+</div>
+
+<div class="filter-controls">
+    <div class="btn-group btn-group-sm flex-wrap" role="group" id="type-filter">
+        <button type="button" class="btn btn-secondary active" data-filter-type="all">All</button>
+        <button type="button" class="btn btn-secondary" data-filter-type="reading">Reading</button>
+        <button type="button" class="btn btn-secondary" data-filter-type="quiz">Quizzes</button>
+        <button type="button" class="btn btn-secondary" data-filter-type="lab">Labs</button>
+        <button type="button" class="btn btn-secondary" data-filter-type="flashcarddeck">Flashcards</button>
+        <button type="button" class="btn btn-secondary" data-filter-type="hotspotactivity">Hotspots</button>
+        <button type="button" class="btn btn-secondary" data-filter-type="draganddropactivity">Drag & Drop</button>
+        <button type="button" class="btn btn-secondary" data-filter-type="codingactivity">Coding</button>
+        <button type="button" class="btn btn-secondary" data-filter-type="scenarioactivity">Scenarios</button>
+    </div>
+</div>
+
+<h2>Detailed Grades</h2>
+<div class="table-responsive">
+    <table class="table table-bordered table-striped" id="grades-table">
+        <thead class="table-light">
+            <tr>
+                <th class="sortable" data-sort="chapter">Chapter <span class="sort-icon"></span></th>
+                <th class="sortable" data-sort="title">Content Item <span class="sort-icon"></span></th>
+                <th class="sortable" data-sort="type">Type <span class="sort-icon"></span></th>
+                <th class="sortable text-center" data-sort="grade">Grade <span class="sort-icon"></span></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for grade_info in my_grades %}
+            <tr data-type="{{ grade_info.item|class_name|lower }}" 
+                data-status="{{ grade_info.status }}" 
+                data-grade="{{ grade_info.score }}"
+                data-chapter="{{ grade_info.item.chapter.title|default:'Z' }}"
+                data-title="{{ grade_info.item.title }}">
+                <td>{{ grade_info.item.chapter.title|default:"-" }}</td>
+                <td>{{ grade_info.item.title }}</td>
+                <td>{{ grade_info.item|class_name }}</td>
+                <td class="grade-cell 
+                    {% if grade_info.status == 'complete' %}
+                        {% with score=grade_info.score %}
+                            {% if score >= 90 %}grade-good
+                            {% elif score >= 70 %}grade-ok
+                            {% elif score < 70 and grade_info.item|class_name != 'TextPage' and grade_info.item|class_name != 'Video' %}grade-fail
+                            {% else %}grade-complete
+                            {% endif %}
+                        {% endwith %}
+                    {% else %}
+                        grade-incomplete
+                    {% endif %}
+                ">
+                    {{ grade_info.display }}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" class="text-center">No gradeable items found in this course.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block labtech_extra_body %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const table = document.getElementById('grades-table');
+    const tbody = table.querySelector('tbody');
+    const typeFilterGroup = document.getElementById('type-filter');
+
+    if(table && tbody){
+        table.querySelectorAll('thead th.sortable').forEach(headerCell => {
+            headerCell.addEventListener('click', () => {
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                const sortKey = headerCell.dataset.sort;
+                const newDir = headerCell.classList.contains('sort-asc') ? 'desc' : 'asc';
+                rows.sort((a, b) => {
+                    let valA = sortKey === 'grade' ? parseFloat(a.dataset.grade) : a.dataset[sortKey].toLowerCase();
+                    let valB = sortKey === 'grade' ? parseFloat(b.dataset.grade) : b.dataset[sortKey].toLowerCase();
+                    if (valA < valB) return newDir === 'asc' ? -1 : 1;
+                    if (valA > valB) return newDir === 'asc' ? 1 : -1;
+                    return 0;
+                });
+                table.querySelectorAll('thead th.sortable').forEach(th => th.className = 'sortable');
+                headerCell.classList.add(`sort-${newDir}`);
+                rows.forEach(row => tbody.appendChild(row));
+            });
+        });
+    }
+
+    if(typeFilterGroup && tbody){
+        let currentTypeFilter = 'all';
+        function applyFilters() {
+            tbody.querySelectorAll('tr').forEach(row => {
+                const type = row.dataset.type;
+                const readingTypes = ['textpage', 'video'];
+                const typeMatch = currentTypeFilter === 'all' || 
+                                  (currentTypeFilter === 'reading' && readingTypes.includes(type)) ||
+                                  type === currentTypeFilter;
+                row.style.display = typeMatch ? '' : 'none';
+            });
+        }
+        typeFilterGroup.addEventListener('click', e => {
+            if (e.target.tagName === 'BUTTON') {
+                currentTypeFilter = e.target.dataset.filterType;
+                typeFilterGroup.querySelector('.active').classList.remove('active');
+                e.target.classList.add('active');
+                applyFilters();
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

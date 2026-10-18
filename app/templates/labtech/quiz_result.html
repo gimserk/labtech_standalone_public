@@ -1,0 +1,78 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .result-container { max-width: 900px; margin: 0 auto; padding: 20px; }
+    .result-header { text-align: center; margin-bottom: 30px; padding: 20px; background-color: var(--lt-surface-muted); border-radius: 8px; }
+    .result-header h1 { margin-bottom: 5px; }
+    .score-badge { font-size: 1.5em; padding: 10px 20px; border-radius: 8px; color: var(--lt-on-accent); }
+    .score-badge.passed { background-color: var(--lt-success); color: var(--lt-on-accent); }
+    .score-badge.failed { background-color: var(--lt-danger); color: var(--lt-on-accent); }
+    .answer-review-block { margin-top: 30px; }
+    .question-review { margin-bottom: 20px; padding: 20px; border: 1px solid var(--lt-border); border-radius: 8px; }
+    .question-review.correct { border-left: 5px solid var(--lt-success); background-color: var(--lt-success-subtle); }
+    .question-review.incorrect { border-left: 5px solid var(--lt-danger); background-color: var(--lt-danger-subtle); }
+    .correct-answer-text { color: var(--lt-success); font-weight: bold; }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="result-container">
+    <div class="result-header">
+        <h1>{{ attempt.quiz.title }}</h1>
+        <p>Your Results</p>
+        <h2>Score: {{ attempt.score|floatformat:0 }}%</h2>
+        {% if attempt.passed %}
+            <span class="score-badge passed">Passed</span>
+        {% else %}
+            <span class="score-badge failed">Failed</span>
+        {% endif %}
+    </div>
+
+    {% if show_correct_answers %}
+        <div class="answer-review-block">
+            <h3>Answer Review</h3>
+            {% for answer in attempt.answers.all %}
+                <div class="question-review {% if answer.is_correct %}correct{% else %}incorrect{% endif %}">
+                    {# ADDED: Display question points #}
+                    <p><strong>Question ({{ answer.question.points }} pts):</strong> {{ answer.question.text|safe }}</p>
+                    <p><strong>Your Answer:</strong> 
+                        {% if answer.question.question_type == 'SA' %}
+                            <em>{{ answer.short_answer_text|default:"(No answer)" }}</em>
+                        {% else %}
+                            <em>{{ answer.selected_choice.text|default:"(No answer)" }}</em>
+                        {% endif %}
+                    </p>
+                    
+                    {# --- UPDATED: Logic to show the correct answer --- #}
+                    {% if not answer.is_correct %}
+                        <p class="correct-answer-text">
+                            Correct Answer(s):
+                            {% if answer.question.question_type == 'SA' %}
+                                {% for correct_ans in answer.question.correct_short_answers.all %}
+                                    "{{ correct_ans.answer_text }}"{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                {% for choice in answer.question.choices.all %}
+                                    {% if choice.is_correct %}{{ choice.text }}{% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        </p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            Detailed answer review will be available at a later time as determined by your instructor.
+        </div>
+    {% endif %}
+
+    <div style="margin-top: 30px;">
+        <a href="{% url 'course_detail' course_id=attempt.quiz.course.id %}" class="btn btn-secondary">← Back to Course</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .management-container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid var(--lt-border);
+    }
+    .page-header h2 { margin: 0; color: var(--lt-text); font-size: 1.8em; }
+    .breadcrumbs { font-size: 0.9em; color: var(--lt-muted); margin-bottom: 20px; }
+    .breadcrumbs a { color: var(--lt-primary); text-decoration: none; }
+    .breadcrumbs a:hover { text-decoration: underline; }
+
+    /* Themed Button Styles */
+    .btn {
+        padding: 8px 15px; text-decoration: none; border-radius: 5px; font-size: 0.9em;
+        cursor: pointer; border: none; display: inline-block; margin-left: 10px;
+    }
+    .btn-primary { background-color: var(--lt-primary); color: var(--lt-on-accent); }
+    .btn-primary:hover { background-color: var(--lt-primary-hover); color: var(--lt-on-accent); }
+    .btn-secondary { background-color: var(--lt-secondary); color: var(--lt-on-accent); }
+    .btn-secondary:hover { background-color: var(--lt-secondary-hover); color: var(--lt-on-accent); }
+    .btn-edit { background-color: var(--lt-warning); color: var(--lt-on-warning); }
+    .btn-edit:hover { background-color: var(--lt-warning-hover); color: var(--lt-on-warning); }
+    .btn-danger { background-color: var(--lt-danger); color: var(--lt-on-accent); }
+    .btn-danger:hover { background-color: var(--lt-danger-hover); color: var(--lt-on-accent); }
+    .btn-sm { font-size: 0.8em; padding: 5px 10px; }
+
+    /* Themed Table Styles */
+    .table-responsive { overflow-x: auto; margin-top: 20px; }
+    .styled-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9em;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .styled-table th, .styled-table td {
+        border: 1px solid var(--lt-border);
+        padding: 12px 15px;
+        text-align: left;
+        vertical-align: middle;
+    }
+    .styled-table th {
+        background-color: var(--lt-surface-muted);
+        color: var(--lt-text);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85em;
+    }
+    .styled-table tbody tr:nth-child(even) { background-color: var(--lt-surface-muted); }
+    .styled-table tbody tr:hover { background-color: var(--lt-surface-muted); }
+    .styled-table .actions-cell {
+        display: flex;
+        gap: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="management-container">
+    <div class="breadcrumbs">
+        <a href="{% url 'manage_faq_categories' %}">FAQ Categories</a> &raquo;
+        {{ category.name }}
+    </div>
+
+    <div class="page-header">
+        <h2>{{ title }}</h2>
+        <a href="{% url 'add_faq' category_id=category.id %}" class="btn btn-primary">Add New FAQ</a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="styled-table">
+            <thead>
+                <tr>
+                    <th>Question</th>
+                    <th>Display Order</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for faq in faqs %}
+                <tr>
+                    <td>{{ faq.question|truncatewords:15 }}</td>
+                    <td>{{ faq.order }}</td>
+                    <td class="actions-cell">
+                        <a href="{% url 'edit_faq' faq_id=faq.id %}" class="btn btn-sm btn-edit">Edit</a>
+                        <a href="{% url 'delete_faq' faq_id=faq.id %}" class="btn btn-sm btn-danger">Delete</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" style="text-align: center; padding: 20px;">
+                        No FAQs have been added to this category yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

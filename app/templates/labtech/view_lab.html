@@ -1,0 +1,482 @@
+{% extends "labtech/generic_base.html" %}
+{% load static lab_checks %}
+{% block labtech_extra_head %}
+<style>
+    /* Styling for the lab layout */
+    .lab-container {
+        display: flex;
+        flex-direction: row;
+        gap: 20px;
+        height: calc(100vh - 120px); /* Adjust based on your header/footer height */
+    }
+
+    .instructions-panel {
+        flex: 3;
+        overflow-y: auto;
+        padding-right: 15px;
+        border-right: 1px solid var(--lt-border);
+    }
+
+    .machines-panel {
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    /* Styling for individual machine cards */
+    .machine-card {
+        transition: all 0.3s ease-in-out;
+    }
+
+    .machine-card .card-body {
+        padding: 1rem;
+    }
+
+    .status-indicator {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+
+    .status-running { background-color: var(--lt-success); color: var(--lt-on-accent); } /* Green */
+    .status-stopped { background-color: var(--lt-danger); color: var(--lt-on-accent); } /* Red */
+    .status-building, .status-pending { background-color: var(--lt-warning); color: var(--lt-on-warning); } /* Yellow */
+    .status-unknown, .status-error { background-color: var(--lt-secondary); color: var(--lt-on-accent); } /* Grey */
+
+    /* Make buttons in the machine card smaller */
+    .machine-card .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+    }
+</style>
+{% endblock %}
+{% block labtech_content %}
+{% lab_check_context lab_session lab as check_context %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'my_courses' %}">My Courses</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'course_detail' course_id=course.id %}">{{ course.title }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ lab.title }}</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>{{ lab.title }}</h1>
+        <div>
+            {% if lab_session %}
+                {% if lab_session.expires_at %}
+                    <span id="countdown-timer" class="badge bg-warning text-dark me-2 fs-6"></span>
+                {% endif %}
+                
+                {# --- UPDATED LOGIC: Disable finish button for persistent labs --- #}
+                {% if lab.lab_type == 'persistent' %}
+                    <button class="btn btn-secondary" disabled title="Persistent labs must be deleted by an instructor.">
+                        <i class="fas fa-lock me-1"></i> Persistent Lab Active
+                    </button>
+                {% elif not is_expired and lab_session.status != 'deleting' and not cleanup_job %}
+                    <button id="open-finish-btn" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#finishLabModal">
+                        <i class="fas fa-stop-circle me-1"></i> Finish Lab Session
+                    </button>
+                {% endif %}
+                {# ------------------------------------------------------------- #}
+
+            {% else %}
+            {% if lab.machines.all %}
+                <form id="start-lab-form" action="{% url 'create_lab_instance' course_id=course.id lab_id=lab.id %}" method="POST">
+                    {% csrf_token %}
+                    <button id="start-lab-btn" type="submit" class="btn btn-primary">
+                        <i class="fas fa-play-circle me-1"></i> Start Lab
+                    </button>
+                     {% endif %}
+                </form>
+            {% endif %}
+        </div>
+    </div>
+    {% if lab_session.status == 'active' and total_questions_count|add:check_context.total_count > 0 %}
+    <div class="card mb-3" aria-label="Lab Progress">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h2 class="h5 mb-0">Lab Progress</h2>
+                <span id="progress-text-counter" class="text-muted">{{ correct_questions_count|add:check_context.passed_count }} / {{ total_questions_count|add:check_context.total_count }} completed</span>
+            </div>
+            <div class="progress">
+                <div id="progress-bar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <div id="deletion-status-container"></div>
+    {% if is_expired %}<div class="alert alert-warning">Time expired—your lab environment is being cleaned up.</div>{% endif %}
+    {% if cleanup_job %}<div class="alert alert-info">Cleanup status: {{ cleanup_job.status }}{% if cleanup_job.status == 'failed' %}. Please contact your instructor.{% endif %}</div>{% endif %}
+
+    {% if lab_session %}
+        {% if lab_session.status == 'building' %}
+            <div id="building-status-container" class="alert alert-info">
+                <div class="d-flex align-items-center">
+                    <div class="spinner-border text-primary me-3" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <div>
+                        <h4 class="alert-heading">Your Lab is Being Built!</h4>
+                        <p id="building-status-message" class="mb-0">Please wait a few moments. This page will refresh automatically when your lab is ready.</p>
+                    </div>
+                </div>
+            </div>
+        {% elif lab_session.status == 'error' %}
+            <div id="building-status-container" class="alert alert-danger">
+                {% if cleanup_job %}
+                    <h4 class="alert-heading">Lab Cleanup Failed</h4>
+                    <p>Please contact your instructor. A new session cannot start until cleanup succeeds.</p>
+                {% else %}
+                    <h4 class="alert-heading">Lab Creation Failed</h4>
+                    <p>Something went wrong while building your lab. Please try finishing this lab session and starting a new one.</p>
+                    <hr>
+                    <p class="mb-0"><strong>Error Details:</strong> {{ lab_session.build_error_message|default:"No specific error message was provided." }}</p>
+                {% endif %}
+            </div>
+        {% endif %}
+    {% endif %}
+    <div class="lab-container">
+        <div class="instructions-panel">
+            {% include 'labtech/partials/lab_instructions_content.html' %}
+        </div>
+<div class="machines-panel">
+    <h2>Lab Environment</h2>
+
+    {% if lab_session %}
+        {# This container will be updated by JavaScript when a lab is building or active. #}
+        <ul class="list-unstyled" id="machine-list-container">
+            <li class="text-muted">Loading lab environment status...</li>
+        </ul>
+    {% else %}
+        {# This block shows the correct message before a lab has been started. #}
+        {% if lab.machines.all %}
+            <div class="alert alert-secondary">
+                <p class="mb-0">Your lab environment is not running. Click "Start Lab" to create your personalized instance.</p>
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                <p class="mb-0">No machines are required for this lab. You can complete the instructions without a virtual environment.</p>
+            </div>
+        {% endif %}
+    {% endif %}
+</div>
+    </div>
+</div>
+
+<div class="modal fade" id="finishLabModal" tabindex="-1" aria-labelledby="finishLabModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="finishLabModalLabel">Confirm Finish Lab</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Are you sure you want to finish this lab session? This action cannot be undone and **all your virtual machines will be permanently deleted.**
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form id="finish-lab-form" action="{% if lab_session %}{% url 'finish_lab_session' course_id=course.id instance_id=lab_session.id %}{% endif %}" method="POST">
+            {% csrf_token %}
+            <button id="confirm-finish-btn" type="submit" class="btn btn-danger">Yes, Finish Lab</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block labtech_extra_body %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const labSessionId = '{{ lab_session.id|default:"" }}';
+    const expiresAt = '{{ lab_session.expires_at.isoformat|default:"" }}';
+    let pollingInterval = null;
+
+    // ========================================================================
+    // --- UNIFIED LAB STATE POLLER & RENDERER ---
+    // ========================================================================
+    
+    function renderMachineControls(machine) {
+        const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+        let statusBadge = `<span class="badge bg-secondary text-capitalize">${machine.status}</span>`;
+        if (machine.status === 'running') statusBadge = `<span class="badge bg-success">Running</span>`;
+        if (machine.status === 'stopped') statusBadge = `<span class="badge bg-danger">Stopped</span>`;
+        if (machine.status === 'building') statusBadge = `<span class="badge bg-warning">Building</span>`;
+        if (machine.status === 'pending') statusBadge = `<span class="badge bg-info">Pending...</span>`; 
+        
+        const isRunning = machine.status === 'running';
+        const actionForms = `
+            <form method="POST" action="/courses/{{ course.id }}/lab-machine/${machine.id}/action/" class="d-inline">
+                <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+                <input type="hidden" name="action" value="start">
+                <button type="submit" class="btn btn-success btn-sm" ${isRunning ? 'disabled' : ''}>Start</button>
+            </form>
+            <form method="POST" action="/courses/{{ course.id }}/lab-machine/${machine.id}/action/" class="d-inline">
+                <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+                <input type="hidden" name="action" value="stop">
+                <button type="submit" class="btn btn-warning btn-sm" ${!isRunning ? 'disabled' : ''}>Stop</button>
+            </form>
+            <form method="POST" action="/courses/{{ course.id }}/lab-machine/${machine.id}/action/" class="d-inline">
+                <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+                <input type="hidden" name="action" value="reset">
+                <button type="submit" class="btn btn-danger btn-sm" ${!isRunning ? 'disabled' : ''}>Reset</button>
+            </form>
+        `;
+
+        const credentialsHtml = `
+            <div class="mt-2">
+                <small class="text-muted">
+                    User: <code class="text-dark">${machine.username || 'N/A'}</code> | 
+                    Pass: <code class="text-dark">${machine.password || 'N/A'}</code>
+                </small>
+            </div>
+        `;
+
+        return `
+            <div class="card machine-card mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong class="card-title">${machine.name}</strong><br>
+                            <small class="text-muted">IP: ${machine.ip_address || 'N/A'}</small>
+                        </div>
+                        <div>${statusBadge}</div>
+                    </div>
+                    ${credentialsHtml} {# This line adds the credentials to the card #}
+                    <hr class="my-2">
+                    <div class="text-center">
+                        <a href="/console/sso/${machine.id}/" target="_blank" class="btn btn-dark btn-sm" ${!isRunning ? 'disabled' : ''}>
+                            <i class="fas fa-desktop me-1"></i> Console
+                        </a>
+                        ${actionForms}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderLabState(data) {
+        const buildingContainer = document.getElementById('building-status-container');
+        const machineListContainer = document.getElementById('machine-list-container');
+
+        if (data.instance_status === 'building' && buildingContainer) {
+            buildingContainer.style.display = 'block';
+            document.getElementById('building-status-message').innerHTML = `<pre class="mb-0" style="white-space: pre-wrap; font-size: 0.8rem;">${data.build_log || 'Waiting for task to start...'}</pre>`;
+        } else if (data.instance_status === 'error' && buildingContainer) {
+            buildingContainer.style.display = 'block';
+            buildingContainer.className = 'alert alert-danger';
+            buildingContainer.textContent = data.cleanup_status ?
+                'Lab cleanup failed. Please contact your instructor.' :
+                'Lab creation failed. Please contact your instructor.';
+        } else if (buildingContainer) {
+            buildingContainer.style.display = 'none';
+        }
+
+        if (data.instance_status === 'active' && machineListContainer && (!expiresAt || Date.now() < new Date(expiresAt).getTime())) {
+            let machineHtml = '';
+            if (data.machines && data.machines.length > 0) {
+                data.machines.forEach(machine => {
+                    machineHtml += renderMachineControls(machine);
+                });
+            } else {
+                machineHtml = '<div class="text-muted">No machines are associated with this lab session.</div>';
+            }
+            machineListContainer.innerHTML = machineHtml;
+        } else if (data.instance_status === 'building' && machineListContainer) {
+            machineListContainer.innerHTML = '<div class="text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Your lab environment is being built. Machines will appear here shortly.</div>';
+        } else if (machineListContainer) {
+            machineListContainer.innerHTML = '<div class="text-muted">Lab controls are unavailable while cleanup is in progress.</div>';
+        }
+    }
+
+    function pollCompositeStatus() {
+        if (!labSessionId) return;
+        fetch(`/api/lab-composite-status/${labSessionId}/`)
+            .then(response => {
+                if (response.status === 404) {
+                    clearInterval(pollingInterval);
+                    window.location.reload();
+                    return null;
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data) {
+                    renderLabState(data);
+                    if (data.instance_status === 'error' || data.status === 'deleted') {
+                        clearInterval(pollingInterval);
+                    }
+                }
+            })
+            .catch(error => console.error('Error polling composite status:', error));
+    }
+
+    if (labSessionId) {
+        pollCompositeStatus(); // Initial call
+        pollingInterval = setInterval(pollCompositeStatus, 10000);
+    }
+
+    // ========================================================================
+    // --- OTHER UI SCRIPTS ---
+    // ========================================================================
+    
+    const startLabForm = document.getElementById('start-lab-form');
+    if(startLabForm) {
+        startLabForm.addEventListener('submit', function() {
+            document.getElementById('start-lab-btn').disabled = true;
+            document.getElementById('start-lab-btn').innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Starting Lab...';
+        });
+    }
+
+    const finishLabForm = document.getElementById('finish-lab-form');
+    // Checked labs need the server redirect, which may lead back to a failed step.
+    if (finishLabForm && !document.querySelector('[data-check-id]')) {
+        finishLabForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const finishBtn = document.getElementById('confirm-finish-btn');
+            finishBtn.disabled = true;
+            finishBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Deleting...';
+            
+            fetch(finishLabForm.action, {
+                method: 'POST',
+                body: new FormData(finishLabForm),
+                headers: { 'X-CSRFToken': finishLabForm.querySelector('[name=csrfmiddlewaretoken]').value }
+            }).then(() => {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('finishLabModal'));
+                if (modal) modal.hide();
+                document.getElementById('deletion-status-container').innerHTML = `
+                    <div class="alert alert-warning">
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        Deleting lab environment... This may take a few seconds. You can safely leave this page.
+                    </div>`;
+            });
+        });
+    }
+
+    const timerEl = document.getElementById('countdown-timer');
+    if (timerEl && expiresAt) {
+        const expiresDate = new Date(expiresAt);
+        const timerInterval = setInterval(() => {
+            const now = new Date();
+            const distance = expiresDate - now;
+            if (distance < 0) {
+                clearInterval(timerInterval);
+                timerEl.textContent = 'Expired';
+                timerEl.classList.remove('bg-warning');
+                timerEl.classList.add('bg-danger');
+                document.querySelectorAll('.machine-card form button, .machine-card a').forEach(el => { el.disabled = true; el.setAttribute('aria-disabled', 'true'); });
+                window.location.reload();
+                return;
+            }
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            timerEl.textContent = `Time Left: ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            if (distance < 5 * 60 * 1000) {
+                 timerEl.classList.remove('bg-warning');
+                 timerEl.classList.add('bg-danger');
+            }
+        }, 1000);
+    }
+    
+    const progressBar = document.getElementById('progress-bar');
+    const progressText = document.getElementById('progress-text-counter');
+    const questionForms = Array.from(document.querySelectorAll('.step-question-form'));
+    const checkOutcomes = Array.from(document.querySelectorAll('[data-check-id] .check-outcome'));
+    const totalQuestions = questionForms.length;
+    const totalChecks = checkOutcomes.length;
+    function updateProgress() {
+        if (totalQuestions + totalChecks > 0) {
+            const correctAnswers = questionForms.filter(form => form.querySelector('input[name="answer"]')?.readOnly).length;
+            const passedChecks = checkOutcomes.filter(el => el.textContent.trim() === 'pass').length;
+            const completed = correctAnswers + passedChecks;
+            const percentage = Math.round((completed / (totalQuestions + totalChecks)) * 100);
+            if (progressBar) {
+                progressBar.style.width = percentage + '%';
+                progressBar.setAttribute('aria-valuenow', percentage);
+            }
+            if (progressText) {
+                progressText.textContent = `${completed} / ${totalQuestions + totalChecks} completed`;
+            }
+        }
+    }
+    questionForms.forEach(form => {
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const inputField = this.querySelector('input[name="answer"]');
+            const feedbackSpan = this.querySelector('.question-feedback');
+            const submitButton = this.querySelector('button[type="submit"]');
+            fetch(this.action, {
+                method: 'POST',
+                body: new FormData(this),
+                headers: { 'X-CSRFToken': this.querySelector('[name=csrfmiddlewaretoken]').value }
+            })
+            .then(response => response.json())
+            .then(data => {
+                feedbackSpan.style.display = 'inline';
+                if (data.is_correct) {
+                    feedbackSpan.textContent = '✔ Correct';
+                    feedbackSpan.className = 'question-feedback text-success';
+                    inputField.readOnly = true;
+                    inputField.classList.add('is-valid');
+                    if(submitButton) submitButton.remove();
+                    updateProgress();
+                } else {
+                    feedbackSpan.textContent = '✗ Incorrect, try again.';
+                    feedbackSpan.className = 'question-feedback text-danger';
+                    inputField.classList.add('is-invalid');
+                }
+            });
+        });
+        const inputField = form.querySelector('input[name="answer"]');
+        if (inputField) {
+            inputField.addEventListener('input', function() {
+                this.classList.remove('is-invalid');
+                const feedbackSpan = this.closest('form').querySelector('.question-feedback');
+                if(feedbackSpan) feedbackSpan.textContent = '';
+            });
+        }
+    });
+    document.addEventListener('labchecks:updated', updateProgress);
+    updateProgress();
+    
+    const markCompleteForm = document.querySelector('.mark-complete-form');
+    if (markCompleteForm) {
+        markCompleteForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const button = markCompleteForm.querySelector('.mark-complete-btn');
+            if (!button) return;
+            button.disabled = true;
+            button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Marking...';
+            fetch(markCompleteForm.action, {
+                method: 'POST',
+                body: new FormData(markCompleteForm),
+                headers: { 'X-CSRFToken': markCompleteForm.querySelector('[name=csrfmiddlewaretoken]').value }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const parentDiv = markCompleteForm.parentNode;
+                    parentDiv.innerHTML = '<button class="btn btn-lg btn-success" disabled>✔ Completed</button>';
+                } else {
+                    alert('Could not mark complete: ' + data.message);
+                    button.disabled = false;
+                    button.innerHTML = 'Mark Lab as Complete';
+                }
+            })
+            .catch(error => {
+                console.error('Error marking lab complete:', error);
+                alert('An error occurred. Please try again.');
+                button.disabled = false;
+                button.innerHTML = 'Mark Lab as Complete';
+            });
+        });
+    }
+});
+</script>
+<script src="{% static 'labtech/js/lab_checks.js' %}" defer></script>
+{% endblock %}

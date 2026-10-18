@@ -1,0 +1,97 @@
+{% extends 'labtech/generic_base.html' %} {# This line correctly extends your base_labtech.html #}
+{% load static %}
+
+{% block labtech_title %}{{ page_title }}{% endblock %} {# Using page_title from context #}
+
+{% block labtech_extra_head %}
+{# Include the same styles from your example list template #}
+<style>
+    .management-container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+    .management-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid var(--lt-border); }
+    .management-header h2 { margin: 0; color: var(--lt-text); font-size: 1.8em; }
+    .btn { padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 1em; cursor: pointer; border: none; display: inline-block; }
+    .btn-primary { background-color: var(--lt-primary); color: var(--lt-on-accent); }
+    .btn-primary:hover { background-color: var(--lt-primary-hover); color: var(--lt-on-accent); }
+    .btn-edit { background-color: var(--lt-warning); color: var(--lt-on-warning); }
+    .btn-edit:hover { background-color: var(--lt-warning-hover); color: var(--lt-on-warning); }
+    .btn-danger { background-color: var(--lt-danger); color: var(--lt-on-accent); }
+    .btn-danger:hover { background-color: var(--lt-danger-hover); color: var(--lt-on-accent); }
+    .btn-info { background-color: var(--lt-info); color: var(--lt-on-accent); }
+    .btn-info:hover { background-color: var(--lt-info-hover); color: var(--lt-on-accent); }
+    .table-responsive { overflow-x: auto; margin-top: 20px; }
+    .styled-table { width: 100%; border-collapse: collapse; font-size: 0.9em; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .styled-table th, .styled-table td { border: 1px solid var(--lt-border); padding: 12px 15px; text-align: left; }
+    .styled-table th { background-color: var(--lt-surface-muted); color: var(--lt-text); font-weight: 600; text-transform: uppercase; font-size: 0.85em; }
+    .styled-table tbody tr:nth-child(even) { background-color: var(--lt-surface-muted); }
+    .styled-table tbody tr:hover { background-color: var(--lt-surface-muted); }
+    .action-links a { margin-right: 8px; text-decoration: none; font-size: 0.9em; padding: 6px 10px; border-radius:4px; }
+    .status-ok { color: green; font-weight: bold; }
+    .status-error { color: var(--lt-danger); font-weight: bold; }
+    .default-server { background-color: var(--lt-success-subtle); }
+</style>
+{% endblock labtech_extra_head %}
+
+{% block labtech_content %}
+<div class="management-container">
+    <div class="management-header">
+        <h2>{{ page_title }}</h2> {# Using page_title from context #}
+        <a href="{% url 'labtech_add_guacamole_server' %}" class="btn btn-primary">Add New Guacamole Server</a>
+    </div>
+
+    <p>Manage connections to your Guacamole Gateway servers. These connections will be used to provide VNC access to Proxmox VMs.</p>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="table-responsive">
+        <table class="styled-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Host:Port</th>
+                    <th>Username</th>
+                    <th>API Path</th>
+                    <th>Default</th>
+                    <th>SSL Verify</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for server in servers %} {# Loop over 'servers' from your view context #}
+                <tr class="{% if server.is_default %}default-server{% endif %}">
+                    <td>{{ server.name }}</td>
+                    <td>{{ server.host }}:{{ server.port }}</td>
+                    <td>{{ server.username }}</td>
+                    <td>{{ server.api_path }}</td>
+                    <td>{% if server.is_default %}⭐ Default{% else %}No{% endif %}</td>
+                    <td>
+                        {% if server.verify_ssl %}
+                            <span class="status-ok">Yes</span>
+                        {% else %}
+                            <span class="status-error">No</span>
+                        {% endif %}
+                    </td>
+                    <td class="action-links">
+                        <a href="{% url 'labtech_edit_guacamole_server' server_id=server.id %}" class="btn btn-edit btn-sm">Edit</a>
+                        <a href="{% url 'labtech_delete_guacamole_server' server_id=server.id %}" class="btn btn-danger btn-sm">Delete</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 20px;">
+                        No Guacamole servers configured yet. 
+                        <a href="{% url 'labtech_add_guacamole_server' %}">Add the first one?</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock labtech_content %}

@@ -1,0 +1,23 @@
+{% extends 'labtech/generic_base.html' %}
+{% load course_extras %}
+{% block labtech_title %}{{ title }}{% endblock %}
+{% block labtech_content %}
+<div class="container py-3">
+    <h1 class="h3">{{ title }}</h1>
+    <p class="text-muted">{{ snapshot.mode|title }} grading · as of {{ snapshot.as_of|date:'SHORT_DATETIME_FORMAT' }}</p>
+    <div class="row g-2 mb-4">
+        <div class="col-md-6"><div class="card card-body"><h2 class="h6">Course grade</h2><strong class="fs-2">{% if row.course_grade != None %}{{ row.course_grade|floatformat:2 }}%{% else %}N/A{% endif %}</strong>
+            <span>{{ row.earned_points|floatformat:2 }} / {{ row.possible_points|floatformat:2 }} assessed points {% if row.provisional %}· Provisional (submission awaiting grading){% endif %}</span></div></div>
+        <div class="col-md-6"><div class="card card-body"><h2 class="h6">Course completion</h2><strong class="fs-2">{{ row.course_completion|floatformat:1 }}%</strong><span>Progress through course content</span></div></div>
+    </div>
+    <h2 class="h5">Activity grades and progress</h2>
+    <div class="table-responsive"><table class="table table-striped">
+        <thead><tr><th>Chapter</th><th>Activity</th><th>Type</th><th>Result</th><th>Complete</th></tr></thead>
+        <tbody>{% for item in snapshot.items %}{% with result=row.item_results|get_item:item.key %}
+        <tr><td>{{ item.item.chapter.title|default:'Unassigned' }}</td><td>{{ item.item.title }}{% if result.pbq_attempt_id %} <a href="{% url 'pbq_result' course.id item.item.id result.pbq_attempt_id %}">View result</a>{% endif %}</td><td>{{ item.category_key|gradebook_label }}</td>
+            <td>{% if result.possible != None %}{{ result.earned|floatformat:2 }} / {{ result.possible|floatformat:2 }} ({{ result.score_percent|floatformat:1 }}%) · {{ result.status|title }}{% elif result.status == 'pending' %}Pending instructor grade{% else %}{{ result.status|title }}{% endif %}</td>
+            <td>{% if result.complete %}Yes{% else %}No{% endif %}</td></tr>
+        {% endwith %}{% empty %}<tr><td colspan="5">No course activities yet.</td></tr>{% endfor %}</tbody>
+    </table></div>
+</div>
+{% endblock %}

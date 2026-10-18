@@ -1,0 +1,22 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_content %}
+<div class="container mt-4">
+    <h1>{{ title }}</h1>
+    <p>Choose OpenWebUI or direct OpenAI, then tune how the AI Tutor teaches. An API key stays on this server.</p>
+    <p class="text-muted">For direct OpenAI, leave Host blank and enter your model ID and API key. To search student-visible course material, enable course grounding.</p>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <hr>
+                <button type="submit" class="btn btn-primary">Save Assistant</button>
+                <a href="{% url 'manage_assistants' %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

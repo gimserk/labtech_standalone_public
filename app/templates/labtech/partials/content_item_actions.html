@@ -1,0 +1,72 @@
+{% load course_extras %}
+
+<div class="dropdown">
+    <button class="btn btn-sm btn-outline-secondary dropdown-toggle btn-sm-actions" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">
+        Actions
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end">
+        {% with item_model_name=item|class_name|lower %}
+            {% if item_model_name == 'textpage' %}
+                <li><a class="dropdown-item" href="{% url 'labtech_edit_text_page' course_id=item.course.id page_id=item.id %}"><i class="fas fa-edit fa-fw me-2"></i>Edit Content</a></li>
+                <li><a class="dropdown-item text-danger" href="{% url 'labtech_delete_text_page' course_id=item.course.id page_id=item.id %}"><i class="fas fa-trash-alt fa-fw me-2"></i>Delete</a></li>
+            
+            {% elif item_model_name == 'pbqactivity' %}
+                <li><a class="dropdown-item" href="{% url 'pbq_manage' item.course.id item.id %}">Manage PBQ &amp; grade</a></li>
+                <li><a class="dropdown-item" href="{% url 'pbq_preview' item.course.id item.id %}">Preview PBQ</a></li>
+            {% elif item_model_name == 'video' %}
+                <li><a class="dropdown-item" href="{% url 'labtech_edit_video' course_id=item.course.id video_id=item.id %}"><i class="fas fa-cog fa-fw me-2"></i>Edit Details</a></li>
+                <li><a class="dropdown-item text-danger" href="{% url 'labtech_delete_video' course_id=item.course.id video_id=item.id %}"><i class="fas fa-trash-alt fa-fw me-2"></i>Delete</a></li>
+
+            {% elif item_model_name == 'audio' %}
+                <li><a class="dropdown-item" href="{% url 'labtech_edit_audio' course_id=item.course.id audio_id=item.id %}">Edit Audio</a></li>
+                <li><a class="dropdown-item text-danger" href="{% url 'labtech_delete_audio' course_id=item.course.id audio_id=item.id %}">Delete</a></li>
+
+            {% elif item_model_name == 'filesubmissionactivity' %}
+                <li><a class="dropdown-item" href="{% url 'edit_file_submission' course.id item.id %}"><i class="fas fa-edit me-2"></i> Edit Instructions</a></li>
+                <li><a class="dropdown-item" href="{% url 'grade_file_submissions' course.id item.id %}"><i class="fas fa-check-double me-2"></i> Grade Submissions</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item text-danger" href="{% url 'delete_file_submission' course.id item.id %}"><i class="fas fa-trash me-2"></i> Delete Activity</a></li>
+
+            {% elif item_model_name == 'quiz' %}
+                <li><a class="dropdown-item" href="{% url 'labtech_manage_quiz_questions' course_id=item.course.id quiz_id=item.id %}"><i class="fas fa-list-ol fa-fw me-2"></i>Manage Questions</a></li>
+                <li><a class="dropdown-item" href="{% url 'labtech_edit_quiz' course_id=item.course.id quiz_id=item.id %}"><i class="fas fa-cog fa-fw me-2"></i>Edit Details</a></li>
+                <li><a class="dropdown-item text-danger" href="{% url 'labtech_delete_quiz' course_id=item.course.id quiz_id=item.id %}"><i class="fas fa-trash-alt fa-fw me-2"></i>Delete</a></li>
+            
+            {% elif item_model_name == 'lab' %}
+                <li><a class="dropdown-item" href="{% url 'labtech_manage_lab_machines' course_id=item.course.id lab_id=item.id %}"><i class="fas fa-server fa-fw me-2"></i>Manage Machines</a></li>
+                <li><a class="dropdown-item" href="{% url 'labtech_manage_lab_steps' course_id=item.course.id lab_id=item.id %}"><i class="fas fa-shoe-prints fa-fw me-2"></i>Manage Steps</a></li>
+                <li><a class="dropdown-item" href="{% url 'labtech_edit_lab' course_id=item.course.id lab_id=item.id %}"><i class="fas fa-cog fa-fw me-2"></i>Edit Details</a></li>
+                <li><a class="dropdown-item text-danger" href="{% url 'labtech_delete_lab' course_id=item.course.id lab_id=item.id %}"><i class="fas fa-trash-alt fa-fw me-2"></i>Delete</a></li>
+
+            {% elif item_model_name == 'flashcarddeck' %}
+                <li><a class="dropdown-item" href="{% url 'edit_flashcard_deck' course_id=item.course.id deck_id=item.id %}"><i class="fas fa-edit fa-fw me-2"></i>Edit Deck & Cards</a></li>
+                <li><a class="dropdown-item text-danger" href="{% url 'delete_flashcard_deck' course_id=item.course.id deck_id=item.id %}"><i class="fas fa-trash-alt fa-fw me-2"></i>Delete</a></li>
+
+            {# --- ADD THIS NEW BLOCK --- #}
+            {% elif item_model_name == 'teamscenario' %}
+                <li><a class="dropdown-item" href="{% url 'edit_team_scenario' course_id=item.course.id scenario_id=item.id %}"><i class="fas fa-cogs fa-fw me-2"></i>Configure Scenario</a></li>
+                <li><a class="dropdown-item text-danger" href="{% url 'delete_team_scenario' course_id=item.course.id scenario_id=item.id %}"><i class="fas fa-trash-alt fa-fw me-2"></i>Delete</a></li>
+            {# --- END OF NEW BLOCK --- #}
+
+            {% elif item_model_name == 'hotspotactivity' %}
+                <li><a class="dropdown-item" href="{% url 'labtech_manage_hotspot' course_id=item.course.id activity_id=item.id %}"><i class="fas fa-map-marker-alt fa-fw me-2"></i>Manage Hotspots</a></li>
+                <li><a class="dropdown-item" href="{% url 'labtech_edit_hotspot' course_id=item.course.id activity_id=item.id %}"><i class="fas fa-cog fa-fw me-2"></i>Edit Details</a></li>
+                <li><a class="dropdown-item text-danger" href="{% url 'labtech_delete_hotspot' course_id=item.course.id activity_id=item.id %}"><i class="fas fa-trash-alt fa-fw me-2"></i>Delete</a></li>
+
+            {% elif item_model_name == 'draganddropactivity' %}
+                <li><a class="dropdown-item" href="{% url 'labtech_manage_drag_and_drop' course_id=item.course.id activity_id=item.id %}"><i class="fas fa-arrows-alt fa-fw me-2"></i>Manage Zones</a></li>
+                <li><a class="dropdown-item" href="{% url 'labtech_edit_drag_and_drop' course_id=item.course.id activity_id=item.id %}"><i class="fas fa-cog fa-fw me-2"></i>Edit Details</a></li>
+                <li><a class="dropdown-item text-danger" href="{% url 'labtech_delete_drag_and_drop' course_id=item.course.id activity_id=item.id %}"><i class="fas fa-trash-alt fa-fw me-2"></i>Delete</a></li>
+            
+            {% elif item_model_name == 'codingactivity' %}
+                <li><a class="dropdown-item" href="{% url 'labtech_edit_coding_activity' course_id=item.course.id activity_id=item.id %}"><i class="fas fa-code fa-fw me-2"></i>Manage Tests</a></li>
+                <li><a class="dropdown-item text-danger" href="{% url 'labtech_delete_coding_activity' course_id=item.course.id activity_id=item.id %}"><i class="fas fa-trash-alt fa-fw me-2"></i>Delete</a></li>
+
+            {% elif item_model_name == 'scenarioactivity' %}
+                <li><a class="dropdown-item" href="{% url 'edit_scenario_activity' course_id=item.course.id activity_id=item.id %}"><i class="fas fa-edit fa-fw me-2"></i>Edit Scenario</a></li>
+                <li><a class="dropdown-item text-danger" href="{% url 'delete_scenario_activity' course_id=item.course.id activity_id=item.id %}"><i class="fas fa-trash-alt fa-fw me-2"></i>Delete</a></li>
+
+            {% endif %}
+        {% endwith %}
+    </ul>
+</div>

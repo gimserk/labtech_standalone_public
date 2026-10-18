@@ -1,0 +1,58 @@
+{% extends "labtech/generic_base.html" %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .mode-card {
+        border: 1px solid var(--lt-border);
+        border-radius: .5rem;
+        transition: all 0.2s ease-in-out;
+    }
+    .mode-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border-color: var(--lt-primary);
+    }
+    .mode-card a {
+        text-decoration: none;
+        color: inherit;
+    }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="container mt-4">
+    <div class="text-center">
+        <h2 class="mb-1">{{ deck.title }}</h2>
+        <div class="lead text-muted">{{ deck.description|safe }}</div>
+    </div>
+    <hr class="my-4">
+
+    <h3 class="text-center mb-4">Choose Your Study Mode</h3>
+    <div class="row justify-content-center g-4">
+        <div class="col-md-5">
+            <div class="mode-card h-100">
+                <a href="{% url 'learn_flashcard_deck' course_id=deck.course.id deck_id=deck.id %}">
+                    <div class="card-body text-center p-4">
+                        <div class="display-4 mb-3">🧠</div>
+                        <h4 class="card-title">Learn Mode</h4>
+                        <p class="card-text text-muted">A smart study session that prioritizes cards you're still learning. Your progress will be saved.</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+        <div class="col-md-5">
+            <div class="mode-card h-100">
+                 <a href="{% url 'review_flashcard_deck' course_id=deck.course.id deck_id=deck.id %}">
+                    <div class="card-body text-center p-4">
+                        <div class="display-4 mb-3">🗂️</div>
+                        <h4 class="card-title">Review Mode</h4>
+                        <p class="card-text text-muted">A simple review of all cards in the deck. Flip through them at your own pace. Progress is not tracked.</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

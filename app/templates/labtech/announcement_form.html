@@ -1,0 +1,115 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+    {{ form.media }} {# This is crucial for loading CKEditor's JS and CSS #}
+    <style>
+        .form-container {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 30px;
+            background-color: var(--lt-surface);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .form-header h2 {
+            margin-top: 0;
+            color: var(--lt-text);
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--lt-border);
+        }
+        .form-field {
+            margin-bottom: 20px;
+        }
+        .form-field label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .form-field input[type="text"],
+        .form-field select,
+        .form-field textarea,
+        .django-ckeditor-widget {
+            width: 100% !important; /* Use important to override potential inline styles from widgets */
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid var(--lt-border);
+            border-radius: 4px;
+        }
+        .form-field-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .form-field-checkbox label {
+            margin-bottom: 0; /* Align label with checkbox */
+            font-weight: normal;
+        }
+        .form-actions {
+            margin-top: 30px;
+            text-align: right;
+            border-top: 1px solid var(--lt-border);
+            padding-top: 20px;
+        }
+        .help-text {
+            font-size: 0.9em;
+            color: var(--lt-muted);
+            margin-top: 5px;
+        }
+
+        /* Consistent Button Styles */
+        .btn {
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 1em;
+            font-weight: 500;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+        .btn-primary { background-color: var(--lt-primary); color: var(--lt-on-accent); border-color: var(--lt-primary); }
+        .btn-primary:hover { background-color: var(--lt-primary-hover); border-color: var(--lt-primary); color: var(--lt-on-accent); }
+        .btn-secondary { background-color: var(--lt-secondary); color: var(--lt-on-accent); border-color: var(--lt-border); }
+        .btn-secondary:hover { background-color: var(--lt-secondary-hover); border-color: var(--lt-border); color: var(--lt-on-accent); }
+    </style>
+{% endblock %}
+
+{% block labtech_content %}
+
+    <div class="form-header">
+        <h2>{{ title }}</h2>
+    </div>
+    
+    <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="form-field">
+            <label for="{{ form.title.id_for_label }}">{{ form.title.label }}</label>
+            {{ form.title }}
+        </div>
+        <div class="form-field">
+            <label for="{{ form.body.id_for_label }}">{{ form.body.label }}</label>
+            {{ form.body }}
+            {% if form.body.help_text %}
+                <div class="help-text">{{ form.body.help_text|safe }}</div>
+            {% endif %}
+        </div>
+        <div class="form-field-checkbox">
+             {{ form.is_pinned }}
+            <label for="{{ form.is_pinned.id_for_label }}">
+                {{ form.is_pinned.label }}
+            </label>
+        </div>
+        <div class="help-text">{{ form.is_pinned.help_text }}</div>
+
+        <div class="form-actions">
+            <a href="{% url 'manage_announcements' course_id=course.id %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Save Announcement</button>
+        </div>
+    </form>
+
+{% endblock %}

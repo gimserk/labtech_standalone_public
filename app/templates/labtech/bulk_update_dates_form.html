@@ -1,0 +1,95 @@
+{% extends "labtech/generic_base.html" %}
+{% load static course_extras %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .management-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid var(--lt-border); }
+    .page-header h2 { margin: 0; color: var(--lt-text); }
+    .date-table { width: 100%; border-collapse: collapse; }
+    .date-table th, .date-table td { padding: 12px 15px; border: 1px solid var(--lt-border); text-align: left; vertical-align: middle; }
+    .date-table thead { background-color: var(--lt-surface-muted); }
+    .date-table td.content-title { font-weight: 600; }
+    .date-table input[type="datetime-local"] { width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid var(--lt-border); border-radius: 4px; }
+    .form-actions { margin-top: 30px; text-align: right; }
+    .alert { padding: 15px; margin-bottom: 20px; border: 1px solid transparent; border-radius: 4px; }
+    .alert-warning { color: var(--lt-warning-text); background-color: var(--lt-warning-subtle); border-color: var(--lt-border); }
+    
+    /* --- ADDED: Themed Button Styles --- */
+    .btn {
+        padding: 10px 20px;
+        text-decoration: none;
+        border-radius: 5px;
+        font-size: 1em;
+        font-weight: 500;
+        cursor: pointer;
+        border: 1px solid transparent;
+        display: inline-block;
+        transition: background-color 0.2s ease;
+    }
+    .btn-primary { background-color: var(--lt-primary); color: var(--lt-on-accent); border-color: var(--lt-primary); }
+    .btn-primary:hover { background-color: var(--lt-primary-hover); border-color: var(--lt-primary); color: var(--lt-on-accent); }
+    .btn-secondary { background-color: var(--lt-secondary); color: var(--lt-on-accent); border-color: var(--lt-border); }
+    .btn-secondary:hover { background-color: var(--lt-secondary-hover); border-color: var(--lt-border); color: var(--lt-on-accent); }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="management-container">
+    <div class="page-header">
+        <h2>{{ title }}</h2>
+    </div>
+
+    <div class="alert alert-warning">
+        <strong>Warning:</strong> Submitting this form will overwrite the individual start, due, and end dates for <strong>all</strong> content items in this course. Leave a field blank to clear its date. All dates are optional.
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <table class="date-table">
+            <thead>
+                <tr>
+                    <th>Content Item</th>
+                    <th>Available From</th>
+                    <th>Due Date</th>
+                    <th>Available Until (Locks)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in all_content %}
+                <tr>
+                    <td class="content-title">
+                        {% with item_model_name=item|class_name|lower %}
+                            {% if item_model_name == 'textpage' %}📖
+                            {% elif item_model_name == 'video' %}▶️
+                            {% elif item_model_name == 'quiz' %}❓
+                            {% elif item_model_name == 'lab' %}🔬
+                            {% endif %}
+                        {% endwith %}
+                        {{ item.title }}
+                    </td>
+                    {% with item_prefix=item|class_name|lower|add:"-"|add:item.id %}
+                    <td>
+                        <input type="datetime-local" name="{{ item_prefix }}-available_from" value="{{ item.available_from|date:'Y-m-d\TH:i' }}">
+                    </td>
+                    <td>
+                        <input type="datetime-local" name="{{ item_prefix }}-due_date" value="{{ item.due_date|date:'Y-m-d\TH:i' }}">
+                    </td>
+                    <td>
+                        <input type="datetime-local" name="{{ item_prefix }}-available_until" value="{{ item.available_until|date:'Y-m-d\TH:i' }}">
+                    </td>
+                    {% endwith %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <div class="form-actions">
+            <a href="{% url 'manage_course_content' course_id=course.id %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Save All Dates</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

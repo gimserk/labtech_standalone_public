@@ -1,0 +1,65 @@
+{% extends "labtech/generic_base.html" %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    /* Simple colored badges for status */
+    .status-badge {
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 0.8em;
+        font-weight: 600;
+        color: var(--lt-on-accent);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .status-active { background-color: var(--lt-success); color: var(--lt-on-accent); } /* Green */
+    .status-upcoming { background-color: var(--lt-warning); color: var(--lt-on-warning); } /* Yellow */
+    .status-finished { background-color: var(--lt-secondary); color: var(--lt-on-accent); } /* Gray */
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="page-header">
+    <h2>{{ title }}</h2>
+    <a href="{% url 'ctf_create' %}" class="btn btn-primary">Create New CTF Campaign</a>
+</div>
+
+<div class="table-responsive mt-4">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+                <th>Visibility</th>
+                <th>Creator</th>
+                <th class="text-end">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ctf in ctf_campaigns %}
+            <tr>
+                <td><strong>{{ ctf.name }}</strong></td>
+                <td><span class="status-badge status-{{ ctf.status|lower }}">{{ ctf.status }}</span></td>
+                <td>{{ ctf.start_time|date:"M d, Y, P" }}</td>
+                <td>{{ ctf.end_time|date:"M d, Y, P" }}</td>
+                <td>{{ ctf.get_visibility_display }}</td>
+                <td>{{ ctf.creator.username|default:"N/A" }}</td>
+                <td class="text-end">
+    <a href="{% url 'ctf_manage' ctf_id=ctf.id %}" class="btn btn-sm btn-secondary">Manage</a>
+    <a href="{% url 'ctf_edit' ctf_id=ctf.id %}" class="btn btn-sm btn-info">Edit</a>
+    <a href="{% url 'ctf_delete' ctf_id=ctf.id %}" class="btn btn-sm btn-danger">Delete</a>
+</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="text-center p-4">You have not created or been assigned to any CTF campaigns yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,125 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+    {# This is CRUCIAL for loading CKEditor's JS and CSS #}
+    {{ profile_form.media }}
+
+    <style>
+        /* Reusing the generic form styles from other templates */
+        .form-container { max-width: 900px; margin: 0 auto; padding: 25px; }
+        .form-container h2 { text-align: center; color: var(--bs-body-color); margin-bottom: 25px; }
+        .form-container h3 { margin-top: 30px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); }
+        .form-field { margin-bottom: 20px; }
+        .form-field label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--bs-body-color); }
+        .form-field input,
+        .form-field select,
+        .form-field textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 0.95em;
+            background-color: var(--bs-body-bg);
+            color: var(--bs-body-color);
+        }
+        .form-field textarea { min-height: 80px; resize: vertical; }
+        .form-field .helptext { font-size: 0.85em; color: var(--bs-secondary-color); margin-top: 5px; }
+        .form-field .errorlist { list-style: none; padding: 0; margin: 5px 0 0 0; color: var(--lt-danger); font-size: 0.85em; }
+        .form-actions { margin-top: 30px; text-align: right; }
+        .btn { padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 1em; cursor: pointer; border: none; }
+        .btn-primary { background-color: var(--bs-primary); color: var(--lt-on-accent); }
+        .btn-secondary { background-color: var(--bs-secondary); color: var(--lt-on-accent); margin-right: 10px; }
+
+        /* Style for the current profile picture preview */
+        .current-profile-picture {
+            display: block;
+            margin-bottom: 10px;
+            max-width: 150px;
+            max-height: 150px;
+            border-radius: 50%;
+            border: 3px solid var(--border-color);
+        }
+    </style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="form-container">
+    <h2>{{ title }}</h2>
+
+    <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        
+        <h3>Basic Information</h3>
+        <p>This information is tied to your main user account.</p>
+        
+        {# Manually render user_form fields for consistent styling #}
+        {% for field in user_form %}
+            <div class="form-field">
+                <label for="{{ field.id_for_label }}">
+                    {{ field.label }}
+                    {% if field.field.required %}*{% endif %}
+                </label>
+                {{ field }}
+                {% if field.help_text %}
+                    <div class="helptext">{{ field.help_text|safe }}</div>
+                {% endif %}
+                {% if field.errors %}
+                    <ul class="errorlist">{% for error in field.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        <hr style="margin: 30px 0;">
+
+        <h3>Profile Details</h3>
+        <p>This information will be displayed on your public profile page.</p>
+
+        {# Manually render profile_form fields to add image preview #}
+        {% for field in public_profile_fields %}
+            <div class="form-field">
+                <label for="{{ field.id_for_label }}">
+                    {{ field.label }}
+                    {% if field.field.required %}*{% endif %}
+                </label>
+
+                {# Add a preview for the profile picture field #}
+                {% if field.name == 'profile_picture' and user.profile.profile_picture %}
+                    <img src="{{ user.profile.profile_picture.url }}" alt="Current profile picture" class="current-profile-picture">
+                {% endif %}
+
+                {{ field }}
+                
+                {% if field.help_text %}
+                    <div class="helptext">{{ field.help_text|safe }}</div>
+                {% endif %}
+                {% if field.errors %}
+                    <ul class="errorlist">{% for error in field.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        <hr style="margin: 30px 0;">
+        <h3>Accessibility and appearance</h3>
+        <p>These settings are private to your account and apply throughout LabTech.</p>
+        {% for field in appearance_fields %}
+            <div class="form-field">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}<div class="helptext">{{ field.help_text }}</div>{% endif %}
+                {% if field.errors %}
+                    <ul class="errorlist">{% for error in field.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        <div class="form-actions">
+            <a href="{% url 'profile_detail' user_id=user.id %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

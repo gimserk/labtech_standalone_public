@@ -1,0 +1,44 @@
+{% extends "labtech/generic_base.html" %}
+
+{% block title %}Generate Course with AI{% endblock %}
+
+{% block labtech_content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">✨ Generate New Course with AI</h4>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        Describe the course you want to create. Be as descriptive as possible. Include the target audience, key topics, desired number of chapters, and any specific activities you'd like to see. The AI will use this to generate a course blueprint for your review.
+                    </p>
+                    <hr>
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="prompt" class="form-label"><strong>Course Goals and Description:</strong></label>
+                            <textarea class="form-control" id="prompt" name="prompt" rows="12" placeholder="e.g., Create a course for beginners on Python programming. It should have 4 chapters: Introduction, Variables & Data Types, Control Flow, and Functions. Include a quiz in each chapter and a final hands-on lab. The tone should be encouraging and friendly.">{{ prompt }}</textarea>
+                        </div>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'instructor_my_courses' %}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-magic me-2"></i>Generate Blueprint
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="alert alert-info mt-4" role="alert">
+                <h5 class="alert-heading">How it Works</h5>
+                <p>
+                    1. You provide the initial goals for your course.<br>
+                    2. Our AI architect will generate a structured blueprint (outline) for you to review.<br>
+                    3. You'll have a chance to edit the blueprint and provide feedback before any content is created.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock labtech_content %}

@@ -1,0 +1,179 @@
+{% load static course_extras %}
+
+{% if focused_content %}
+    {# This part handles displaying a specific content item (text, video, quiz, etc.) #}
+    {% if is_content_available %}
+        {% with model_name=focused_content|class_name|lower %}
+            {% is_completed completed_items focused_content.content_type_id focused_content.id as is_done %}
+            <h2 class="content-title">{{ focused_content.title }}</h2>
+                        <hr>
+            {% if model_name == 'textpage' %}
+                <div class="content-body">{{ focused_content.content|safe }}</div>
+{% elif model_name == 'video' %}
+                <div class="video-container">
+                    <iframe 
+                        src="{{ focused_content.get_embed_url }}" 
+                        frameborder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                        referrerpolicy="strict-origin-when-cross-origin" 
+                        allowfullscreen>
+                    </iframe>
+                </div>
+                <div class="content-body" style="margin-top: 20px;">{{ focused_content.description|linebreaks|safe }}</div>
+            {% elif model_name == 'audio' %}
+                {% include 'labtech/partials/_course_audio.html' with audio=focused_content %}
+            {% elif focused_content|class_name|lower == 'filesubmissionactivity' %}
+    <div class="mt-4">
+        <div class="alert alert-info border-0 shadow-sm border-start border-4 border-info">
+            <h5 class="fw-bold"><i class="fas fa-file-upload me-2"></i> File Submission Assignment</h5>
+            <p class="mb-3">This assignment requires you to upload a file for grading. Click below to read the full instructions and submit your work.</p>
+            <a href="{% url 'take_file_submission' course.id focused_content.id %}" class="btn btn-primary">
+                View Instructions & Submit
+            </a>
+        </div>
+    </div>
+
+            {% elif model_name == 'pbqactivity' %}
+                <p>Read the scenario and evidence, then answer the questions.</p>
+                {% if is_instructor %}<a href="{% url 'pbq_preview' course.id focused_content.id %}" class="btn btn-primary">Preview PBQ</a>{% else %}<a href="{% url 'pbq_take' course.id focused_content.id %}" class="btn btn-primary">Open PBQ</a>{% endif %}
+            {% elif model_name == 'quiz' %}
+                <p>{{ focused_content.description|linebreaks }}</p>
+                <a href="{% url 'take_quiz' course_id=course.id quiz_id=focused_content.id %}" class="btn btn-primary">Take Quiz</a>
+            {% elif model_name == 'lab' %}
+                <p>{{ focused_content.description|linebreaks }}</p>
+                <a href="{% url 'view_lab' course_id=course.id lab_id=focused_content.id %}" class="btn btn-primary">Start Lab</a>
+            
+            {# --- THIS BLOCK IS UPDATED --- #}
+            {% elif model_name == 'flashcarddeck' %}
+                <div class="content-body">{{ focused_content.description|safe }}</div>
+                {# Change 'study_flashcard_deck' to 'flashcard_deck_hub' #}
+                <a href="{% url 'flashcard_deck_hub' course_id=course.id deck_id=focused_content.id %}" class="btn btn-primary mt-3">
+                    <i class="fas fa-layer-group me-2"></i>Study Flashcards
+                </a>
+            {# --- END OF UPDATE --- #}
+
+            {% elif model_name == 'hotspotactivity' %}
+                <div class="content-body">{{ focused_content.scenario|safe }}</div>
+                <a href="{% url 'take_hotspot_activity' course_id=course.id activity_id=focused_content.id %}" class="btn btn-primary mt-3">Start Activity</a>
+            {% elif focused_content|class_name|lower == 'draganddropactivity' %}
+                <div class="mb-3">
+                     {{ focused_content.scenario|safe }}
+                </div>
+                <div class="text-center my-4">
+                    <a href="{% url 'take_drag_and_drop_activity' course_id=course.id activity_id=focused_content.id %}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-mouse-pointer me-2"></i> Start Activity
+                    </a>
+                </div>
+            {% elif focused_content|class_name|lower == 'codingactivity' %}
+                {% include "labtech/partials/coding_activity_content.html" %}
+            
+            {% elif model_name == 'scenarioactivity' %}
+                <div class="content-body">{{ focused_content.scenario_description|safe }}</div>
+                <div class="text-center my-4">
+                    <a href="{% url 'take_scenario_activity' course_id=course.id activity_id=focused_content.id %}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-play-circle me-2"></i> Start Scenario
+                    </a>
+                </div>
+            
+            {% elif model_name == 'teamscenario' %}
+                <div class="content-body">{{ focused_content.description|safe }}</div>
+                <a href="{% url 'team_scenario_hub' course_id=course.id scenario_id=focused_content.id %}" class="btn btn-danger mt-3">
+                    <i class="fas fa-flag"></i> Enter Scenario Hub
+                </a>
+
+            {% endif %}
+            <div class="content-nav">
+                <div class="nav-left">
+                    {% if previous_item_url %}<a href="{{ previous_item_url }}" class="btn btn-secondary btn-nav">← Previous</a>{% endif %}
+                </div>
+                <div class="nav-center">
+                    {% if model_name == 'textpage' or model_name == 'video' or model_name == 'audio' %}
+                        {% if is_done %}
+                            <button type="button" class="btn btn-outline-success" disabled>✓ Completed</button>
+                        {% else %}
+                            <form class="mark-complete-form" action="{% url 'mark_content_complete' course_id=course.id content_type_name=model_name object_id=focused_content.id %}" method="post" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-success mark-complete-btn">Mark as Complete</button>
+                            </form>
+                        {% endif %}
+                    {% endif %}
+                </div>
+                <div class="nav-right">
+                    {% if next_item_url %}<a href="{{ next_item_url }}" class="btn btn-primary btn-nav">Next →</a>{% endif %}
+                </div>
+            </div>
+        {% endwith %}
+    {% else %}
+        <h2 class="content-title">{{ focused_content.title }}</h2>
+        <hr>
+        <div class="alert alert-warning">
+            <h4 style="margin-top:0;">Content Not Currently Available</h4>
+            <p>This content is not available at this time.</p>
+        </div>
+         <div class="content-nav">
+            <div class="nav-left">
+                {% if previous_item_url %}<a href="{{ previous_item_url }}" class="btn btn-secondary btn-nav">← Previous</a>{% endif %}
+            </div>
+             <div class="nav-right">
+                {% if next_item_url %}<a href="{{ next_item_url }}" class="btn btn-primary btn-nav">Next →</a>{% endif %}
+            </div>
+        </div>
+    {% endif %}
+{% else %}
+    <div class="welcome-message">
+        <h2>Welcome to {{ course.title }}!</h2>
+        <p class="lead">Select an item from the curriculum panel on the right to begin.</p>
+        <hr class="my-4">
+        
+        <div class="course-overview-grid">
+            <div class="course-description">
+                <h4>About This Course</h4>
+                <p>{{ course.description|safe|linebreaks }}</p>
+
+                <h4>Course Content</h4>
+                <ul>
+                    {% if course.text_page_count > 0 %}<li><i class="fas fa-book-open"></i> {{ course.text_page_count }} Reading Page{{ course.text_page_count|pluralize }}</li>{% endif %}
+                    {% if course.video_count > 0 %}<li><i class="fas fa-video"></i> {{ course.video_count }} Video{{ course.video_count|pluralize }}</li>{% endif %}
+                    {% if course.audio_count > 0 %}<li><i class="fas fa-headphones"></i> {{ course.audio_count }} Audio item{{ course.audio_count|pluralize }}</li>{% endif %}
+                    {% if course.quiz_count > 0 %}<li><i class="fas fa-question-circle"></i> {{ course.quiz_count }} {% if course.quiz_count == 1 %}Quiz{% else %}Quizzes{% endif %}</li>{% endif %}
+                    {% if course.lab_count > 0 %}<li><i class="fas fa-flask"></i> {{ course.lab_count }} Lab{{ course.lab_count|pluralize }}</li>{% endif %}
+                    {% if course.flashcard_deck_count > 0 %}<li><i class="fas fa-layer-group"></i> {{ course.flashcard_deck_count }} Flashcard Deck{{ course.flashcard_deck_count|pluralize }}</li>{% endif %}
+                    {% if course.hotspot_activity_count > 0 %}<li><i class="fas fa-map-marker-alt"></i> {{ course.hotspot_activity_count }} Hotspot Activity{{ course.hotspot_activity_count|pluralize }}</li>{% endif %}
+                    {% if course.drag_and_drop_activity_count > 0 %}<li><i class="fas fa-arrows-alt"></i> {{ course.drag_and_drop_activity_count }} Drag & Drop Activity{{ course.drag_and_drop_activity_count|pluralize }}</li>{% endif %}
+                    {% if course.coding_activity_count > 0 %}<li><i class="fas fa-code"></i> {{ course.coding_activity_count }} Coding Activity{{ course.coding_activity_count|pluralize }}</li>{% endif %}
+                    {% if course.scenario_activity_count > 0 %}<li><i class="fas fa-comments"></i> {{ course.scenario_activity_count }} Scenario Activity{{ course.scenario_activity_count|pluralize }}</li>{% endif %}
+                    {% if course.team_scenarios.count > 0 %}<li><i class="fas fa-flag"></i> {{ course.team_scenarios.count }} Team Scenario{{ course.team_scenarios.count|pluralize }}</li>{% endif %}
+                </ul>
+            </div>
+            <div class="course-meta">
+                <div class="info-card mb-4">
+                    <h4>Instructor(s)</h4>
+                    {% for instructor in course.instructors.all %}
+                    <div class="instructor-list-item">
+                        <img src="{{ instructor.profile.profile_picture.url }}" alt="Profile picture for {{ instructor.get_full_name|default:instructor.username }}">
+                        <a href="{% url 'profile_detail' user_id=instructor.id %}">
+                            {{ instructor.get_full_name|default:instructor.username }}
+                        </a>
+                    </div>
+                    {% empty %}
+                    <p>No instructor assigned.</p>
+                    {% endfor %}
+                </div>
+
+                <div class="info-card">
+                    <h4>Course Details</h4>
+                    <ul>
+                        <li><i class="fas fa-signal"></i> <strong>Difficulty:</strong> {{ course.get_difficulty_level_display }}</li>
+                        <li><i class="far fa-clock"></i> <strong>Duration:</strong> {{ course.estimated_duration|default:"Self-paced" }}</li>
+                        {% if course.available_from %}<li><i class="far fa-play-circle"></i> <strong>Starts:</strong> {{ course.available_from|date:"F d, Y" }}</li>{% endif %}
+                        {% if course.due_date %}<li><i class="far fa-calendar-times"></i> <strong>Due:</strong> {{ course.due_date|date:"F d, Y" }}</li>{% endif %}
+                        {% if course.available_until %}<li><i class="far fa-stop-circle"></i> <strong>Ends:</strong> {{ course.available_until|date:"F d, Y" }}</li>{% endif %}
+                        {% if resources_by_category %}
+                            <li><i class="fas fa-paperclip"></i> <a href="#" data-bs-toggle="modal" data-bs-target="#resourcesModal"><strong>View Resources</strong></a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}

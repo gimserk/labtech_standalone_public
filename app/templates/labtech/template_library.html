@@ -1,0 +1,215 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .management-container { 
+        max-width: 1100px; 
+        margin: 0 auto; 
+        padding: 20px; 
+    }
+    .page-header { 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        margin-bottom: 25px; 
+        padding-bottom: 15px; 
+        border-bottom: 1px solid var(--lt-border);
+    }
+    .page-header h2 { 
+        margin: 0; 
+        color: var(--lt-text);
+        font-size: 1.8em; 
+    }
+    .search-form {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 25px;
+    }
+    .search-form input[type="search"] {
+        flex-grow: 1;
+        padding: 10px;
+        border: 1px solid var(--lt-border);
+        border-radius: 5px;
+        font-size: 1em;
+    }
+    .template-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 25px;
+    }
+    .template-card {
+        background-color: var(--lt-surface);
+        border: 1px solid var(--lt-border);
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    .card-body {
+        padding: 20px;
+        flex-grow: 1;
+    }
+    .card-body p.description {
+        margin-top: 0;
+        color: var(--lt-muted);
+        font-style: italic;
+        min-height: 40px;
+    }
+    .card-body ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        font-size: 0.9em;
+    }
+    .card-body ul li {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--lt-border);
+    }
+     .card-body ul li:last-child {
+        border-bottom: none;
+    }
+    .card-body ul li span {
+        text-align: right;
+        color: var(--lt-text);
+    }
+    .card-footer {
+        padding: 15px 20px;
+        background-color: var(--lt-surface-muted);
+        text-align: right;
+        border-top: 1px solid var(--lt-border);
+    }
+
+    /* --- Accordion & Button Styles --- */
+    .accordion-header {
+        background-color: var(--lt-surface-muted);
+        padding: 15px 20px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: background-color 0.2s ease;
+    }
+    .accordion-header:hover { background-color: var(--lt-surface-muted); }
+    .accordion-header h3 { font-size: 1.3em; font-weight: 600; color: var(--lt-text); margin: 0; }
+    .accordion-header .toggle-icon { font-size: 1.4em; font-weight: bold; transition: transform 0.3s ease; color: var(--lt-primary); }
+    .accordion-header.active .toggle-icon { transform: rotate(45deg); }
+    .accordion-body { display: none; } /* Hidden by default */
+    .accordion-header.active + .accordion-body, 
+    .accordion-header.active + .accordion-body + .card-footer { display: block; }
+    
+    .btn { padding: 8px 16px; text-decoration: none; border-radius: 5px; font-size: 0.9em; font-weight: 500; cursor: pointer; border: 1px solid transparent; }
+    .btn-primary { background-color: var(--lt-primary); color: var(--lt-on-accent); }
+    .btn-secondary { background-color: var(--lt-secondary); color: var(--lt-on-accent); }
+
+    /* Pagination Styles */
+    .pagination { margin-top: 30px; text-align: center; }
+    .pagination a, .pagination .current { margin: 0 5px; padding: 8px 12px; text-decoration: none; border: 1px solid var(--lt-border); border-radius: 4px; color: var(--lt-primary); }
+    .pagination .current { background-color: var(--lt-primary); color: var(--lt-on-accent); border-color: var(--lt-primary); }
+    .pagination a:hover { background-color: var(--lt-surface-muted); }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="management-container">
+    <div class="page-header">
+        <h2>{{ title }}</h2>
+    </div>
+    <p>This library shows all Proxmox templates available for use in labs. Click on any template to expand its details.</p>
+    <form class="search-form" method="get">
+        <input type="search" name="q" value="{{ search_query|default:'' }}" placeholder="Search templates by name or description...">
+        <button type="submit" class="btn btn-primary">Search</button>
+    </form>
+
+    <div class="template-grid">
+        {% for template in templates_page %}
+        <div class="template-card">
+            <div class="accordion-header">
+                <h3>{{ template.name }}</h3>
+                <span class="toggle-icon">+</span>
+            </div>
+            <div class="accordion-body card-body">
+                <p class="description">{{ template.description|default:"No description provided."|linebreaksbr }}</p>
+                <ul>
+                    <li><strong>Proxmox Server:</strong> <span>{{ template.proxmox_server.name }}</span></li>
+                    <li><strong>Node:</strong> <span>{{ template.node }}</span></li>
+                    <li><strong>VMID:</strong> <span>{{ template.vmid }}</span></li>
+                    <li><strong>Type:</strong> <span>{{ template.get_template_type_display }}</span></li>
+                    <li><strong>Storage:</strong> <span>{{ template.storage|default:"N/A" }}</span></li>
+                    <hr>
+                    <li><strong>CPU:</strong> <span>{{ template.cpu_cores|default:"N/A" }} cores</span></li>
+                    <li><strong>RAM:</strong> <span>{{ template.memory_mb|default:"N/A" }} MB</span></li>
+                    <li><strong>Disk:</strong> <span>{{ template.disk_gb|default:"N/A" }} GB</span></li>
+                    <hr>
+                    <li><strong>Network Mode:</strong> <span>{{ template.network_mode|default:"N/A" }}</span></li>
+                    {% if template.static_ip_config %}<li><strong>IP:</strong> <code>{{ template.static_ip_config }}</code></li>{% endif %}
+                    <li><strong>Internet Access:</strong> <span>{% if template.internet_access %}Yes{% else %}No{% endif %}</span></li>
+                    <li><strong>ISO Attached:</strong> <span>{{ template.iso_info|default:"None" }}</span></li>
+                    <hr>
+                    <li><strong>Visibility:</strong> <span>{% if template.is_public %}Public{% else %}{{ template.institution.name|default:"Private" }}{% endif %}</span></li>
+                    <li><strong>Usable for Labs:</strong> <span>{% if template.is_active_for_labs %}Yes{% else %}No{% endif %}</span></li>
+                    <li><strong>Last Synced:</strong> <span>{{ template.last_synced|date:"M d, Y, P" }}</span></li>
+                </ul>
+            </div>
+            <div class="accordion-body card-footer">
+                {% if user.is_superuser %}
+                    <a href="{% url 'edit_template_details' template_id=template.id %}" class="btn btn-secondary">Edit Details</a>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="alert alert-info">
+            {% if search_query %}
+                No templates found matching your search for "{{ search_query }}".
+            {% else %}
+                No Proxmox templates are available for you to view at this time.
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if templates_page.has_other_pages %}
+    <div class="pagination">
+        {% if templates_page.has_previous %}
+            <a href="?page=1{% if search_query %}&q={{ search_query }}{% endif %}">&laquo; First</a>
+            <a href="?page={{ templates_page.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}">Previous</a>
+        {% endif %}
+        <span class="current">Page {{ templates_page.number }} of {{ templates_page.paginator.num_pages }}</span>
+        {% if templates_page.has_next %}
+            <a href="?page={{ templates_page.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}">Next</a>
+            <a href="?page={{ templates_page.paginator.num_pages }}{% if search_query %}&q={{ search_query }}{% endif %}">Last &raquo;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block labtech_extra_body %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.accordion-header').forEach(header => {
+        header.addEventListener('click', function() {
+            this.classList.toggle('active');
+            const icon = this.querySelector('.toggle-icon');
+            
+            // Because the body and footer are siblings, we need to handle both
+            let nextElem = this.nextElementSibling;
+            while(nextElem && nextElem.classList.contains('accordion-body')) {
+                if (nextElem.style.display === "block") {
+                    nextElem.style.display = "none";
+                    if(icon) icon.textContent = '+';
+                } else {
+                    nextElem.style.display = "block";
+                    if(icon) icon.textContent = '−';
+                }
+                nextElem = nextElem.nextElementSibling;
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

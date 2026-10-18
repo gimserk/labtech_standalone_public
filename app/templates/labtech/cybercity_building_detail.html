@@ -1,0 +1,420 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }} - LabTech{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .breadcrumb-nav {
+        margin-bottom: 20px;
+        font-size: 0.9rem;
+    }
+    .breadcrumb-nav a {
+        text-decoration: none;
+        color: var(--lt-primary);
+    }
+    .breadcrumb-nav a:hover {
+        text-decoration: underline;
+    }
+    .page-header {
+        background-color: var(--lt-surface);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border: 1px solid var(--lt-border);
+    }
+    .page-header h1 {
+        margin-top: 0;
+    }
+    .grid-container {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    .card {
+        background: var(--lt-surface);
+        border: 1px solid var(--lt-border);
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .card-header {
+        padding: 15px;
+        border-bottom: 1px solid var(--lt-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .card-header h3 {
+        margin: 0;
+        font-size: 1.1rem;
+    }
+    .card-body {
+        padding: 15px;
+    }
+    .btn {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 5px;
+        text-decoration: none;
+        font-size: 0.85rem;
+        cursor: pointer;
+        margin-left: 5px;
+    }
+    .btn-primary { background-color: var(--lt-primary); color: var(--lt-on-accent); }
+    .btn-secondary { background-color: var(--lt-secondary); color: var(--lt-on-accent); }
+    .btn-success { background-color: var(--lt-success); color: var(--lt-on-accent); }
+    .btn-danger { background-color: var(--lt-danger); color: var(--lt-on-accent); }
+    .btn-warning { background-color: var(--lt-warning); color: var(--lt-on-warning); }
+    .btn-info { background-color: var(--lt-primary); color: var(--lt-on-accent); }
+    
+    .list-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        border-bottom: 1px solid var(--lt-border);
+    }
+    .list-item:last-child {
+        border-bottom: none;
+    }
+    .status-badge {
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+    .status-running { background-color: var(--lt-success-subtle); color: var(--lt-success); }
+    .status-stopped { background-color: var(--lt-danger-subtle); color: var(--lt-danger); }
+    .status-error { background-color: var(--lt-warning-subtle); color: var(--lt-warning-text); }
+    .pin-status-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .pin-status-table th, .pin-status-table td {
+        padding: 8px;
+        border-bottom: 1px solid var(--lt-border);
+        text-align: left;
+        transition: background-color 0.5s ease;
+    }
+    .status-ok { background-color: var(--lt-success-subtle); }
+    .stale-warning { background-color: var(--lt-warning-subtle); }
+    .stale-error { background-color: var(--lt-danger-subtle); }
+
+    .tooltip-container {
+        position: relative;
+        display: inline-block;
+    }
+    .tooltip-text {
+        visibility: hidden;
+        width: 300px;
+        background-color: var(--lt-secondary);
+        color: var(--lt-on-accent);
+        text-align: left;
+        border-radius: 6px;
+        padding: 10px;
+        position: absolute;
+        z-index: 1;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -150px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        font-size: 0.8rem;
+        line-height: 1.4;
+        word-wrap: break-word;
+    }
+    .tooltip-text hr {
+        margin: 4px 0; border-color: var(--lt-border); border-style: solid;
+    }
+    .tooltip-text::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: var(--lt-border) transparent transparent transparent;
+    }
+    .tooltip-container:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+    }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="breadcrumb-nav">
+    <a href="{% url 'cybercity_dashboard' %}">CyberCity Dashboard</a> &raquo;
+    <a href="{% url 'cybercity_detail' city.id %}">{{ city.name }}</a> &raquo;
+    <span>{{ building.name }}</span>
+</div>
+
+<div class="page-header">
+    <h1>{{ building.name }}</h1>
+    <p>{{ building.description|default:"No description available." }}</p>
+    <div>
+        <a href="{% url 'cybercity_building_edit' city.id building.id %}" class="btn btn-secondary">Edit Building</a>
+        <a href="{% url 'cybercity_building_delete' city.id building.id %}" class="btn btn-danger">Delete Building</a>
+    </div>
+</div>
+
+<div class="grid-container">
+    <div class="card">
+        <div class="card-header">
+            <h3>Machines</h3>
+            <a href="{% url 'cybercity_machine_add' city.id building.id %}" class="btn btn-primary">Add Machine</a>
+        </div>
+        <div class="card-body">
+            {% for machine in machines %}
+                <div class="list-item">
+                    <div>
+                        <strong>{{ machine.name }}</strong><br>
+                        <small class="text-muted">Template: {{ machine.proxmox_template.name|default:"N/A" }}</small>
+                        {% if machine.status == 'running' and machine.active_user %}
+                            <br><small>In use by: {{ machine.active_user.username }}</small>
+                        {% endif %}
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span class="status-badge status-{{ machine.status }}">{{ machine.status }}</span>
+                        <form method="post" style="margin: 0;">
+                            {% csrf_token %}
+                            {% if machine.status == 'running' %}
+                                <button type="submit" formaction="{% url 'cybercity_machine_action' city.id building.id machine.id 'stop' %}" class="btn btn-warning">Stop</button>
+                            {% else %}
+                                <button type="submit" formaction="{% url 'cybercity_machine_action' city.id building.id machine.id 'start' %}" class="btn btn-success">Start</button>
+                            {% endif %}
+                        </form>
+                        
+                        {% if machine.status == 'running' %}
+                            <a href="{% url 'cybercity_machine_guacamole_sso_redirect' machine_id=machine.id %}" class="btn btn-primary" target="_blank" rel="noopener noreferrer">Console</a>
+                        {% else %}
+                            <a href="#" class="btn btn-primary" style="background-color: var(--lt-secondary); cursor: not-allowed; opacity: 0.6;" aria-disabled="true" onclick="return false;">Console</a>
+                        {% endif %}
+                        
+                        <a href="{% url 'manage_machine_monitors' city.id building.id machine.id %}" class="btn btn-info">Monitors</a>
+                        
+                        <a href="{% url 'cybercity_machine_edit' city.id building.id machine.id %}" class="btn btn-secondary">Edit</a>
+                        <a href="{% url 'cybercity_machine_delete' city.id building.id machine.id %}" class="btn btn-danger">Delete</a>
+                    </div>
+                </div>
+            {% empty %}
+                <p>No machines configured.</p>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <h3>Pin & Attack Status</h3>
+            <span id="pin-status-indicator" class="status-badge status-stopped">Loading...</span>
+        </div>
+        <div class="card-body">
+            <table class="pin-status-table">
+                <thead>
+                    <tr>
+                        <th>Pin</th>
+                        <th>ESP Status</th>
+                        <th>Last Command</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for esp in building.esp32s.all %}
+                        {% for pin in esp.pins.all %}
+                        <tr>
+                            <td><strong>{{ pin.name }}</strong><br><small>({{esp.name}} - GPIO{{pin.pin_number}})</small></td>
+                            <td id="pin-{{ pin.id }}-status">{{ pin.last_status|default:"N/A" }}</td>
+                            <td id="pin-{{ pin.id }}-command">{{ pin.last_command|default:"N/A" }}</td>
+                            <td>
+                                <div class="tooltip-container">
+                                    <span class="btn btn-secondary btn-sm" style="cursor: default;">Info</span>
+                                    <span class="tooltip-text">
+                                        <b>Base Topic (from Building):</b><br>{{ building.mqtt_base_topic }}<br>
+                                        <b>Pin Sub-Topic:</b><br>{{ pin.mqtt_subtopic }}<br>
+                                        <hr>
+                                        <b>Full Command Topic:</b><br>{{ building.mqtt_base_topic }}{{ pin.mqtt_subtopic }}/command<br>
+                                        <b>Full Status Topic:</b><br>{{ building.mqtt_base_topic }}{{ pin.mqtt_subtopic }}/status
+                                    </span>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>Attack Monitors</h3>
+            <a href="{% url 'cybercity_attack_monitor_add' city.id building.id %}" class="btn btn-primary">Add Monitor</a>
+        </div>
+        <div class="card-body">
+            {% for monitor in attack_monitors %}
+            <div class="list-item">
+                <div>
+                    <strong>{{ monitor.name }}</strong><br>
+                    <small class="text-muted">Sends '{{ monitor.attack_command }}' &rarr; {{ monitor.target_pin.name|default:'N/A' }}</small>
+                </div>
+                <div>
+                    <div class="tooltip-container" style="display: inline-block;">
+                        <span class="btn btn-info btn-sm" style="cursor: default;">Details</span>
+                        <span class="tooltip-text">
+                            <b>Publishes to Topic:</b><br>
+                            {% if monitor.target_pin %}
+                                {{ building.mqtt_base_topic }}{{ monitor.target_pin.mqtt_subtopic }}/command
+                            {% else %}
+                                No target pin selected
+                            {% endif %}
+                            <hr>
+                            <b>With Command (Payload):</b><br>
+                            {{ monitor.attack_command }}
+                        </span>
+                    </div>
+                    <button type="button" class="btn btn-danger btn-sm trigger-attack-btn" data-url="{% url 'cybercity_trigger_attack' city.id building.id monitor.id %}">Trigger</button>
+                    <a href="{% url 'cybercity_attack_monitor_edit' city.id building.id monitor.id %}" class="btn btn-secondary btn-sm">Edit</a>
+                    <a href="{% url 'cybercity_attack_monitor_delete' city.id building.id monitor.id %}" class="btn btn-danger btn-sm">Delete</a>
+                </div>
+            </div>
+            {% empty %}
+                <p>No attack monitors configured.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>ESP32 Devices</h3>
+            <a href="{% url 'cybercity_esp32_add' city.id building.id %}" class="btn btn-primary">Add ESP32</a>
+        </div>
+        <div class="card-body">
+            {% for esp in esp32s %}
+                <div class="list-item">
+                    <a href="{% url 'cybercity_esp32_detail' city.id building.id esp.id %}">{{ esp.name }}</a>
+                    <span>{{ esp.mac_address }}</span>
+                </div>
+            {% empty %}
+                <p>No ESP32 devices configured.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block labtech_extra_body %}
+<script>
+    const csrftoken = '{{ csrf_token }}';
+
+    function updateCellWithColor(cell, payload, timestamp) {
+        if (!cell) return;
+        
+        let displayPayload = payload || 'N/A';
+        cell.textContent = displayPayload;
+        
+        if (!timestamp) {
+            cell.className = '';
+            return;
+        }
+
+        const now = new Date();
+        const messageTime = new Date(timestamp);
+        const ageInSeconds = (now - messageTime) / 1000;
+
+        cell.classList.remove('status-ok', 'stale-warning', 'stale-error');
+
+        if (ageInSeconds > 300) { // Older than 5 minutes
+            cell.classList.add('stale-error');
+        } else if (ageInSeconds > 60) { // Older than 1 minute
+            cell.classList.add('stale-warning');
+        } else {
+            cell.classList.add('status-ok');
+        }
+    }
+
+    function fetchPinStatuses() {
+        const statusIndicator = document.getElementById('pin-status-indicator');
+        fetch("{% url 'cybercity_get_pin_statuses' city.id building.id %}")
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Network response was not ok (${response.status})`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    statusIndicator.textContent = "Error";
+                    statusIndicator.className = 'status-badge status-error';
+                    console.error("Error fetching statuses:", data.error);
+                    return;
+                }
+                statusIndicator.textContent = "Live";
+                statusIndicator.className = 'status-badge status-running';
+
+                for (const pinId in data) {
+                    const pinData = data[pinId];
+                    const statusCell = document.getElementById(`pin-${pinId}-status`);
+                    const commandCell = document.getElementById(`pin-${pinId}-command`);
+
+                    updateCellWithColor(statusCell, pinData.status, pinData.status_timestamp);
+                    updateCellWithColor(commandCell, pinData.command, pinData.command_timestamp);
+                }
+            })
+            .catch(error => {
+                statusIndicator.textContent = "Error";
+                statusIndicator.className = 'status-badge status-error';
+                console.error('There was a problem with the fetch operation:', error);
+            });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        fetchPinStatuses();
+        setInterval(fetchPinStatuses, 5000);
+
+        document.querySelectorAll('.trigger-attack-btn').forEach(button => {
+            button.addEventListener('click', function(event) {
+                const url = this.dataset.url;
+                this.textContent = 'Sending...';
+                this.disabled = true;
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrftoken,
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        this.textContent = 'Sent!';
+                        this.classList.remove('btn-danger');
+                        this.classList.add('btn-success');
+                        setTimeout(fetchPinStatuses, 500);
+                    } else {
+                        this.textContent = 'Error!';
+                        alert(`Failed to trigger attack: ${data.message}`);
+                    }
+
+                    setTimeout(() => {
+                        this.textContent = 'Trigger';
+                        this.disabled = false;
+                        this.classList.remove('btn-success');
+                        this.classList.add('btn-danger');
+                    }, 2000);
+                })
+                .catch(error => {
+                    this.textContent = 'Error!';
+                    alert(`Network error: ${error}`);
+                    setTimeout(() => {
+                        this.textContent = 'Trigger';
+                        this.disabled = false;
+                    }, 2000);
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}

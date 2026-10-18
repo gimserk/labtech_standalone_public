@@ -1,0 +1,217 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .activity-wrapper {
+        display: grid;
+        grid-template-columns: 250px 1fr;
+        gap: 30px;
+        align-items: flex-start;
+    }
+    .labels-panel {
+        padding: 15px;
+        border: 1px solid var(--lt-border);
+        border-radius: 8px;
+        background-color: var(--lt-surface-muted);
+        min-height: 200px;
+    }
+    .label-entry {
+        padding: 12px;
+        margin-bottom: 10px;
+        background-color: var(--lt-surface);
+        border-radius: 5px;
+        border: 1px solid var(--lt-border);
+        cursor: grab;
+        font-weight: 500;
+        transition: background-color 0.2s, box-shadow 0.2s;
+    }
+    .label-entry:active {
+        cursor: grabbing;
+        background-color: var(--lt-surface-muted);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    /* --- START: CRITICAL FIXES FOR POSITIONING --- */
+    .image-panel {
+        /* This ensures the panel doesn't create extra space */
+        line-height: 0; 
+    }
+    #image-wrapper {
+        position: relative; /* This is the anchor for the absolute drop zones */
+        display: inline-block; /* This makes the wrapper shrink to the image size */
+        line-height: 0; 
+    }
+    /* --- END: CRITICAL FIXES --- */
+
+    #activity-image {
+        max-width: 100%;
+        height: auto;
+        border: 1px solid var(--lt-border);
+        display: block; /* Ensures no extra space below the image */
+    }
+    .drop-zone {
+        position: absolute;
+        border: 2px dashed var(--lt-border);
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 5px;
+        transition: background-color 0.2s, border-color 0.2s;
+    }
+    .drop-zone.drag-over {
+        background-color: rgba(0, 123, 255, 0.2);
+        border-color: var(--lt-primary);
+    }
+    .drop-zone.correct { border: 3px solid var(--lt-success); background-color: rgba(40, 167, 69, 0.2); }
+    .drop-zone.incorrect { border: 3px solid var(--lt-danger); background-color: rgba(220, 53, 69, 0.2); }
+    .activity-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 1px solid var(--lt-border);
+    }
+    #result-card {
+        text-align: center;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    #result-card.correct { background-color: var(--lt-success-subtle); border: 1px solid var(--lt-border); }
+    #result-card.incorrect { background-color: var(--lt-danger-subtle); border: 1px solid var(--lt-border); }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<h2>{{ activity.title }}</h2>
+<hr>
+<div class="alert alert-info" id="instructions">
+    {{ activity.scenario|safe }}
+    <p class="mt-2"><strong>Instructions:</strong> Drag the labels from the left panel and drop them onto the correct zones on the image.</p>
+</div>
+
+<div id="result-card" class="d-none"></div>
+
+<div class="activity-wrapper">
+    <div class="labels-panel" id="labels-panel">
+        <h4>Labels</h4>
+        {% for label in labels %}
+            <div class="label-entry" draggable="true" data-label-id="{{ label.id }}">
+                {{ label.text }}
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="image-panel">
+        <div id="image-wrapper">
+            <img src="{{ activity.background_image.url }}" id="activity-image" alt="Activity Background">
+            {% for zone in drop_zones %}
+                <div class="drop-zone" 
+                     data-zone-id="{{ zone.id }}"
+                     style="left: {{ zone.x_coord }}%; top: {{ zone.y_coord }}%; width: {{ zone.width }}%; height: {{ zone.height }}%;">
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="activity-footer">
+    <a href="{% url 'course_detail' course_id=activity.course.id %}?content=draganddropactivity&id={{ activity.id }}" class="btn btn-secondary">Back to Course</a>
+    <button id="submit-btn" class="btn btn-primary">Submit Answers</button>
+</div>
+{% endblock %}
+
+{% block labtech_extra_body %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const labels = document.querySelectorAll('.label-entry');
+    const dropZones = document.querySelectorAll('.drop-zone');
+    const submitBtn = document.getElementById('submit-btn');
+    const resultCard = document.getElementById('result-card');
+    const labelsPanel = document.getElementById('labels-panel');
+    const csrfToken = '{{ csrf_token }}';
+    
+    let answers = {};
+
+    labels.forEach(label => {
+        label.addEventListener('dragstart', e => {
+            e.dataTransfer.setData('text/plain', label.dataset.labelId);
+            setTimeout(() => { label.style.display = 'none'; }, 0);
+        });
+        label.addEventListener('dragend', () => {
+            setTimeout(() => { label.style.display = 'block'; }, 0);
+        });
+    });
+
+    dropZones.forEach(zone => {
+        zone.addEventListener('dragover', e => {
+            e.preventDefault();
+            zone.classList.add('drag-over');
+        });
+        zone.addEventListener('dragleave', () => {
+            zone.classList.remove('drag-over');
+        });
+        zone.addEventListener('drop', e => {
+            e.preventDefault();
+            zone.classList.remove('drag-over');
+            
+            const labelId = e.dataTransfer.getData('text/plain');
+            const draggedLabel = document.querySelector(`.label-entry[data-label-id="${labelId}"]`);
+
+            // If the zone already has a label, return it to the panel
+            if (zone.firstChild) {
+                labelsPanel.appendChild(zone.firstChild);
+            }
+            
+            zone.appendChild(draggedLabel);
+            answers[zone.dataset.zoneId] = labelId;
+        });
+    });
+
+    submitBtn.addEventListener('click', () => {
+        fetch("{% url 'api_submit_drag_and_drop' activity_id=activity.id %}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({ answers: answers })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showResults(data);
+            } else {
+                alert('An error occurred during submission.');
+            }
+        });
+    });
+
+    function showResults(data) {
+        submitBtn.style.display = 'none'; // Hide submit button
+        
+        let resultMessage = `<h4>Result: You scored ${data.score} out of ${data.total} correct.</h4>`;
+        resultMessage += `<p class="mt-2 mb-0">This activity has been marked as complete in your curriculum.</p>`;
+        resultCard.innerHTML = resultMessage;
+        
+        resultCard.classList.add(data.score === data.total ? 'correct' : 'incorrect');
+        resultCard.classList.remove('d-none');
+        
+        // Disable further dragging
+        labels.forEach(l => l.setAttribute('draggable', 'false'));
+        
+        // Show correct/incorrect feedback
+        Object.keys(answers).forEach(zoneId => {
+            const zone = document.querySelector(`.drop-zone[data-zone-id="${zoneId}"]`);
+            const labelId = answers[zoneId];
+            const resultInfo = data.results.find(r => r.label_id === labelId);
+            if (resultInfo) {
+                zone.classList.add(resultInfo.is_correct ? 'correct' : 'incorrect');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

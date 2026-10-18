@@ -1,0 +1,7 @@
+{% extends 'labtech/generic_base.html' %}
+{% block labtech_content %}<h2>{{ activity.title }}</h2><p>Submitted {{ attempt.submitted_at }}</p>
+{% if result.state == 'graded' %}<h3>Score: {{ result.earned }} / {{ result.maximum }}</h3>{% else %}<h3>Pending grading</h3><p>Your PBQ has been submitted and counts as complete.</p>{% endif %}
+<ol>{% for response in result.responses %}<li class="my-3"><strong>{{ response.label }}</strong><p style="white-space:pre-wrap">{{ response.answer }}</p>
+{% if result.state == 'graded' %}<p>{{ response.points }} / {{ response.maximum }} points</p><p>{{ response.feedback }}</p>{% endif %}
+{% if result.show_answers %}<p>Answer / marking guidance: {{ response.key }}</p>{% endif %}</li>{% endfor %}</ol>
+<h3>Evidence</h3>{% include 'labtech/pbq/artifacts.html' %}<a href="{% url 'course_detail' course.id %}">Return to course</a>{% endblock %}

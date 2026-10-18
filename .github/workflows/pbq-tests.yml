@@ -1,0 +1,67 @@
+name: Application regression tests
+on:
+  pull_request:
+    paths: ['app/**', 'scripts/**', 'requirements.txt', '.github/workflows/pbq-tests.yml']
+  push:
+    branches: [main]
+    paths: ['app/**', 'scripts/**', 'requirements.txt', '.github/workflows/pbq-tests.yml']
+jobs:
+  pbq:
+    runs-on: ubuntu-24.04
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_ROOT_PASSWORD: pbq-ci-only
+          MARIADB_DATABASE: labtech_pbq_ci
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s --health-timeout=5s --health-retries=10
+    env:
+      PBQ_CI_DB_PASSWORD: pbq-ci-only
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install native dependencies
+        run: sudo apt-get update && sudo apt-get install -y python3-venv python3-dev build-essential pkg-config default-libmysqlclient-dev libldap2-dev libsasl2-dev libssl-dev libxml2-dev libxslt1-dev libjpeg-dev zlib1g-dev libffi-dev
+      - name: Install requirements
+        run: |
+          python3 -m venv /tmp/labtech-pbq-ci
+          /tmp/labtech-pbq-ci/bin/pip install -r requirements.txt
+      - name: SQLite regression suite and migration drift
+        run: |
+          /tmp/labtech-pbq-ci/bin/python manage.py test app --top-level-directory . --settings=app.test_settings
+          /tmp/labtech-pbq-ci/bin/python manage.py makemigrations --check --dry-run --settings=app.test_settings
+      - name: PBQ editor content filtering
+        run: |
+          npm install --prefix /tmp/pbq-dom jsdom@26.1.0 --ignore-scripts
+          NODE_PATH=/tmp/pbq-dom/node_modules PYTHON_BIN=/tmp/labtech-pbq-ci/bin/python node scripts/test_pbq_editor.cjs
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Theme contrast and editor browser checks
+        env:
+          NODE_PATH: ${{ github.workspace }}/scripts/theme-tests/node_modules
+          PYTHON_BIN: /tmp/labtech-pbq-ci/bin/python
+        run: |
+          npm ci --prefix scripts/theme-tests --ignore-scripts
+          scripts/theme-tests/node_modules/.bin/playwright-core install --with-deps chromium
+          "$PYTHON_BIN" scripts/render_theme_fixtures.py /tmp/theme-pages.json
+          node scripts/test_theme_contrast.cjs /tmp/theme-pages.json /tmp/theme-results
+          "$PYTHON_BIN" scripts/render_pbq_workspace.py /tmp/pbq-workspace.json
+          node scripts/test_pbq_workspace.cjs /tmp/pbq-workspace.json /tmp/theme-results/pbq-workspace
+          "$PYTHON_BIN" scripts/render_audio_player.py /tmp/audio-player.json
+          node scripts/test_audio_player.cjs /tmp/audio-player.json /tmp/theme-results/audio-player
+      - name: Upload theme contrast results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: theme-contrast-results
+          path: /tmp/theme-results
+          if-no-files-found: ignore
+      - name: MariaDB upgrade from pre-PBQ schema
+        run: |
+          /tmp/labtech-pbq-ci/bin/python manage.py migrate app 0018 --settings=app.pbq_mariadb_settings --noinput
+          /tmp/labtech-pbq-ci/bin/python manage.py migrate --settings=app.pbq_mariadb_settings --noinput
+      - name: MariaDB PBQ lifecycle and concurrency
+        run: /tmp/labtech-pbq-ci/bin/python manage.py test app --pattern='test_pbq*.py' --top-level-directory . --settings=app.pbq_mariadb_settings --noinput

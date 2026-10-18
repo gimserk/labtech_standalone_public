@@ -1,0 +1,120 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    #chat-container { display: flex; flex-direction: column; height: 80vh; max-width: 800px; margin: 2rem auto; border: 1px solid var(--lt-border); border-radius: 8px; overflow: hidden; background-color: var(--lt-surface); }
+    #message-list { flex-grow: 1; overflow-y: auto; padding: 1rem; }
+    .message { display: flex; margin-bottom: 1rem; padding: 0.75rem 1rem; border-radius: 12px; max-width: 80%; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .user-message { background-color: var(--lt-primary); color: var(--lt-on-accent); align-self: flex-end; margin-left: auto; }
+    .bot-message { background-color: var(--lt-surface-muted); color: var(--lt-text); align-self: flex-start; }
+    #chat-form { display: flex; padding: 1rem; border-top: 1px solid var(--lt-border); }
+    .bouncing-loader { display: flex; align-items: center; height: 100%; }
+    .bouncing-loader div { width: 8px; height: 8px; margin: 0 3px; background-color: var(--lt-secondary); border-radius: 50%; animation: bouncing-loader 0.6s infinite alternate; color: var(--lt-on-accent); }
+    .bouncing-loader div:nth-child(2) { animation-delay: 0.2s; }
+    .bouncing-loader div:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bouncing-loader { to { opacity: 0.3; transform: translateY(-8px); } }
+    #completion-section { display: none; } /* Hidden by default */
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="container mt-4">
+    <p><a href="{% url 'course_detail' course_id=activity.course.id %}">← Back to {{ activity.course.title }}</a></p>
+    <h1>{{ title }}</h1>
+    <div class="mb-4">{{ activity.scenario_description|safe }}</div>
+</div>
+
+<div id="chat-container">
+    <div id="message-list" class="d-flex flex-column">
+        <!-- Chat history will be loaded here -->
+    </div>
+    <div id="completion-section" class="alert alert-success m-3">
+        <strong>Scenario Complete!</strong> You have successfully resolved the issue.
+    </div>
+    <form id="chat-form">
+        <input type="text" id="message-input" class="form-control" placeholder="Type your message..." required autocomplete="off">
+        <button type="submit" id="send-button" class="btn btn-primary ms-2">Send</button>
+    </form>
+</div>
+
+{{ attempt.conversation_history|json_script:"conversation-history" }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('chat-form');
+    const input = document.getElementById('message-input');
+    const sendButton = document.getElementById('send-button');
+    const messageList = document.getElementById('message-list');
+    const completionSection = document.getElementById('completion-section');
+    const apiUrl = "{% url 'scenario_chat_api' activity_id=activity.id %}";
+    const csrfToken = "{{ csrf_token }}";
+    let conversationHistory = JSON.parse(document.getElementById('conversation-history').textContent);
+
+    // Load existing chat history
+    conversationHistory.forEach(msg => {
+        appendMessage(msg.content, msg.role);
+    });
+
+    // Check initial completion status
+    if ({{ attempt.is_complete|yesno:"true,false" }}) {
+        form.style.display = 'none';
+        completionSection.style.display = 'block';
+    }
+
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const userMessage = input.value.trim();
+        if (!userMessage) return;
+
+        input.disabled = true;
+        sendButton.disabled = true;
+        appendMessage(userMessage, 'user');
+        input.value = '';
+        const botResponsePlaceholder = appendMessage('', 'bot', true);
+
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                body: JSON.stringify({ message: userMessage })
+            });
+
+            if (!response.ok) { throw new Error(`API Error: ${response.statusText}`); }
+
+            const data = await response.json();
+            botResponsePlaceholder.textContent = data.reply;
+            
+            // Update local history
+            conversationHistory.push({ role: 'user', content: userMessage });
+            conversationHistory.push({ role: 'assistant', content: data.reply });
+
+            if (data.is_complete) {
+                form.style.display = 'none';
+                completionSection.style.display = 'block';
+            }
+
+        } catch (error) {
+            console.error("Error in scenario chat:", error);
+            botResponsePlaceholder.textContent = "Sorry, an error occurred. Please try again.";
+        } finally {
+            input.disabled = false;
+            sendButton.disabled = false;
+            input.focus();
+        }
+    });
+
+    function appendMessage(text, sender, isLoading = false) {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message', sender === 'user' ? 'user-message' : 'bot-message');
+        if (isLoading) {
+            messageDiv.innerHTML = `<div class="bouncing-loader"><div></div><div></div><div></div></div>`;
+        } else {
+            messageDiv.textContent = text;
+        }
+        messageList.appendChild(messageDiv);
+        messageList.scrollTop = messageList.scrollHeight;
+        if (isLoading) return messageDiv;
+    }
+});
+</script>
+{% endblock %}

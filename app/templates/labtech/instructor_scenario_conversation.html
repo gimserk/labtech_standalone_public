@@ -1,0 +1,22 @@
+{% extends 'labtech/generic_base.html' %}
+{% block labtech_title %}{{ title }}{% endblock %}
+{% block labtech_content %}
+<div class="container py-3">
+    <a href="{% url 'instructor_gradebook' course.id %}?student_id={{ student.id }}">← Back to {{ course.title }} gradebook</a>
+    <h1 class="h3 mt-3">{{ activity.title }} — {{ student.get_full_name|default:student.username }}</h1>
+    <p>Started {{ attempt.started_at|date:'SHORT_DATETIME_FORMAT' }} ·
+        {% if attempt.is_complete %}Completed {{ attempt.completed_at|date:'SHORT_DATETIME_FORMAT' }}{% else %}In progress{% endif %}
+    </p>
+    <h2 class="h5">Conversation</h2>
+    {% for message in attempt.conversation_history %}
+        <div class="card mb-2">
+            <div class="card-body">
+                <strong>{% if message.role == 'user' %}Student{% elif message.role == 'assistant' %}Customer{% else %}Message{% endif %}</strong>
+                <p class="mb-0" style="white-space: pre-wrap">{{ message.content }}</p>
+            </div>
+        </div>
+    {% empty %}
+        <p>No messages yet.</p>
+    {% endfor %}
+</div>
+{% endblock %}

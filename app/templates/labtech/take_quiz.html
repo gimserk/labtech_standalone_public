@@ -1,0 +1,58 @@
+{% extends "labtech/generic_base.html" %}
+{% load static course_extras %}
+
+{% block labtech_title %}Taking Quiz: {{ quiz.title }}{% endblock %}
+
+{% block labtech_extra_head %}
+<style>
+    .quiz-container { max-width: 900px; margin: 0 auto; padding: 20px; }
+    .question-block { margin-bottom: 30px; padding: 20px; border: 1px solid var(--lt-border); border-radius: 8px; }
+    .question-text { font-size: 1.2em; font-weight: 500; }
+    .choices { list-style: none; padding-left: 10px; margin-top: 15px; }
+    .choices li { margin-bottom: 10px; }
+    .short-answer-input { width: 100%; padding: 8px; border: 1px solid var(--lt-border); border-radius: 4px; font-size: 1em; }
+    .course-header { margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid var(--lt-border); }
+    .btn { padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 1.2em; cursor: pointer; border: none; }
+    .btn-primary { background-color: var(--lt-primary); color: var(--lt-on-accent); }
+</style>
+{% endblock %}
+
+{% block labtech_content %}
+<div class="quiz-container">
+    <div class="course-header">
+        <p><a href="{% url 'course_detail' course_id=quiz.course.id %}">← Back to {{ quiz.course.title }}</a></p>
+        <h1>{{ quiz.title }}</h1>
+        <p>{{ quiz.description|safe }}</p>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        {% for question in questions %}
+            <div class="question-block">
+                <p class="question-text">{{ forloop.counter }}. {{ question.text|safe }}</p>
+                
+                {% if question.question_type == 'MCQ' or question.question_type == 'TF' %}
+                    <ul class="choices">
+                        {# --- THIS BLOCK IS CORRECTED --- #}
+                        {% if quiz.shuffle_answers %}
+                            {% for choice in question.choices.all|shuffle %}
+                                <li><label><input type="radio" name="question_{{ question.id }}" value="{{ choice.id }}" required> {{ choice.text }}</label></li>
+                            {% endfor %}
+                        {% else %}
+                            {% for choice in question.choices.all %}
+                                <li><label><input type="radio" name="question_{{ question.id }}" value="{{ choice.id }}" required> {{ choice.text }}</label></li>
+                            {% endfor %}
+                        {% endif %}
+                    </ul>
+
+                {% elif question.question_type == 'SA' %}
+                    <input type="text" name="question_{{ question.id }}" class="short-answer-input" required>
+                {% endif %}
+
+            </div>
+        {% endfor %}
+
+        <button type="submit" class="btn btn-primary">Submit Quiz</button>
+    </form>
+</div>
+{% endblock %}

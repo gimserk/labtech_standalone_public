@@ -1,0 +1,17 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}Process Payment{% endblock %}
+
+{% block labtech_content %}
+<div class="form-container">
+    <h2>Complete Your Payment</h2>
+    <p>You are about to subscribe to the <strong>{{ payment.description }}</strong> plan for ${{ payment.total }}.</p>
+    <hr>
+    
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+    </form>
+</div>
+{% endblock %}

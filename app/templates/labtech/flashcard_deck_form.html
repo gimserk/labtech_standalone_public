@@ -1,0 +1,141 @@
+{% extends "labtech/generic_base.html" %}
+
+{% block labtech_title %}
+    {{ title }}
+{% endblock %}
+
+{% block labtech_content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">{{ title }}</h4>
+                    <a href="{% url 'manage_course_content' course.id %}" class="btn btn-sm btn-secondary">Back to Course Content</a>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        {# Manually render the main form fields #}
+                        {% for field in form.visible_fields %}
+                            <div class="mb-3">
+                                <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                                {{ field }}
+                                {% if field.help_text %}
+                                    <small class="form-text text-muted">{{ field.help_text|safe }}</small>
+                                {% endif %}
+                                {% for error in field.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                        
+                        {# Render hidden fields if any #}
+                        {% for field in form.hidden_fields %}{{ field }}{% endfor %}
+
+                        {% if deck %}
+                            <hr class="my-4">
+                            <h5>Flashcards</h5>
+                            {{ formset.management_form }}
+                            
+                            <div id="card-form-list">
+                                {% for card_form in formset %}
+                                    <div class="card mb-3 p-3 bg-light" id="card-form-{{ forloop.counter0 }}">
+                                        {% if card_form.instance.pk %}
+                                            <div class="form-check" style="float: right;">
+                                                {{ card_form.DELETE }}
+                                                <label class="form-check-label" for="{{ card_form.DELETE.id_for_label }}">Delete</label>
+                                            </div>
+                                        {% endif %}
+                                        {{ card_form.id }}
+                                        {% for field in card_form.visible_fields %}
+                                        <div class="mb-2">
+                                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                                            {{ field }}
+                                            {% for error in field.errors %}
+                                                <div class="invalid-feedback d-block">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            
+                            <button type="button" id="add-card-form" class="btn btn-outline-success mt-2"><i class="fas fa-plus"></i> Add Another Card</button>
+                        {% endif %}
+                        
+                        <hr class="my-4">
+                        <button type="submit" class="btn btn-primary">Save Deck & Cards</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            {% if deck %}
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Deck Actions</h5>
+                    <p>Manage the cards for this deck.</p>
+                    <a href="{% url 'import_flashcards_csv' course.id deck.id %}" class="btn btn-info w-100 mb-2">
+                        <i class="fas fa-file-csv"></i> Import Cards from CSV
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{# Hidden template for the "Add Another Card" button #}
+<template id="empty-form-template">
+    <div class="card mb-3 p-3 bg-light" id="card-form-__prefix__">
+        {{ formset.empty_form.id }}
+        {% for field in formset.empty_form.visible_fields %}
+        <div class="mb-2">
+            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+            {{ field }}
+        </div>
+        {% endfor %}
+    </div>
+</template>
+{% endblock %}
+
+{% block labtech_extra_body %}
+    {{ form.media }} {# Ensures CKEditor JS is loaded #}
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const addCardBtn = document.getElementById('add-card-form');
+        const formList = document.getElementById('card-form-list');
+        const emptyFormTemplate = document.getElementById('empty-form-template');
+        const totalFormsInput = document.getElementById('id_cards-TOTAL_FORMS');
+
+        if (addCardBtn) {
+            addCardBtn.addEventListener('click', function() {
+                let formNum = parseInt(totalFormsInput.value);
+                
+                // Create new form HTML by cloning the template
+                let newFormHtml = emptyFormTemplate.innerHTML.replace(/__prefix__/g, formNum);
+                
+                // Create a temporary div to hold the new HTML
+                let tempDiv = document.createElement('div');
+                tempDiv.innerHTML = newFormHtml;
+
+                // Append the new form to the list
+                const newFormElement = tempDiv.firstElementChild;
+                formList.append(newFormElement);
+
+                // Increment the total forms count in the management form
+                totalFormsInput.value = formNum + 1;
+
+                // For CKEditor, we need to initialize the new textarea
+                const newEditorId = `id_cards-${formNum}-definition`;
+                if (CKEDITOR.instances[newEditorId]) {
+                    CKEDITOR.instances[newEditorId].destroy(true);
+                }
+                CKEDITOR.replace(newEditorId);
+            });
+        }
+    });
+    </script>
+{% endblock %}

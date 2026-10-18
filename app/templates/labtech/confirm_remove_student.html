@@ -1,0 +1,27 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+
+{% block labtech_title %}{{ title }}{% endblock %}
+
+{% block labtech_content %}
+<div class="management-container" style="max-width: 700px; text-align: center;">
+    <div class="card">
+        <div class="card-header">
+            <h2>{{ title }}</h2>
+        </div>
+        <div class="card-body">
+            <p>
+                Are you sure you want to remove student <strong>{{ enrollment.user.get_full_name|default:enrollment.user.username }}</strong> 
+                from the course <strong>"{{ course.title }}"</strong>?
+            </p>
+            <p class="text-muted">This will unenroll them and they will lose access to the course content. This action cannot be undone.</p>
+            
+            <form action="{% url 'remove_student_from_course' enrollment_id=enrollment.id %}" method="post" style="margin-top: 20px;">
+                {% csrf_token %}
+                <a href="{% url 'instructor_student_list' course_id=course.id %}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-danger">Yes, Remove Student</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

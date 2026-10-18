@@ -1,0 +1,14 @@
+{% load static %}
+
+<div class="mb-3">
+    {{ focused_content.description|safe }}
+</div>
+
+<div class="text-center my-4">
+    <a href="{% url 'take_coding_activity' course_id=course.id activity_id=focused_content.id %}" class="btn btn-primary btn-lg">
+        <i class="fas fa-code me-2"></i> Start Coding Activity
+    </a>
+</div>
+
+<hr>
+<p class="text-center text-muted">Your work will be marked as complete automatically after you pass all the required test cases.</p>
