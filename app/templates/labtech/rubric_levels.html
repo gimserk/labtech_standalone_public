@@ -1,0 +1,23 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}Rubric performance levels{% endblock %}
+{% block labtech_content %}
+<div class="container py-3">
+<h1 class="h3">Performance levels: {{ criterion.title }}</h1>
+<p>{{ rubric.title }} — criterion maximum {{ criterion.max_points }} points</p>
+<form method="post">{% csrf_token %}
+{{ formset.management_form }}{{ formset.non_form_errors }}
+{% for form in formset %}
+<fieldset class="card card-body mb-3">
+{{ form.id }}{{ form.non_field_errors }}
+<p>{{ form.label.label_tag }} {{ form.label }} {{ form.label.errors }}</p>
+<p>{{ form.description.label_tag }} {{ form.description }} {{ form.description.errors }}</p>
+<p>{{ form.points.label_tag }} {{ form.points }} {{ form.points.errors }}</p>
+<p>{{ form.order.label_tag }} {{ form.order }} {{ form.order.errors }}</p>
+{% if form.instance.pk %}<p>{{ form.DELETE }} Delete level</p>{% endif %}
+</fieldset>
+{% endfor %}
+<button type="submit" class="btn btn-primary">Save performance levels</button>
+</form>
+<a href="{% url 'instructor_rubric_builder' course.id model_name activity.id %}">Back to rubric</a>
+</div>
+{% endblock %}

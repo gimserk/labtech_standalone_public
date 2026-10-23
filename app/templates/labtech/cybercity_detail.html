@@ -165,6 +165,7 @@
     <p>{{ city.description|default:"This city has no description." }}</p>
     <div>
         <a href="{% url 'cybercity_edit' city.id %}" class="btn btn-secondary">Edit Settings</a>
+        <a href="{% url 'cybercity_esp32_basic_firmware' city.id %}" class="btn btn-primary">Download Basic ESP32 Firmware</a>
         <a href="{% url 'cybercity_visualizer' city.id %}" class="btn btn-info">Visualizer</a>
         <a href="{% url 'cybercity_delete' city.id %}" class="btn btn-danger" onclick="return confirm('Are you sure you want to permanently delete this city and all its assets? This cannot be undone.')">Delete City</a>
     </div>
@@ -233,6 +234,23 @@
                             {% endif %}
                         </form>
                     </div>
+                </div>
+                <div class="list-group-item">
+                    <strong>Control VM (MQTT Broker)</strong><br>
+                    <span class="status-badge status-{{ city.control_status|lower }}">{{ city.control_status|capfirst }}</span>
+                    {% if city.control_vmid %}<small class="text-muted ms-2">VMID: {{ city.control_vmid }}</small>{% endif %}
+                    <div class="mt-2">
+                        <form method="post" class="d-inline">
+                            {% csrf_token %}
+                            {% if city.control_status == 'running' %}
+                                <a href="{% url 'cybercity_guacamole_sso_redirect' city_id=city.id machine_type='control' %}" target="_blank" rel="noopener noreferrer" class="btn btn-info btn-sm">Console</a>
+                                <button type="submit" formaction="{% url 'cybercity_utility_action' city.id 'control' 'stop' %}" class="btn btn-warning btn-sm" onclick="return confirm('Stop and destroy the Control VM? This will interrupt IoT/MQTT traffic for this city.')">Stop</button>
+                            {% else %}
+                                <button type="submit" formaction="{% url 'cybercity_utility_action' city.id 'control' 'start' %}" class="btn btn-success btn-sm" {% if not city.control_vm_template %}disabled title="No Control VM template is configured for this city."{% endif %}>Start</button>
+                            {% endif %}
+                        </form>
+                    </div>
+                    <small class="text-muted">Broker connectivity is checked separately using the city MQTT settings above.</small>
                 </div>
                 <div class="list-group-item">
                     <strong>Management VM</strong><br>

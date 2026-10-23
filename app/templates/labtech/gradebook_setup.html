@@ -24,6 +24,20 @@
         <button class="btn btn-primary" type="submit">Save grading setup</button>
         <a class="btn btn-outline-secondary" href="{% url 'instructor_gradebook' course.id %}">Cancel</a>
     </form>
+<section class="card mt-4 shadow-sm">
+  <div class="card-header"><h2 class="h5 mb-0"><i class="fas fa-clipboard-check me-2" aria-hidden="true"></i>Assignment Rubrics</h2></div>
+  <div class="card-body">
+    <p class="text-body-secondary">Create grading criteria and performance levels for activities. You can also open a rubric from an activity's Actions menu.</p>
+    <div class="table-responsive"><table class="table table-hover align-middle mb-0">
+      <thead><tr><th>Activity</th><th>Type</th><th>Rubric</th></tr></thead><tbody>
+      {% for key, activity in rubric_targets %}
+      <tr><td>{{ activity.title|default:key }}</td><td>{{ key|gradebook_label }}</td>
+        <td><a class="btn btn-sm btn-outline-primary" href="{% url 'instructor_rubric_builder' course.id key activity.id %}"><i class="fas fa-edit me-1" aria-hidden="true"></i>Manage rubric</a></td></tr>
+      {% empty %}<tr><td colspan="3" class="text-body-secondary">No activities available yet.</td></tr>{% endfor %}
+      </tbody></table></div>
+  </div>
+</section>
+
 </div>
 {% endblock %}
 {% block labtech_extra_body %}
@@ -52,4 +66,5 @@ document.addEventListener('DOMContentLoaded', function () {
   updatePreview();
 });
 </script>
+
 {% endblock %}

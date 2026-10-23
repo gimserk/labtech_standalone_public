@@ -1,0 +1,18 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}Your rubric feedback{% endblock %}
+{% block labtech_content %}
+<div class="container py-3">
+<h1 class="h3">{{ rubric.title }}</h1>
+<h2 class="h5">{{ activity.title }}</h2>
+<p>Points awarded: {{ assessment.awarded_points }} / {{ rubric.possible_points }}</p>
+{% for score in assessment.scores.all %}
+<section class="card card-body mb-3">
+<h3 class="h6">{{ score.criterion.title }}</h3>
+<p>{{ score.points_awarded }} / {{ score.criterion.max_points }} points</p>
+<p>{{ score.feedback }}</p>
+</section>
+{% endfor %}
+<h3 class="h6">Instructor feedback</h3>
+<p>{{ assessment.feedback }}</p>
+</div>
+{% endblock %}

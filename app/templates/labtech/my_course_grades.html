@@ -14,7 +14,7 @@
     <div class="table-responsive"><table class="table table-striped">
         <thead><tr><th>Chapter</th><th>Activity</th><th>Type</th><th>Result</th><th>Complete</th></tr></thead>
         <tbody>{% for item in snapshot.items %}{% with result=row.item_results|get_item:item.key %}
-        <tr><td>{{ item.item.chapter.title|default:'Unassigned' }}</td><td>{{ item.item.title }}{% if result.pbq_attempt_id %} <a href="{% url 'pbq_result' course.id item.item.id result.pbq_attempt_id %}">View result</a>{% endif %}</td><td>{{ item.category_key|gradebook_label }}</td>
+        <tr><td>{{ item.item.chapter.title|default:'Unassigned' }}</td><td>{{ item.item.title }}{% if rubric_feedback|get_item:item.key %} <a href="{% url 'student_rubric_feedback' course.id item.category_key item.item.id %}">View rubric feedback</a>{% endif %}{% if result.pbq_attempt_id %} <a href="{% url 'pbq_result' course.id item.item.id result.pbq_attempt_id %}">View result</a>{% endif %}</td><td>{{ item.category_key|gradebook_label }}</td>
             <td>{% if result.possible != None %}{{ result.earned|floatformat:2 }} / {{ result.possible|floatformat:2 }} ({{ result.score_percent|floatformat:1 }}%) · {{ result.status|title }}{% elif result.status == 'pending' %}Pending instructor grade{% else %}{{ result.status|title }}{% endif %}</td>
             <td>{% if result.complete %}Yes{% else %}No{% endif %}</td></tr>
         {% endwith %}{% empty %}<tr><td colspan="5">No course activities yet.</td></tr>{% endfor %}</tbody>

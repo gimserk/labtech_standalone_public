@@ -1,0 +1,13 @@
+{% extends "base_generic.html" %}
+{% block title %}TEKCON Badge Session{% endblock %}
+{% block content %}
+<div style="max-width:500px;margin:8vh auto;padding:25px">
+  <h1>Workshop session in use</h1>
+  <p>A participant is already signed in. To protect their work, sign out before another attendee scans a badge.</p>
+  <form method="post" action="{% url 'tekcon_nfc_session' %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-primary">Sign out and scan next badge</button>
+  </form>
+  <p><a href="{% url 'home' %}">Return to current session</a></p>
+</div>
+{% endblock %}

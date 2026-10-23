@@ -1,15 +1,30 @@
+from app import tekcon_nfc_auth
+from app import cybercity_firmware_bundle
 from django.contrib import admin
 from django.urls import path, include, re_path
 from django.conf import settings
 from django.conf.urls.static import static
 from app import views as app_views
 from app import audio_views
+from app import cybercity_provisioning
 from app import lab_check_views
 from app import gradebook_views
+from app import rubric_views
+from app import learning_outcome_views
 from django.views.static import serve
 from django.shortcuts import redirect
 
 urlpatterns = [
+    path('courses/<int:course_id>/learning-outcomes/', learning_outcome_views.course_outcomes, name='course_learning_outcomes'),
+    path('courses/<int:course_id>/learning-outcomes/<int:outcome_id>/delete/', learning_outcome_views.delete_course_outcome, name='delete_course_learning_outcome'),
+    path('courses/<int:course_id>/activities/<str:model_name>/<int:activity_id>/learning-outcomes/', learning_outcome_views.activity_learning_outcomes, name='activity_learning_outcomes'),
+    path('courses/<int:course_id>/rubrics/<str:model_name>/<int:activity_id>/criteria/<int:criterion_id>/levels/', rubric_views.instructor_rubric_levels, name='instructor_rubric_levels'),
+    path('courses/<int:course_id>/rubrics/<str:model_name>/<int:activity_id>/roster/', rubric_views.instructor_rubric_roster, name='instructor_rubric_roster'),
+    path('courses/<int:course_id>/rubrics/<str:model_name>/<int:activity_id>/copy/', rubric_views.instructor_rubric_copy, name='instructor_rubric_copy'),
+    path('courses/<int:course_id>/rubrics/<str:model_name>/<int:activity_id>/students/<int:student_id>/release/', rubric_views.instructor_rubric_release, name='instructor_rubric_release'),
+    path('courses/<int:course_id>/rubrics/<str:model_name>/<int:activity_id>/my-feedback/', rubric_views.student_rubric_feedback, name='student_rubric_feedback'),
+    path('courses/<int:course_id>/rubrics/<str:model_name>/<int:activity_id>/', rubric_views.instructor_rubric_builder, name='instructor_rubric_builder'),
+    path('courses/<int:course_id>/rubrics/<str:model_name>/<int:activity_id>/students/<int:student_id>/', rubric_views.instructor_rubric_assessment, name='instructor_rubric_assessment'),
     path('courses/<int:course_id>/pbq/', include('app.pbq_urls')),
     path('admin-plugins/', include('app.plugin_urls')),
     path('courses/<int:course_id>/lab-instances/<int:instance_id>/steps/<int:step_id>/check/', lab_check_views.run_lab_step_checks_view, name='run_lab_step_checks'),
@@ -24,6 +39,8 @@ urlpatterns = [
     # --- CORE APP & ADMIN URLS ---
     path('admin/', admin.site.urls),
     path('accounts/', include('allauth.urls')),
+    path('accounts/tekcon-nfc/', tekcon_nfc_auth.tekcon_nfc_login, name='tekcon_nfc_login'),
+    path('accounts/tekcon-nfc/session/', tekcon_nfc_auth.tekcon_nfc_session, name='tekcon_nfc_session'),
 
     # Redirect the root URL to the main application dashboard
     path('', lambda request: redirect('home', permanent=False)),
@@ -246,6 +263,7 @@ urlpatterns = [
     path('labtech/cybercity/add/', app_views.cybercity_add_view, name='cybercity_add'),
     path('labtech/cybercity/<int:city_id>/', app_views.cybercity_detail_view, name='cybercity_detail'),
     path('labtech/cybercity/<int:city_id>/edit/', app_views.cybercity_edit_view, name='cybercity_edit'),
+    path('labtech/cybercity/<int:city_id>/esp32/basic-firmware/', cybercity_firmware_bundle.download_basic_esp32_firmware, name='cybercity_esp32_basic_firmware'),
     path('labtech/cybercity/<int:city_id>/delete/', app_views.cybercity_delete_view, name='cybercity_delete'),
     path('labtech/cybercity/<int:city_id>/check-broker-status/', app_views.check_broker_status_view, name='cybercity_check_broker_status'),
     path('labtech/cybercity/<int:city_id>/buildings/add/', app_views.cybercity_building_add_view, name='cybercity_building_add'),
@@ -302,6 +320,11 @@ urlpatterns = [
     path('api/ctf/submit_flag/', app_views.ctf_submit_flag_view, name='ctf_submit_flag'),
     path('api/ctf/hint/<int:hint_id>/unveil/', app_views.ctf_unveil_hint_view, name='ctf_unveil_hint'),
     path('api/firmware/check/', app_views.api_check_firmware_update, name='api_check_firmware_update'),
+    path('api/firmware/v2/config/', cybercity_provisioning.api_esp32_provisioning_v2, name='api_esp32_provisioning_v2'),
+    path('api/firmware/v2/manifest/', cybercity_provisioning.api_esp32_manifest_v2, name='api_esp32_manifest_v2'),
+    path('api/firmware/v2/report/', cybercity_provisioning.api_esp32_firmware_report_v2, name='api_esp32_firmware_report_v2'),
+    path('api/firmware/v2/download/<int:firmware_id>/', cybercity_provisioning.api_esp32_firmware_download_v2, name='api_esp32_firmware_download_v2'),
+    path('api/firmware/v2/library/<int:library_id>/', cybercity_provisioning.api_esp32_library_download_v2, name='api_esp32_library_download_v2'),
     path('api/firmware/download/<int:firmware_id>/', app_views.api_download_firmware, name='api_download_firmware'),
     path('api/firmware/get-config/', app_views.api_get_device_config, name='api_get_device_config'),
     path('api/firmware/download/library/<int:library_id>/', app_views.api_download_library, name='api_download_library'),

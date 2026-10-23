@@ -1,5 +1,13 @@
 {% load static course_extras %}
 
+{% if not focused_content and learning_outcomes %}
+<section class="card mb-4 shadow-sm" aria-labelledby="learning-outcomes-title">
+<div class="card-header"><h2 class="h5 mb-0" id="learning-outcomes-title"><i class="fas fa-bullseye me-2" aria-hidden="true"></i>Course Learning Outcomes</h2></div>
+<div class="card-body"><p class="text-body-secondary">By the end of this course, you should be able to:</p>
+<ol class="mb-0">{% for outcome in learning_outcomes %}<li class="mb-3"><strong>{{ outcome.code }}</strong> {{ outcome.statement }}
+{% if outcome.activities.all %}<div class="small text-body-secondary">{{ outcome.activities.count }} linked course activit{{ outcome.activities.count|pluralize:"y,ies" }}</div>{% endif %}
+</li>{% endfor %}</ol></div></section>
+{% endif %}
 {% if focused_content %}
     {# This part handles displaying a specific content item (text, video, quiz, etc.) #}
     {% if is_content_available %}

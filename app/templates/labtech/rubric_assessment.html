@@ -1,0 +1,37 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}Assess rubric{% endblock %}
+{% block labtech_content %}
+<div class="container py-3">
+<h1 class="h3">Assess {{ student.get_username }} — {{ activity.title }}</h1>
+<p>{{ course.title }} / {{ rubric.title }} ({{ rubric.possible_points }} possible points)</p>
+{% if assessment.released %}<div class="alert alert-success" role="status">This rubric grade has been released to the student and gradebook.</div>{% else %}<div class="alert alert-info">Scores are drafts until you release the completed rubric grade.</div>{% endif %}
+{% for message in errors %}<p role="alert">{{ message }}</p>{% endfor %}
+<form method="post">{% csrf_token %}
+{% for row in rows %}
+<section class="card card-body mb-3">
+<h2 class="h5">{{ row.criterion.title }}</h2>
+<p>{{ row.criterion.description }}</p>
+<p>Maximum: {{ row.criterion.max_points }}</p>
+{% for level in row.criterion.levels.all %}
+<p>{{ level.label }} — {{ level.points }} points: {{ level.description }}</p>
+{% endfor %}
+<label class="form-label" for="points_{{ row.criterion.pk }}">Points awarded</label>
+<input class="form-control" type="number" id="points_{{ row.criterion.pk }}" name="points_{{ row.criterion.pk }}" min="0" max="{{ row.criterion.max_points }}" step=".01" value="{{ row.value }}" required>
+<label class="form-label" for="feedback_{{ row.criterion.pk }}">Criterion feedback</label>
+<textarea class="form-control" id="feedback_{{ row.criterion.pk }}" name="feedback_{{ row.criterion.pk }}">{{ row.feedback }}</textarea>
+</section>
+{% endfor %}
+<label class="form-label" for="overall_feedback">Overall feedback</label>
+<textarea class="form-control" id="overall_feedback" name="overall_feedback">{{ assessment.feedback }}</textarea>
+<button type="submit" class="btn btn-primary" {% if assessment.released %}disabled{% endif %}>Save draft assessment</button>
+</form>
+{% if not assessment.released %}
+<form method="post" action="{% url 'instructor_rubric_release' course.id model_name rubric.object_id student.id %}">
+{% csrf_token %}
+<button type="submit" class="btn btn-warning" onclick="return confirm('Release this rubric grade to the student and gradebook? You cannot edit it afterward.')">Release completed rubric grade</button>
+</form>
+{% else %}
+<p role="status">Released to student and course gradebook.</p>
+{% endif %}
+</div>
+{% endblock %}

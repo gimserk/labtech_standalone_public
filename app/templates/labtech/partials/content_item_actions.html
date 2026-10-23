@@ -67,6 +67,11 @@
                 <li><a class="dropdown-item text-danger" href="{% url 'delete_scenario_activity' course_id=item.course.id activity_id=item.id %}"><i class="fas fa-trash-alt fa-fw me-2"></i>Delete</a></li>
 
             {% endif %}
+            {% if item_model_name == 'textpage' or item_model_name == 'video' or item_model_name == 'audio' or item_model_name == 'quiz' or item_model_name == 'lab' or item_model_name == 'hotspotactivity' or item_model_name == 'draganddropactivity' or item_model_name == 'codingactivity' or item_model_name == 'scenarioactivity' or item_model_name == 'flashcarddeck' or item_model_name == 'filesubmissionactivity' or item_model_name == 'pbqactivity' %}
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{% url 'instructor_rubric_builder' item.course.id item_model_name item.id %}"><i class="fas fa-clipboard-check fa-fw me-2"></i>Manage Rubric</a></li>
+                <li><a class="dropdown-item" href="{% url 'activity_learning_outcomes' item.course.id item_model_name item.id %}"><i class="fas fa-bullseye fa-fw me-2"></i>Learning Outcomes</a></li>
+            {% endif %}
         {% endwith %}
     </ul>
 </div>

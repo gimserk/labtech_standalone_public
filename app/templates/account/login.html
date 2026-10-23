@@ -1,6 +1,7 @@
 {% extends "base_generic.html" %}
 {% load crispy_forms_tags %}
 {% load socialaccount %}
+{% load tekcon_nfc_flags %}
 
 {% block title %}Login{% endblock %}
 
@@ -237,6 +238,11 @@
                 </a>
             </div>
         {% endif %}
+    {% endif %}
+
+{% tekcon_nfc_enabled as tekcon_badge_login %}
+    {% if tekcon_badge_login %}
+    <div class="text-center mt-3"><a href="{% url 'tekcon_nfc_login' %}" class="btn btn-outline-primary w-100">Sign in with TEKCON NFC Badge</a></div>
     {% endif %}
 
 {# Registration Prompt Footer #}

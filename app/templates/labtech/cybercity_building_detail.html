@@ -295,6 +295,32 @@
                 <div class="list-item">
                     <a href="{% url 'cybercity_esp32_detail' city.id building.id esp.id %}">{{ esp.name }}</a>
                     <span>{{ esp.mac_address }}</span>
+                    <div style="margin-top: 6px; font-size: 0.9rem;">
+                        {% with released=esp.firmwares.all %}
+                            <strong>Firmware:</strong>
+                            {% if esp.firmware_reported_version is not None %}
+                                Installed v{{ esp.firmware_reported_version }}
+                            {% else %}
+                                Not reported
+                            {% endif %}
+                            {% for fw in released %}
+                                {% if fw.is_active %}
+                                    | Available v{{ fw.version }}
+                                    {% if esp.firmware_reported_version is not None and esp.firmware_reported_version < fw.version %}
+                                        <span style="color: var(--lt-warning);">Update available</span>
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endwith %}
+                        {% if esp.firmware_last_seen %}
+                            <div>Last firmware report: {{ esp.firmware_last_seen|date:"Y-m-d H:i:s T" }}</div>
+                        {% else %}
+                            <div>Last firmware report: Never</div>
+                        {% endif %}
+                        {% if esp.firmware_reported_status %}
+                            <div>Device report: {{ esp.firmware_reported_status }}</div>
+                        {% endif %}
+                    </div>
                 </div>
             {% empty %}
                 <p>No ESP32 devices configured.</p>

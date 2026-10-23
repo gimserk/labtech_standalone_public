@@ -1292,6 +1292,8 @@ class CyberCity(models.Model):
     is_public = models.BooleanField(default=False, help_text="Is this CyberCity publicly accessible?")
     mqtt_broker_address = models.CharField(max_length=255, blank=True)
     mqtt_broker_port = models.PositiveIntegerField(default=1883)
+    mqtt_use_tls = models.BooleanField(default=False, help_text='Use verified TLS for the city MQTT broker.')
+    mqtt_ca_certificate_path = models.CharField(max_length=500, blank=True, help_text='Server-local trusted CA bundle path when MQTT TLS is enabled.')
     mqtt_broker_username = models.CharField(max_length=255, blank=True, help_text="Optional username for the MQTT broker.")
     mqtt_broker_password = models.CharField(max_length=255, blank=True, help_text="Optional password for the MQTT broker.")
 
@@ -1324,6 +1326,16 @@ class CyberCity(models.Model):
     pfsense_status = models.CharField(max_length=20, default='stopped', editable=False)
     pfsense_console_port = models.PositiveIntegerField(null=True, blank=True)
     pfsense_backup_snapshot_name = models.CharField(max_length=100, null=True, blank=True, help_text="Name of the single backup snapshot.")
+
+    # Cyber City Control VM: hosts the city's MQTT broker and control services.
+    control_vm_template = models.ForeignKey(
+        'ProxmoxVMTemplate', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='+',
+        help_text="Proxmox template for the city's Control/MQTT VM."
+    )
+    control_vmid = models.PositiveIntegerField(null=True, blank=True, unique=True)
+    control_vnc_port = models.PositiveIntegerField(null=True, blank=True)
+    control_status = models.CharField(max_length=20, default='stopped', editable=False)
 
     # Management VM Instance State
     management_vmid = models.PositiveIntegerField(null=True, blank=True, unique=True)
@@ -1420,6 +1432,10 @@ class CyberCityESP32(models.Model):
     """Represents an ESP32 microcontroller used for physical responses in a building."""
     name = models.CharField(max_length=100, help_text="A friendly name for the ESP32 device.")
     mac_address = models.CharField(max_length=17, unique=True, help_text="The unique MAC address of the device (e.g., 'AA:BB:CC:11:22:33').")
+    provisioning_key_hash = models.CharField(
+        max_length=128, blank=True, default='', editable=False,
+        help_text="Hashed enrollment credential for the device provisioning API."
+    )
     building = models.ForeignKey(
         CyberCityBuilding,
         on_delete=models.CASCADE,
@@ -1427,6 +1443,11 @@ class CyberCityESP32(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    firmware_last_seen = models.DateTimeField(null=True, blank=True, editable=False)
+    firmware_reported_version = models.PositiveIntegerField(null=True, blank=True, editable=False)
+    firmware_reported_status = models.CharField(
+        max_length=24, blank=True, default='', editable=False
+    )
 
     class Meta:
         verbose_name = "CyberCity ESP32"
@@ -2766,4 +2787,29 @@ class FileSubmission(models.Model):
 from .lab_check_models import StepCheck, ValidationLease, ValidationRun, ValidationResult  # noqa: E402,F401
 from .pbq_models import PBQActivity, PBQArtifact, PBQQuestion, PBQAnswerField, PBQChoice, PBQAcceptedAnswer, PBQAttempt, PBQResponse, PBQGradeEvent  # noqa: E402,F401
 from .gradebook_models import CourseGradingPolicy, CourseCategoryWeight, GradebookItemPolicy  # noqa: E402,F401
+from .rubric_models import AssignmentRubric, RubricCriterion, RubricLevel, RubricAssessment, RubricCriterionScore  # noqa: E402,F401
+from .learning_outcome_models import CourseLearningOutcome, LearningOutcomeActivity  # noqa: E402,F401
 from .plugin_models import InstalledConnector, ConnectorConfiguration, PluginInstallJob, PluginAuditEvent  # noqa: E402,F401
+
+
+class TekconNFCConfiguration(models.Model):
+    """Optional site-wide TEKCON USB badge login settings."""
+    enabled = models.BooleanField(default=False)
+    server_url = models.URLField(max_length=255, blank=True,
+        help_text="TEKCON HTTPS origin, DNS or IP address. No path.")
+    auto_create_users = models.BooleanField(default=True)
+    target_ctf = models.ForeignKey('CTF', null=True, blank=True,
+        on_delete=models.SET_NULL, help_text='Optional CTF to enroll badge attendees in.')
+    target_course = models.ForeignKey('Course', null=True, blank=True,
+        on_delete=models.SET_NULL, help_text='Optional workshop course for badge check-in; used only when no CTF target is selected.')
+
+    def __str__(self):
+        return "TEKCON NFC Login"
+
+
+class TekconIdentityLink(models.Model):
+    """Stable TEKCON contestant to local LabTech user mapping."""
+    participant_id = models.CharField(max_length=64, unique=True)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                               related_name="tekcon_identity_link")
+    created_at = models.DateTimeField(auto_now_add=True)

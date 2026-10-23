@@ -1,0 +1,22 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}Rubric grading roster{% endblock %}
+{% block labtech_content %}
+<div class="container py-3">
+<h1 class="h3">{{ activity.title }} — Rubric grading roster</h1>
+<p>{{ course.title }} / {{ rubric.title }}</p>
+<a href="{% url 'instructor_rubric_builder' course.id model_name activity.id %}">Edit rubric</a>
+<div class="table-responsive"><table class="table table-hover align-middle">
+<thead><tr><th>Student</th><th>Status</th><th>Points</th><th>Action</th></tr></thead>
+<tbody>
+{% for row in rows %}
+<tr>
+<td>{{ row.student.get_username }}</td>
+<td>{% if row.assessment.released %}Released{% elif row.assessment %}Draft{% else %}Not assessed{% endif %}</td>
+<td>{% if row.assessment %}{{ row.assessment.awarded_points }} / {{ rubric.possible_points }}{% else %}—{% endif %}</td>
+<td><a href="{% url 'instructor_rubric_assessment' course.id model_name activity.id row.student.pk %}">Grade rubric</a></td>
+</tr>
+{% empty %}<tr><td colspan="4">No enrolled students.</td></tr>{% endfor %}
+</tbody>
+</table></div>
+</div>
+{% endblock %}

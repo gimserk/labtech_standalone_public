@@ -1,0 +1,16 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<p>This performs a read-only TEKCON badge lookup. It does not log anyone in or enroll participants.</p>
+<p><strong>TEKCON endpoint:</strong> {{ config.server_url }}</p>
+<form method="post" autocomplete="off">
+{% csrf_token %}
+<label for="badge_uid">Test USB reader / badge UID:</label>
+<input id="badge_uid" type="password" name="badge_uid" maxlength="64" autofocus autocomplete="off" required>
+<button type="submit" class="button default">Test badge</button>
+</form>
+{% if result %}
+<p role="status">{% if result.ok %}Success: {% else %}Unable to verify: {% endif %}{{ result.message }}</p>
+{% if result.participant_id %}<p>TEKCON participant ID: {{ result.participant_id }}</p>{% endif %}
+{% endif %}
+<p><a href="{% url 'admin:app_tekconnfcconfiguration_change' config.pk %}">Return to TEKCON settings</a></p>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}Assignment rubric{% endblock %}
+{% block labtech_content %}
+<div class="container py-3">
+<h1 class="h3">Rubric: {{ activity.title }}</h1>
+<p>{{ course.title }} — Define measurable criteria and points for this assignment. Existing gradebook scores are unchanged.</p>
+{% if rubric.pk %}
+<p><a href="{% url 'instructor_rubric_roster' course.id model_name activity.id %}">Open student grading roster</a></p>
+{% else %}
+{% if reuse_sources %}
+<form method="post" action="{% url 'instructor_rubric_copy' course.id model_name activity.id %}">
+{% csrf_token %}
+<label class="form-label" for="source_rubric">Reuse an existing rubric in this course</label>
+<select class="form-select" name="source_rubric" id="source_rubric" required>
+{% for source in reuse_sources %}<option value="{{ source.id }}">{{ source.title }}</option>{% endfor %}
+</select>
+<button class="btn btn-outline-primary" type="submit">Copy rubric</button>
+</form>
+{% endif %}
+{% endif %}
+<form method="post">{% csrf_token %}
+{{ form.non_field_errors }}
+<p>{{ form.title.label_tag }} {{ form.title }} {{ form.title.errors }}</p>
+<p>{{ form.description.label_tag }} {{ form.description }} {{ form.description.errors }}</p>
+<p>{{ form.published.label_tag }} {{ form.published }} {{ form.published.errors }}</p>
+<h2 class="h5">Criteria</h2>
+{{ criteria.management_form }}
+{{ criteria.non_form_errors }}
+{% for row in criteria %}
+<section class="card card-body mb-3">
+{{ row.id }}
+{{ row.non_field_errors }}
+<p>{{ row.title.label_tag }} {{ row.title }} {{ row.title.errors }}</p>
+<p>{{ row.description.label_tag }} {{ row.description }} {{ row.description.errors }}</p>
+<p>{{ row.max_points.label_tag }} {{ row.max_points }} {{ row.max_points.errors }}</p>
+<p>{{ row.order.label_tag }} {{ row.order }} {{ row.order.errors }}</p>
+{% if row.instance.pk %}<p><a href="{% url 'instructor_rubric_levels' course.id model_name activity.id row.instance.pk %}">Edit performance levels</a></p><p>{{ row.DELETE }} Delete this criterion</p>{% endif %}
+</section>
+{% endfor %}
+<p>To add more criteria, save and reopen the rubric. For saved criteria, use Edit performance levels to configure scoring descriptions.</p>
+<button type="submit" class="btn btn-primary">Save rubric</button>
+</form>
+</div>
+{% endblock %}

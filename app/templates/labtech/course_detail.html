@@ -12,21 +12,21 @@
         --navbar-height: 70px; /* Height of the top navbar from generic_base.html */
     }
     body {
-        transition: margin-right 0.35s ease-in-out;
+        transition: margin-left 0.35s ease-in-out;
     }
     
     /* --- SLIDE-OUT PANEL STYLES --- */
     .course-sidebar {
         position: fixed;
         top: var(--navbar-height); /* Position below the top navbar */
-        right: 0;
+        left: 0;
         height: calc(100vh - var(--navbar-height)); /* Adjust height for the navbar */
         width: var(--panel-width);
         background-color: var(--navbar-bg); /* Use navbar's dark color */
         color: var(--lt-nav-text);
-        box-shadow: -4px 0 15px rgba(0,0,0,0.1);
+        box-shadow: 4px 0 15px rgba(0,0,0,0.1);
         z-index: 1040;
-        transform: translateX(100%);
+        transform: translateX(-100%);
         transition: transform 0.35s ease-in-out;
         display: flex;
         flex-direction: column;
@@ -52,21 +52,21 @@
     .panel-toggle-btn {
         position: absolute;
         top: 50%;
-        left: -30px;
+        right: -30px;
         transform: translateY(-50%);
         width: 30px;
         height: 60px;
         background-color: var(--navbar-bg);
         color: var(--lt-nav-text);
         border: 1px solid var(--lt-nav-border);
-        border-right: none;
-        border-radius: 5px 0 0 5px;
+        border-left: none;
+        border-radius: 0 5px 5px 0;
         cursor: pointer;
         font-size: 1.5em;
     }
     @media (min-width: 992px) {
         body.panel-is-open {
-            margin-right: var(--panel-width);
+            margin-left: var(--panel-width);
         }
     }
     
@@ -232,7 +232,7 @@
     </div>
 
     <aside class="course-sidebar" id="course-curriculum-panel">
-        <button id="panel-toggle-btn" class="panel-toggle-btn" title="Toggle Curriculum Panel">&lsaquo;</button>
+        <button id="panel-toggle-btn" class="panel-toggle-btn" title="Toggle Curriculum Panel" aria-label="Toggle Curriculum Panel">&rsaquo;</button>
         <div class="sidebar-content-wrapper">
             <div class="progress-info">
                 <div class="progress-text">

@@ -1,0 +1,21 @@
+{% extends 'labtech/generic_base.html' %}
+{% block labtech_title %}Course Learning Outcomes{% endblock %}
+{% block labtech_content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3"><h1 class="h3 mb-0">Learning Outcomes · {{ course.title }}</h1><a class="btn btn-outline-secondary" href="{% url 'labtech_manage_course_content' course.id %}">Back to course management</a></div>
+  <p class="text-body-secondary">Create as many outcomes as your course needs. Connect them to assignments using each activity's Actions menu.</p>
+  <div class="row g-4"><div class="col-lg-5">
+    <div class="card"><div class="card-header fw-semibold">{% if selected %}Edit learning outcome{% else %}Add learning outcome{% endif %}</div>
+      <div class="card-body"><form method="post">{% csrf_token %}{% if selected %}<input type="hidden" name="outcome_id" value="{{ selected.pk }}">{% endif %}
+      {{ form.non_field_errors }}
+      {% for field in form %}<div class="mb-3"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% endfor %}
+      <button type="submit" class="btn btn-primary">Save outcome</button></form></div>
+    </div></div>
+    <div class="col-lg-7"><div class="card"><div class="card-header fw-semibold">Course outcomes</div><div class="list-group list-group-flush">
+      {% for outcome in outcomes %}
+      <div class="list-group-item"><div class="d-flex justify-content-between gap-3"><div><strong>{{ outcome.code|default:"Outcome" }}</strong><p class="mb-0">{{ outcome.statement }}</p></div>
+      <div class="d-flex gap-1 align-items-start"><a class="btn btn-sm btn-outline-primary" href="?edit={{ outcome.id }}">Edit</a><form method="post" action="{% url 'delete_course_learning_outcome' course.id outcome.id %}">{% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this learning outcome?')">Delete</button></form></div></div></div>
+      {% empty %}<div class="list-group-item text-body-secondary">No learning outcomes yet.</div>{% endfor %}
+    </div></div></div></div>
+</div>
+{% endblock %}

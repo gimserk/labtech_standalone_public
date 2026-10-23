@@ -1,0 +1,13 @@
+# Example only. Replace with exact topics for real buildings and devices.
+# Each device username gets only its own assigned pin command/status topics.
+# This example assumes the building topic and device ID shown below.
+user dncc-esp32-aabbcc112233
+topic read dncc/cityhall/security/alarm/command
+topic write dncc/cityhall/security/alarm/status
+topic write dncc/cityhall/devices/dncc-esp32-aabbcc112233/status
+
+# The LabTech service account publishes attack commands and reads statuses.
+user labtech-city-1
+topic write dncc/cityhall/security/alarm/command
+topic read dncc/cityhall/security/alarm/status
+topic read dncc/cityhall/devices/+/status

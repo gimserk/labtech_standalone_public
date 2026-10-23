@@ -1,0 +1,15 @@
+# Cyber City Control VM Mosquitto example
+# Copy to /etc/mosquitto/conf.d/cybercity.conf after provisioning.
+# TLS certificate paths are placeholders; provision certificates first.
+per_listener_settings true
+listener 8883
+protocol mqtt
+allow_anonymous false
+password_file /etc/mosquitto/cybercity/passwords
+acl_file /etc/mosquitto/cybercity/acl
+cafile /etc/mosquitto/cybercity/ca.pem
+certfile /etc/mosquitto/cybercity/server.crt
+keyfile /etc/mosquitto/cybercity/server.key
+tls_version tlsv1.2
+persistence true
+persistence_location /var/lib/mosquitto/
