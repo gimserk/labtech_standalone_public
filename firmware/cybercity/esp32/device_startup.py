@@ -76,12 +76,6 @@ def run():
             print("DNCC city:", config["city"]["name"])
             print("DNCC building:", config["building"]["name"])
             print("Configured GPIO pins:", len(config["pins"]))
-            # Best-effort firmware self-report; errors must not prevent GPIO.
-            try:
-                from firmware_report import report_firmware
-                report_firmware()
-            except (OSError, ValueError, ImportError) as exc:
-                print("Firmware report unavailable:", str(exc))
             # Do not print enrollment or broker credentials.
             user = MQTT_USER.encode() if MQTT_USER else None
             password = MQTT_PASSWORD.encode() if MQTT_PASSWORD else None
@@ -128,7 +122,28 @@ def run():
                         restart_requested[0] = True
                         return True
                 idle_callback = report_update
-            controller.run(on_idle=idle_callback)
+            def report_connected_runtime():
+                # Reaching here proves the MQTT connection and subscriptions
+                # were established and 'online' publish returned; it does NOT
+                # prove long-term operation or independent boot health.
+                from firmware_report import report_firmware
+                report_firmware(status='running')
+            def report_firmware_safe(status='running'):
+                from firmware_report import report_firmware
+                return report_firmware(status=status)
+            # Periodic self-check-ins are opt-in; they do not certify boot health.
+            HEALTH_OBSERVATION_ENABLED = getattr(ota_runtime_config, 'HEALTH_OBSERVATION_ENABLED', False) is True
+            if HEALTH_OBSERVATION_ENABLED:
+                from health_observer import HealthObserver
+                observer = HealthObserver(report_firmware_safe)
+                prior_idle = idle_callback
+                def health_idle():
+                    if prior_idle is not None and prior_idle() is True:
+                        return True
+                    observer.poll(connected=True)
+                idle_callback = health_idle
+            controller.run(on_idle=idle_callback,
+                           on_connected=report_connected_runtime)
             if restart_requested[0]:
                 # MQTT controller has run its safe-output/disconnect cleanup.
                 from machine import reset

@@ -1,5 +1,5 @@
 {% extends "labtech/generic_base.html" %}
-{% load static %}
+{% load static cybercity_firmware_status %}
 
 {% block labtech_title %}{{ title }} - LabTech{% endblock %}
 
@@ -86,6 +86,25 @@
 
     <div>
         <div class="card">
+            <div class="card-header"><h3>Edit Firmware (main.py)</h3></div>
+            <div class="card-body">
+                <p>Edit the controller's Python source, save an inactive version, or publish it for the existing authenticated OTA update check. Syntax validation cannot guarantee MicroPython hardware compatibility. Publishing does not mean installation is complete.</p>
+                {% if current_firmware %}
+                <p>Active release: <strong>v{{ current_firmware.version }}</strong>.
+                Device-reported installed version: <strong>{{ esp32.firmware_reported_version|default:"Not reported" }}</strong>.
+                Last firmware report: <strong>{{ esp32.firmware_last_seen|default:"Never" }}</strong>.</p>
+                {% else %}<p>No release currently active. Enter initial main.py source below.</p>{% endif %}
+                <form method="post">
+                    {% csrf_token %}
+                    {{ firmware_editor.non_field_errors }}
+                    {{ firmware_editor.as_p }}
+                    <button type="submit" name="save_firmware_source" class="btn btn-primary">Save Firmware Version</button>
+                </form>
+                <p><small>Advanced multi-file firmware and libraries can still be uploaded below. Automated OTA activation and rollback are not yet verified for all ESP32 configurations.</small></p>
+            </div>
+        </div>
+
+        <div class="card">
             <div class="card-header">
                 <h3>Upload New Firmware Bundle</h3>
             </div>
@@ -126,6 +145,14 @@
                 <h3>Firmware Version History</h3>
             </div>
             <div class="card-body">
+                <p>
+                    <strong>Deployment status:</strong>
+                    {% if current_firmware %}Target v{{ current_firmware.version }} — {% endif %}{% esp32_firmware_status current_firmware esp32 %}
+                    {% else %}
+                        No firmware published
+                    {% endif %}
+                </p>
+                <p><small>A report is self-reported by the ESP32. Firmware publication does not independently verify installation. Older versions cannot be installed by the current automatic OTA installer.</small></p>
                 <table class="table">
                     <thead>
                         <tr>
@@ -153,6 +180,13 @@
                             </td>
                             <td>
                                 <a href="{% url 'download_firmware_bundle' fw.id %}" class="btn btn-secondary btn-sm" title="Download main.py and all libraries as a .zip file">Bundle</a>
+                                {% if not fw.is_active %}
+                                    <form method="post" style="display:inline" onsubmit="return confirm('Publish firmware v{{ fw.version }}? This only changes the target version; the ESP32 must retrieve and install it.');">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="firmware_id" value="{{ fw.id }}">
+                                        <button type="submit" name="publish_firmware_version" class="btn btn-primary btn-sm">Publish version</button>
+                                    </form>
+                                {% endif %}
                             </td>
                         </tr>
                         {% empty %}

@@ -178,14 +178,30 @@
                     </div>
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <span class="status-badge status-{{ machine.status }}">{{ machine.status }}</span>
+                        {% if machine.reset_started_at and machine.status == "reset_queued" or machine.reset_started_at and machine.status == "resetting" %}<small>Since {{ machine.reset_started_at|date:"M d H:i" }}</small>{% endif %}
+                        {% if machine.status == 'error' or machine.status == 'reset_queued' or machine.status == 'resetting' %}
+                        <a class="btn btn-secondary btn-sm" href="{% url 'cybercity_machine_reset_diagnostics' city.id building.id machine.id %}">Inspect reset</a>
+                        {% endif %}
+                        {% if machine.status == "error" and machine.reset_error %}<small class="text-danger" title="{{ machine.reset_error }}">Reset error: {{ machine.reset_error|truncatechars:120 }}</small>{% endif %}
                         <form method="post" style="margin: 0;">
                             {% csrf_token %}
                             {% if machine.status == 'running' %}
                                 <button type="submit" formaction="{% url 'cybercity_machine_action' city.id building.id machine.id 'stop' %}" class="btn btn-warning">Stop</button>
+                            {% elif machine.status == 'reset_queued' or machine.status == 'resetting' %}
+                                <button type="button" class="btn btn-secondary" disabled>Reset in progress</button>
+                            {% elif machine.status == 'error' %}
+                                <button type="button" class="btn btn-secondary" disabled>Check reset error</button>
                             {% else %}
                                 <button type="submit" formaction="{% url 'cybercity_machine_action' city.id building.id machine.id 'start' %}" class="btn btn-success">Start</button>
                             {% endif %}
                         </form>
+                        {% if machine.proxmox_vmid and machine.status == 'running' %}
+                            <form method="post" action="{% url 'cybercity_machine_action' city.id building.id machine.id 'reset' %}" style="margin: 0;" onsubmit="return confirm('Reset {{ machine.name|escapejs }}? The current Cyber City clone will be destroyed and replaced from its template. Student changes on this VM will be lost.');">
+                                {% csrf_token %}
+                                <input type="hidden" name="confirm_reset" value="yes">
+                                <button type="submit" class="btn btn-danger">Reset to Template</button>
+                            </form>
+                        {% endif %}
                         
                         {% if machine.status == 'running' %}
                             <a href="{% url 'cybercity_machine_guacamole_sso_redirect' machine_id=machine.id %}" class="btn btn-primary" target="_blank" rel="noopener noreferrer">Console</a>
@@ -291,40 +307,10 @@
             <a href="{% url 'cybercity_esp32_add' city.id building.id %}" class="btn btn-primary">Add ESP32</a>
         </div>
         <div class="card-body">
-            {% for esp in esp32s %}
-                <div class="list-item">
-                    <a href="{% url 'cybercity_esp32_detail' city.id building.id esp.id %}">{{ esp.name }}</a>
-                    <span>{{ esp.mac_address }}</span>
-                    <div style="margin-top: 6px; font-size: 0.9rem;">
-                        {% with released=esp.firmwares.all %}
-                            <strong>Firmware:</strong>
-                            {% if esp.firmware_reported_version is not None %}
-                                Installed v{{ esp.firmware_reported_version }}
-                            {% else %}
-                                Not reported
-                            {% endif %}
-                            {% for fw in released %}
-                                {% if fw.is_active %}
-                                    | Available v{{ fw.version }}
-                                    {% if esp.firmware_reported_version is not None and esp.firmware_reported_version < fw.version %}
-                                        <span style="color: var(--lt-warning);">Update available</span>
-                                    {% endif %}
-                                {% endif %}
-                            {% endfor %}
-                        {% endwith %}
-                        {% if esp.firmware_last_seen %}
-                            <div>Last firmware report: {{ esp.firmware_last_seen|date:"Y-m-d H:i:s T" }}</div>
-                        {% else %}
-                            <div>Last firmware report: Never</div>
-                        {% endif %}
-                        {% if esp.firmware_reported_status %}
-                            <div>Device report: {{ esp.firmware_reported_status }}</div>
-                        {% endif %}
-                    </div>
-                </div>
-            {% empty %}
-                <p>No ESP32 devices configured.</p>
-            {% endfor %}
+            <div id="esp32-health-rows">
+                {% include "labtech/includes/cybercity_esp32_health.html" %}
+            </div>
+            <small id="esp32-health-refresh-status" role="status" aria-live="polite">Health values refresh every 30 seconds while this tab is visible.</small>
         </div>
     </div>
 </div>
@@ -333,6 +319,31 @@
 {% block labtech_extra_body %}
 <script>
     const csrftoken = '{{ csrf_token }}';
+    const espHealthRows = document.getElementById('esp32-health-rows');
+    const espHealthStatus = document.getElementById('esp32-health-refresh-status');
+    let espHealthPending = false;
+    async function refreshESPHealth() {
+        if (!espHealthRows || document.hidden || espHealthPending) return;
+        espHealthPending = true;
+        try {
+            const response = await fetch("{% url 'cybercity_esp32_health_fragment' city.id building.id %}", {
+                credentials: 'same-origin', cache: 'no-store',
+                headers: {'X-Requested-With': 'XMLHttpRequest'}
+            });
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            const html = await response.text();
+            espHealthRows.innerHTML = html;
+            espHealthStatus.textContent = 'ESP32 health updated. Device reports are not proof of continuous connectivity.';
+        } catch (error) {
+            espHealthStatus.textContent = 'ESP32 health refresh failed; displayed reports may be outdated.';
+        } finally {
+            espHealthPending = false;
+        }
+    }
+    setInterval(refreshESPHealth, 30000);
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) refreshESPHealth();
+    });
 
     function updateCellWithColor(cell, payload, timestamp) {
         if (!cell) return;

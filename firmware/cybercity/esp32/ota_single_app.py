@@ -58,23 +58,46 @@ def install_staged_main(manifest, folder, approve=False):
     candidate = folder + "/" + ENTRY_POINT
     if _sha256_file(candidate).lower() != files[0]["sha256"].lower():
         raise ValueError("Firmware integrity failed")
-    # The staged application is already on the same filesystem.
-    # Some MicroPython filesystems cannot rename over an existing file.
-    # A power loss after removal requires USB recovery.
+    # Preserve the old application before attempting promotion. The backup
+    # remains available for manual recovery even after a successful update.
+    # This is NOT atomic over power loss and does not provide auto rollback.
+    backup = "main.py.ota-backup"
     try:
-        os.stat(ENTRY_POINT)
+        os.stat(backup)
     except OSError:
         pass
     else:
-        os.remove(ENTRY_POINT)
-    os.rename(candidate, ENTRY_POINT)
-    with open(VERSION_FILE + ".tmp", "w") as handle:
-        handle.write(json.dumps({"version": version}))
+        raise ValueError("Existing OTA backup must be recovered/removed manually")
     try:
-        os.remove(VERSION_FILE)
+        os.stat(ENTRY_POINT)
+        had_previous = True
     except OSError:
-        pass
-    os.rename(VERSION_FILE + ".tmp", VERSION_FILE)
+        had_previous = False
+    if had_previous:
+        os.rename(ENTRY_POINT, backup)
+    promoted = False
+    try:
+        os.rename(candidate, ENTRY_POINT)
+        promoted = True
+        # Keep version metadata consistent with the promoted application.
+        with open(VERSION_FILE + ".tmp", "w") as handle:
+            handle.write(json.dumps({"version": version}))
+        try:
+            os.remove(VERSION_FILE)
+        except OSError:
+            pass
+        os.rename(VERSION_FILE + ".tmp", VERSION_FILE)
+    except Exception:
+        # Best-effort same-session restore. A power cut or a failed restore
+        # still needs manual USB/REPL intervention; do not report success.
+        if promoted:
+            try:
+                os.remove(ENTRY_POINT)
+            except OSError:
+                pass
+        if had_previous:
+            os.rename(backup, ENTRY_POINT)
+        raise
     return version
 
 

@@ -1,0 +1,30 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_content %}
+<div class="card">
+  <div class="card-header"><h3>Linked-clone reset diagnostics</h3></div>
+  <div class="card-body">
+    <p><strong>Building:</strong> {{ building.name }}</p>
+    <p><strong>Machine:</strong> {{ machine.name }}</p>
+    <p><strong>Reset status:</strong> {{ machine.status }}</p>
+    <p><strong>Recorded clone VMID:</strong> {{ machine.proxmox_vmid|default:"Not recorded" }}</p>
+    <p><strong>Source template VMID:</strong> {{ machine.proxmox_template.vmid }}</p>
+    <p><strong>Started:</strong> {{ machine.reset_started_at|default:"Not recorded" }}</p>
+    <p><strong>Inspection:</strong> {{ inspection.decision }}</p>
+    <p><strong>Finding:</strong> {{ inspection.reason }}</p>
+    {% if machine.reset_error %}<p><strong>Last reset error:</strong> {{ machine.reset_error }}</p>{% endif %}
+    <p><strong>Read-only:</strong> No VM operations are performed by this page. Inspect Proxmox and logs before retrying an interrupted reset.</p>
+    {% if machine.status == 'error' %}
+    <form method="post" action="{% url 'cybercity_machine_recovery_review' city.id building.id machine.id %}">
+      {% csrf_token %}
+      <p>Confirm the existing machine VMID to perform a read-only recovery eligibility check. No VM changes will occur.</p>
+      <label for="recovery-vmid">Existing VMID</label>
+      <input id="recovery-vmid" type="number" name="vmid" required min="1">
+      <label for="recovery-confirmation">Type REVIEW RESET</label>
+      <input id="recovery-confirmation" type="text" name="confirmation" required autocomplete="off">
+      <button type="submit" class="btn btn-secondary">Review recovery eligibility</button>
+    </form>
+    {% endif %}
+    <a href="{% url 'cybercity_building_detail' city.id building.id %}" class="btn btn-secondary">Back to building</a>
+  </div>
+</div>
+{% endblock %}

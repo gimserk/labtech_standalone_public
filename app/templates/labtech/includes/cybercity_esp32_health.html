@@ -1,0 +1,16 @@
+{% for row in esp_health_rows %}
+<div class="list-item">
+    <a href="{% url 'cybercity_esp32_detail' city.id building.id row.device.id %}">{{ row.device.name }}</a>
+    <span>{{ row.device.mac_address }}</span>
+    <div style="margin-top: 6px; font-size: 0.9rem;">
+        <div><strong>Reported health:</strong> {{ row.freshness }}</div>
+        <div><strong>Published firmware:</strong> {% if row.target %}v{{ row.target }}{% else %}None{% endif %}</div>
+        <div><strong>Device-reported firmware:</strong> {% if row.reported_version is not None %}v{{ row.reported_version }}{% else %}Unknown{% endif %}</div>
+        <div><strong>Reported state:</strong> {{ row.reported_status }}</div>
+        <div><strong>Deployment:</strong> {{ row.deployment }}</div>
+        <div><strong>Last firmware report:</strong> {% if row.last_seen %}{{ row.last_seen|date:"Y-m-d H:i:s T" }}{% else %}Never{% endif %}</div>
+    </div>
+</div>
+{% empty %}
+<p>No ESP32 devices configured.</p>
+{% endfor %}

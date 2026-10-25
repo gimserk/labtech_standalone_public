@@ -1,0 +1,15 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_content %}
+<div class="card">
+  <div class="card-header"><h3>Recovery eligibility review</h3></div>
+  <div class="card-body">
+    <p><strong>Building:</strong> {{ building.name }}</p>
+    <p><strong>Machine:</strong> {{ machine.name }}</p>
+    <p><strong>VMID:</strong> {{ machine.proxmox_vmid|default:"Not recorded" }}</p>
+    <p><strong>Preflight result:</strong> {% if review.allowed %}Review checks passed{% else %}Review checks not met{% endif %}</p>
+    <p><strong>Reason:</strong> {{ review.reason }}</p>
+    <p><strong>No Proxmox changes were made.</strong> A passing preflight does not grant permission to delete or recreate any machine.</p>
+    <a href="{% url 'cybercity_machine_reset_diagnostics' city.id building.id machine.id %}" class="btn btn-secondary">Back to reset diagnostics</a>
+  </div>
+</div>
+{% endblock %}

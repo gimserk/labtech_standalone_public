@@ -8,6 +8,7 @@ import time
 import ujson
 from machine import Pin, PWM
 from umqtt.simple import MQTTClient
+from command_protocol import decode_command, CommandError
 
 
 class BuildingController:
@@ -16,6 +17,7 @@ class BuildingController:
         self.device_id = str(device_id)
         self.pins = {}
         self.topics = {}
+        self.seen_commands = {}
         broker = config["mqtt"]
         self.base = broker["base_topic"].rstrip("/")
         self.state_topic = self.base + "/devices/" + self.device_id + "/status"
@@ -69,42 +71,78 @@ class BuildingController:
     def _publish(self, topic, value):
         self.client.publish(topic, str(value).encode(), retain=True, qos=1)
 
+    def _ack(self, base, command_id, status, state=None):
+        packet = {'schema': 1, 'command_id': command_id, 'status': status}
+        if state is not None:
+            packet['state'] = state
+        # Do not retain event acknowledgments; a new subscriber must not
+        # interpret an old ACK as a newly executed command.
+        self.client.publish(base + '/ack', ujson.dumps(packet).encode(),
+                            retain=False, qos=1)
+
     def _on_message(self, topic, payload):
         topic = topic.decode() if isinstance(topic, bytes) else topic
         base = self.topics.get(topic)
         if base is None:
             return
-        command = payload.decode().strip().lower()
-        device, kind = self.pins[base]
+        command_id = None
         try:
-            if kind == "LED":
-                if command not in ("on", "off", "1", "0"):
-                    raise ValueError("Expected on/off/1/0")
-                state = 1 if command in ("on", "1") else 0
+            # Legacy plain-text commands continue to work while the LabTech
+            # outbox and controller firmware migrate to versioned JSON.
+            if payload.lstrip().startswith(b'{'):
+                command_id, command = decode_command(payload)
+                if command_id in self.seen_commands:
+                    prior_base, prior_state = self.seen_commands[command_id]
+                    if prior_base == base:
+                        self._ack(base, command_id, 'executed', prior_state)
+                    return
+            else:
+                command = payload.decode().strip().lower()
+            device, kind = self.pins[base]
+            if kind == 'LED':
+                if command.lower() not in ('on', 'off', '1', '0'):
+                    raise ValueError('Expected on/off/1/0')
+                state = 1 if command.lower() in ('on', '1') else 0
                 device.value(state)
             else:
-                # PWM accepts decimal duty (0..65535) or 0..100% string.
-                if command.endswith("%"):
+                if command.endswith('%'):
                     percentage = float(command[:-1])
                     if not 0 <= percentage <= 100:
-                        raise ValueError("Percentage outside 0..100")
+                        raise ValueError('Percentage outside 0..100')
                     state = round(percentage * 65535 / 100)
                 else:
                     state = int(command)
                     if not 0 <= state <= 65535:
-                        raise ValueError("Duty outside 0..65535")
+                        raise ValueError('Duty outside 0..65535')
                 device.duty_u16(state)
-            self._publish(base + "/status", state)
-        except (ValueError, OSError) as exc:
-            # Do not echo arbitrary untrusted commands to display screens.
-            print("Rejected MQTT command for", base, str(exc))
+            self._publish(base + '/status', state)
+            if command_id is not None:
+                # Bounded in-RAM duplicate protection: a power cycle clears
+                # this cache, so broker QoS1 still cannot guarantee once-only.
+                if len(self.seen_commands) >= 64:
+                    self.seen_commands.pop(next(iter(self.seen_commands)))
+                self.seen_commands[command_id] = (base, state)
+                self._ack(base, command_id, 'executed', state)
+        except (ValueError, OSError, CommandError) as exc:
+            print('Rejected MQTT command for', base, str(exc))
+            if command_id is not None:
+                try:
+                    self._ack(base, command_id, 'failed')
+                except OSError:
+                    pass
 
-    def run(self, on_idle=None):
+    def run(self, on_idle=None, on_connected=None):
         self.client.connect()
         try:
             for topic in self.topics:
                 self.client.subscribe(topic.encode(), qos=1)
             self._publish(self.state_topic, "online")
+            if on_connected is not None:
+                try:
+                    on_connected()
+                except (OSError, ValueError, ImportError) as exc:
+                    # Reporting is best effort; controller remains operational.
+                    print("Runtime health reporting unavailable:", str(exc))
             while True:
                 self.client.check_msg()
                 if on_idle is not None:

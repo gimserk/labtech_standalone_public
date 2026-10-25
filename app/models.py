@@ -1415,6 +1415,8 @@ class CyberCityMachine(models.Model):
     api_key = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, help_text="Secure API key for the machine agent.")
     vnc_port = models.PositiveIntegerField(null=True, blank=True)
     console_port = models.PositiveIntegerField(null=True, blank=True)
+    reset_started_at = models.DateTimeField(null=True, blank=True, editable=False)
+    reset_error = models.TextField(blank=True, default='', editable=False)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -1443,6 +1445,7 @@ class CyberCityESP32(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    use_versioned_commands = models.BooleanField(default=False, help_text='Enable MQTT v1 JSON commands and correlated acknowledgments only after firmware and UTC clock validation.')
     firmware_last_seen = models.DateTimeField(null=True, blank=True, editable=False)
     firmware_reported_version = models.PositiveIntegerField(null=True, blank=True, editable=False)
     firmware_reported_status = models.CharField(
@@ -2789,6 +2792,7 @@ from .pbq_models import PBQActivity, PBQArtifact, PBQQuestion, PBQAnswerField, P
 from .gradebook_models import CourseGradingPolicy, CourseCategoryWeight, GradebookItemPolicy  # noqa: E402,F401
 from .rubric_models import AssignmentRubric, RubricCriterion, RubricLevel, RubricAssessment, RubricCriterionScore  # noqa: E402,F401
 from .learning_outcome_models import CourseLearningOutcome, LearningOutcomeActivity  # noqa: E402,F401
+from .cybercity_command_models import CyberCityCommand  # noqa: E402,F401
 from .plugin_models import InstalledConnector, ConnectorConfiguration, PluginInstallJob, PluginAuditEvent  # noqa: E402,F401
 
 
