@@ -179,7 +179,7 @@
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <span class="status-badge status-{{ machine.status }}">{{ machine.status }}</span>
                         {% if machine.reset_started_at and machine.status == "reset_queued" or machine.reset_started_at and machine.status == "resetting" %}<small>Since {{ machine.reset_started_at|date:"M d H:i" }}</small>{% endif %}
-                        {% if machine.status == 'error' or machine.status == 'reset_queued' or machine.status == 'resetting' %}
+                        {% if machine.status == 'reset_queued' or machine.status == 'resetting' or machine.status == 'error' and machine.reset_error %}
                         <a class="btn btn-secondary btn-sm" href="{% url 'cybercity_machine_reset_diagnostics' city.id building.id machine.id %}">Inspect reset</a>
                         {% endif %}
                         {% if machine.status == "error" and machine.reset_error %}<small class="text-danger" title="{{ machine.reset_error }}">Reset error: {{ machine.reset_error|truncatechars:120 }}</small>{% endif %}
@@ -189,13 +189,19 @@
                                 <button type="submit" formaction="{% url 'cybercity_machine_action' city.id building.id machine.id 'stop' %}" class="btn btn-warning">Stop</button>
                             {% elif machine.status == 'reset_queued' or machine.status == 'resetting' %}
                                 <button type="button" class="btn btn-secondary" disabled>Reset in progress</button>
-                            {% elif machine.status == 'error' %}
+                            {% elif machine.status == 'provisioning' %}
+                                <button type="button" class="btn btn-secondary" disabled>Provisioning...</button>
+                            {% elif machine.status == 'error' and machine.reset_error %}
                                 <button type="button" class="btn btn-secondary" disabled>Check reset error</button>
+                            {% elif machine.status == 'error' and machine.proxmox_vmid %}
+                                <button type="submit" formaction="{% url 'cybercity_machine_action' city.id building.id machine.id 'start' %}" class="btn btn-warning">Retry Provisioning</button>
+                            {% elif machine.status == 'error' %}
+                                <button type="button" class="btn btn-secondary" disabled>Inspect missing VMID</button>
                             {% else %}
                                 <button type="submit" formaction="{% url 'cybercity_machine_action' city.id building.id machine.id 'start' %}" class="btn btn-success">Start</button>
                             {% endif %}
                         </form>
-                        {% if machine.proxmox_vmid and machine.status != 'reset_queued' and machine.status != 'resetting' %}
+                        {% if machine.proxmox_vmid and machine.status == 'running' or machine.proxmox_vmid and machine.status == 'stopped' %}
                             <form method="post" action="{% url 'cybercity_machine_action' city.id building.id machine.id 'backup' %}" style="margin: 0;">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-outline-primary">Backup Snapshot</button>
@@ -222,7 +228,7 @@
                         <a href="{% url 'manage_machine_monitors' city.id building.id machine.id %}" class="btn btn-info">Monitors</a>
                         
                         <a href="{% url 'cybercity_machine_edit' city.id building.id machine.id %}" class="btn btn-secondary">Edit</a>
-                        <a href="{% url 'cybercity_machine_delete' city.id building.id machine.id %}" class="btn btn-danger">Delete</a>
+                        {% if machine.status != 'provisioning' %}<a href="{% url 'cybercity_machine_delete' city.id building.id machine.id %}" class="btn btn-danger">Delete</a>{% endif %}
                     </div>
                 </div>
             {% empty %}
