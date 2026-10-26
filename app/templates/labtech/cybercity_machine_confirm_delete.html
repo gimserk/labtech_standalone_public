@@ -1,0 +1,14 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}Delete Cyber City machine{% endblock %}
+{% block labtech_content %}
+<div class="container py-4">
+  <h2>Delete {{ item_to_delete.name }}</h2>
+  <p class="text-danger">This permanently deletes the Cyber City Proxmox clone, including its disks and snapshots, and removes the machine from the building. The source template is not deleted.</p>
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="confirm_delete" value="yes">
+    <a href="{{ cancel_url }}" class="btn btn-secondary">Cancel</a>
+    <button type="submit" class="btn btn-danger">Delete VM and Machine</button>
+  </form>
+</div>
+{% endblock %}

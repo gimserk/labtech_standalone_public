@@ -195,6 +195,16 @@
                                 <button type="submit" formaction="{% url 'cybercity_machine_action' city.id building.id machine.id 'start' %}" class="btn btn-success">Start</button>
                             {% endif %}
                         </form>
+                        {% if machine.proxmox_vmid and machine.status != 'reset_queued' and machine.status != 'resetting' %}
+                            <form method="post" action="{% url 'cybercity_machine_action' city.id building.id machine.id 'backup' %}" style="margin: 0;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-primary">Backup Snapshot</button>
+                            </form>
+                            <form method="post" action="{% url 'cybercity_machine_action' city.id building.id machine.id 'restore' %}" style="margin: 0;" onsubmit="return confirm('Rollback {{ machine.name|escapejs }} to its latest Cyber City backup snapshot? Changes made after that snapshot will be lost.');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-warning">Restore Snapshot</button>
+                            </form>
+                        {% endif %}
                         {% if machine.proxmox_vmid and machine.status == 'running' %}
                             <form method="post" action="{% url 'cybercity_machine_action' city.id building.id machine.id 'reset' %}" style="margin: 0;" onsubmit="return confirm('Reset {{ machine.name|escapejs }}? The current Cyber City clone will be destroyed and replaced from its template. Student changes on this VM will be lost.');">
                                 {% csrf_token %}
