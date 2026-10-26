@@ -222,15 +222,14 @@
                             {% csrf_token %}
                             {% if city.pfsense_status == 'running' %}
                                 <a href="{% url 'cybercity_guacamole_sso_redirect' city_id=city.id machine_type='pfsense' %}" target="_blank" rel="noopener noreferrer" class="btn btn-info btn-sm">Console</a>
-                                <button type="submit" formaction="{% url 'cybercity_utility_action' city.id 'pfsense' 'backup' %}" class="btn btn-secondary btn-sm" onclick="return confirm('This will overwrite any existing backup. Continue?')">Backup</button>
-                                {% if city.pfsense_backup_snapshot_name %}
-                                    <button type="submit" formaction="{% url 'cybercity_utility_action' city.id 'pfsense' 'restore' %}" class="btn btn-info btn-sm" onclick="return confirm('Are you sure you want to restore? The VM will be rolled back and restarted.')">Restore</button>
-                                {% else %}
-                                    <button class="btn btn-info btn-sm" disabled title="No backup available to restore.">Restore</button>
-                                {% endif %}
-                                <button type="submit" formaction="{% url 'cybercity_utility_action' city.id 'pfsense' 'stop' %}" class="btn btn-warning btn-sm" onclick="return confirm('Are you sure you want to stop and destroy the firewall VM?')">Stop</button>
+                                <button type="submit" formaction="{% url 'cybercity_utility_action' city.id 'pfsense' 'stop' %}" class="btn btn-warning btn-sm">Stop</button>
                             {% else %}
-                                <button type="submit" formaction="{% url 'cybercity_utility_action' city.id 'pfsense' 'start' %}" class="btn btn-success btn-sm" {% if not city.pfsense_template %}disabled title="No firewall template is configured for this city."{% endif %}>Start</button>
+                                <button type="submit" formaction="{% url 'cybercity_utility_action' city.id 'pfsense' 'start' %}" class="btn btn-success btn-sm" {% if not city.pfsense_template %}disabled{% endif %}>Start</button>
+                            {% endif %}
+                            {% if city.pfsense_vmid %}
+                                <button type="submit" formaction="{% url 'cybercity_utility_action' city.id 'pfsense' 'backup' %}" class="btn btn-secondary btn-sm">Backup Snapshot</button>
+                                <button type="submit" formaction="{% url 'cybercity_utility_action' city.id 'pfsense' 'restore' %}" class="btn btn-info btn-sm" onclick="return confirm('Rollback to the latest Cyber City snapshot?')">Restore Snapshot</button>
+                                <button type="submit" name="confirm_delete" value="yes" formaction="{% url 'cybercity_utility_action' city.id 'pfsense' 'delete' %}" class="btn btn-danger btn-sm" onclick="return confirm('Permanently DELETE the pfsense VM, disks, and snapshots? This cannot be undone.')">Delete VM</button>
                             {% endif %}
                         </form>
                     </div>
@@ -244,9 +243,14 @@
                             {% csrf_token %}
                             {% if city.control_status == 'running' %}
                                 <a href="{% url 'cybercity_guacamole_sso_redirect' city_id=city.id machine_type='control' %}" target="_blank" rel="noopener noreferrer" class="btn btn-info btn-sm">Console</a>
-                                <button type="submit" formaction="{% url 'cybercity_utility_action' city.id 'control' 'stop' %}" class="btn btn-warning btn-sm" onclick="return confirm('Stop and destroy the Control VM? This will interrupt IoT/MQTT traffic for this city.')">Stop</button>
+                                <button type="submit" formaction="{% url 'cybercity_utility_action' city.id 'control' 'stop' %}" class="btn btn-warning btn-sm">Stop</button>
                             {% else %}
-                                <button type="submit" formaction="{% url 'cybercity_utility_action' city.id 'control' 'start' %}" class="btn btn-success btn-sm" {% if not city.control_vm_template %}disabled title="No Control VM template is configured for this city."{% endif %}>Start</button>
+                                <button type="submit" formaction="{% url 'cybercity_utility_action' city.id 'control' 'start' %}" class="btn btn-success btn-sm" {% if not city.control_vm_template %}disabled{% endif %}>Start</button>
+                            {% endif %}
+                            {% if city.control_vmid %}
+                                <button type="submit" formaction="{% url 'cybercity_utility_action' city.id 'control' 'backup' %}" class="btn btn-secondary btn-sm">Backup Snapshot</button>
+                                <button type="submit" formaction="{% url 'cybercity_utility_action' city.id 'control' 'restore' %}" class="btn btn-info btn-sm" onclick="return confirm('Rollback to the latest Cyber City snapshot?')">Restore Snapshot</button>
+                                <button type="submit" name="confirm_delete" value="yes" formaction="{% url 'cybercity_utility_action' city.id 'control' 'delete' %}" class="btn btn-danger btn-sm" onclick="return confirm('Permanently DELETE the control VM, disks, and snapshots? This cannot be undone.')">Delete VM</button>
                             {% endif %}
                         </form>
                     </div>
@@ -261,9 +265,14 @@
                             {% csrf_token %}
                             {% if city.management_status == 'running' %}
                                 <a href="{% url 'cybercity_guacamole_sso_redirect' city_id=city.id machine_type='management' %}" target="_blank" rel="noopener noreferrer" class="btn btn-info btn-sm">Console</a>
-                                <button type="submit" formaction="{% url 'cybercity_utility_action' city.id 'management' 'stop' %}" class="btn btn-warning btn-sm" onclick="return confirm('Are you sure you want to stop and destroy the management VM?')">Stop</button>
+                                <button type="submit" formaction="{% url 'cybercity_utility_action' city.id 'management' 'stop' %}" class="btn btn-warning btn-sm">Stop</button>
                             {% else %}
-                                <button type="submit" formaction="{% url 'cybercity_utility_action' city.id 'management' 'start' %}" class="btn btn-success btn-sm" {% if not city.management_vm_template %}disabled title="No management VM template is configured for this city."{% endif %}>Start</button>
+                                <button type="submit" formaction="{% url 'cybercity_utility_action' city.id 'management' 'start' %}" class="btn btn-success btn-sm" {% if not city.management_vm_template %}disabled{% endif %}>Start</button>
+                            {% endif %}
+                            {% if city.management_vmid %}
+                                <button type="submit" formaction="{% url 'cybercity_utility_action' city.id 'management' 'backup' %}" class="btn btn-secondary btn-sm">Backup Snapshot</button>
+                                <button type="submit" formaction="{% url 'cybercity_utility_action' city.id 'management' 'restore' %}" class="btn btn-info btn-sm" onclick="return confirm('Rollback to the latest Cyber City snapshot?')">Restore Snapshot</button>
+                                <button type="submit" name="confirm_delete" value="yes" formaction="{% url 'cybercity_utility_action' city.id 'management' 'delete' %}" class="btn btn-danger btn-sm" onclick="return confirm('Permanently DELETE the management VM, disks, and snapshots? This cannot be undone.')">Delete VM</button>
                             {% endif %}
                         </form>
                     </div>
