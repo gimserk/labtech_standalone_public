@@ -1,0 +1,124 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}Cluster Utilization{% endblock %}
+{% block labtech_content %}
+<style>
+.util-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.8rem;margin:1rem 0}
+.util-stat,.util-cluster,.util-node {padding:1rem;border:1px solid var(--lt-border);border-radius:9px;background:var(--lt-surface);margin-bottom:1rem}
+.util-stat strong {display:block;font-size:1.4rem;color:var(--lt-text)}
+.util-muted {color:var(--lt-muted);font-size:.9rem}
+.util-table {width:100%;border-collapse:collapse;margin:.6rem 0 1.2rem}
+.util-table th,.util-table td {padding:.55rem .65rem;border-bottom:1px solid var(--lt-border);text-align:left;vertical-align:top;white-space:normal}
+.util-table th {background:var(--lt-surface-muted);font-weight:650}
+.util-table-wrap {overflow-x:auto}
+.util-table code {white-space:nowrap}
+.util-pill {border:1px solid var(--lt-border);border-radius:5px;padding:.1rem .45rem}
+.util-alert {padding:.8rem;border:1px solid var(--lt-danger);border-radius:6px}
+.util-node summary {cursor:pointer;font-size:1.05rem;font-weight:700;padding:.3rem}
+.util-node h4 {margin-top:1.2rem}
+</style>
+<div class="container-fluid mt-4">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+    <h1>Cluster Utilization &amp; Lab Placement</h1>
+    <div>
+      <a class="btn btn-outline-secondary" href="{% url 'admin_manage_all_labs' %}">Manage Labs</a>
+      <a class="btn btn-outline-secondary" href="{% url 'labtech_manage_proxmox_servers_list' %}">Proxmox Settings</a>
+      <a class="btn btn-outline-primary" href="{% url 'cluster_utilization' %}">Refresh metrics</a>
+    </div>
+  </div>
+  <p class="util-muted">Live Proxmox metrics retrieved {{ snapshot_at|date:"Y-m-d H:i:s T" }}. CPU and memory are observed host usage; VM disk values are Proxmox-reported. Storage may be shared across nodes and must not be summed as independent capacity. This is an inventory view, not an allocation or deletion control.</p>
+  <div class="util-grid">
+    <div class="util-stat"><span>Cleanup queued</span><strong>{{ cleanup_counts.queued }}</strong></div>
+    <div class="util-stat"><span>Cleanup retrying</span><strong>{{ cleanup_counts.retrying }}</strong></div>
+    <div class="util-stat"><span>Cleanup running</span><strong>{{ cleanup_counts.running }}</strong></div>
+    <div class="util-stat"><span>Cleanup failed</span><strong>{{ cleanup_counts.failed }}</strong></div>
+    <div class="util-stat"><span>Periodic cleanup configured</span><strong>{% if cleanup_schedule_enabled %}Enabled{% else %}Disabled{% endif %}</strong><span class="util-muted">Requires one Celery Beat process</span></div>
+    <div class="util-stat"><span>Cleanup sweep heartbeat</span><strong>{% if sweep_healthy %}Healthy{% else %}<span class="text-danger">Stale / missing</span>{% endif %}</strong><span class="util-muted">Last completed sweep: {% if last_sweep %}{{ last_sweep|date:"Y-m-d H:i:s T" }}{% else %}Never observed{% endif %}</span></div>
+  </div>
+  <section class="util-cluster">
+    <h2>Recent managed lab migrations</h2>
+    <p class="util-muted">Moves are performed by LabTech as offline, resumable jobs. A job marked needs_attention requires administrator review before repair.</p>
+    <div class="util-table-wrap"><table class="util-table">
+      <thead><tr><th>Session</th><th>Cluster</th><th>Source → target</th><th>Status</th><th>Stage</th><th>Details</th></tr></thead>
+      <tbody>{% for job in recent_migrations %}<tr>
+        <td>#{{ job.instance_id_snapshot }}</td>
+        <td>{{ job.proxmox_server.name }}</td>
+        <td>{{ job.source_node }} → {{ job.target_node }}</td>
+        <td>{{ job.status }}{% if job.last_error %}<div class="text-danger">{{ job.last_error }}</div>{% endif %}</td>
+        <td>{{ job.stage }}</td>
+        <td>{% if job.instance_id %}<a href="{% url 'admin_migrate_lab_node' instance_id=job.instance_id %}">View / repair</a>{% else %}Session removed{% endif %}</td>
+      </tr>{% empty %}<tr><td colspan="6">No managed lab migrations yet.</td></tr>{% endfor %}</tbody>
+    </table></div>
+  </section>
+  {% for report in reports %}
+  <section class="util-cluster" id="cluster-{{ report.server.pk }}">
+    <h2>{{ report.server.name }}</h2>
+    <div class="util-muted">{{ report.server.host }} · VNC allocation: {{ report.server.vnc_port_start }}–{{ report.server.vnc_port_end }} · {{ report.vnc_capacity }} assignable ports</div>
+    <div class="util-grid">
+      <div class="util-stat"><span>Cluster CPU</span><strong>{{ report.cluster_cpu_pct }}%</strong><span class="util-muted">{{ report.cluster_cores }} logical CPUs across online nodes</span></div>
+      <div class="util-stat"><span>Cluster memory</span><strong>{{ report.cluster_mem_used }} / {{ report.cluster_mem_total }} GiB</strong><span class="util-muted">{{ report.cluster_mem_pct }}% across online nodes</span></div>
+      <div class="util-stat"><span>Proxmox VMs</span><strong>{{ report.proxmox_vm_count }}</strong><span class="util-muted">Includes non-lab workloads</span></div>
+      <div class="util-stat"><span>Student lab VMs</span><strong>{{ report.student_lab_count }}</strong><span class="util-muted">Present on Proxmox</span></div>
+      <div class="util-stat"><span>Other / unknown VMs</span><strong>{{ report.untracked_count }}</strong><span class="util-muted">Unmatched against LabTech records</span></div>
+      <div class="util-stat"><span>VNC reserved</span><strong>{{ report.vnc_reserved }} / {{ report.vnc_capacity }}</strong><span class="util-muted">{{ report.vnc_legacy }} reservations outside current range (legacy)</span></div>
+      <div class="util-stat"><span>Student VMIDs reserved</span><strong>{{ report.vmid_reserved }} / {{ report.vmid_assigned_capacity }}</strong><span class="util-muted">Allocated / assigned student pool capacity; server range {% if report.vmid_range_capacity != None %}{{ report.vmid_range_capacity }}{% else %}not configured{% endif %}</span></div>
+    </div>
+    {% if report.error %}
+    <div class="util-alert" role="alert">{{ report.error }} No live resource metrics can be confirmed for this cluster.</div>
+    {% endif %}
+    {% for node in report.nodes %}
+      <details class="util-node" open>
+        <summary>{{ node.name }} — {% if node.online %}Online{% else %}Offline / unknown{% endif %} · {{ node.guest_count }} guests</summary>
+        <div class="util-grid">
+          <div class="util-stat"><span>CPU usage</span><strong>{{ node.cpu_used }}%</strong><span class="util-muted">{{ node.cores }} logical CPUs</span></div>
+          <div class="util-stat"><span>Memory usage</span><strong>{{ node.mem_used }} / {{ node.mem_total }} GiB</strong><span class="util-muted">{{ node.mem_pct }}%</span></div>
+        </div>
+        <h4>Storage reported for this node</h4>
+        <div class="util-table-wrap"><table class="util-table">
+          <thead><tr><th>Storage</th><th>Used</th><th>Capacity</th><th>Utilization</th><th>Shared</th></tr></thead>
+          <tbody>{% for disk in node.storage %}
+          <tr><td>{{ disk.name }}</td><td>{{ disk.used_gib }} GiB</td><td>{{ disk.total_gib }} GiB</td><td>{{ disk.percent }}%</td><td>{% if disk.shared %}Yes{% else %}No{% endif %}</td></tr>
+          {% empty %}<tr><td colspan="5">No accessible storage metrics.</td></tr>{% endfor %}</tbody>
+        </table></div>
+        <h4>Guest VMs and student lab placement</h4>
+        <div class="util-table-wrap"><table class="util-table">
+          <thead><tr><th>VMID / VM</th><th>State</th><th>Student / class</th><th>Lab / machine</th><th>vCPUs / CPU%</th><th>RAM used / configured</th><th>Disk used / configured</th><th>VNC</th><th>Lab migration</th></tr></thead>
+          <tbody>{% for vm in node.vms %}
+          <tr>
+            <td><code>{{ vm.vmid }}</code><div>{{ vm.name }}</div></td>
+            <td>{{ vm.status }}{% if vm.owner %}<div class="util-muted">{{ vm.owner.lab_state }}</div>{% endif %}{% if vm.identity_conflict %}<div class="text-danger">VMID collision: name differs from LabTech record</div>{% endif %}</td>
+            <td>{% if vm.owner %}<span class="util-pill">{{ vm.owner.kind }}</span><div>{{ vm.owner.student }}</div><small>{{ vm.owner.student_email }}</small><div>{{ vm.owner.class_name }}</div>{% else %}<span class="util-muted">Not mapped to LabTech lab / city</span>{% endif %}</td>
+            <td>{% if vm.owner %}{{ vm.owner.lab }}<div class="util-muted">{% if vm.owner.definition_name %}{{ vm.owner.definition_name }} · {% endif %}{{ vm.owner.name }}{% if vm.owner.session_id %} · session #{{ vm.owner.session_id }}{% endif %}</div>{% if vm.owner.db_node and vm.owner.db_node != vm.node %}<div class="text-danger">DB node differs: {{ vm.owner.db_node }}</div>{% endif %}{% else %}—{% endif %}</td>
+            <td>{{ vm.cpu_cores }} / {{ vm.cpu_pct }}%</td>
+            <td>{{ vm.mem_used }} / {{ vm.mem_total }} GiB</td>
+            <td>{{ vm.disk_used }} / {{ vm.disk_total }} GiB</td>
+            <td>{% if vm.owner and vm.owner.vnc_port %}{{ vm.owner.vnc_port }}{% else %}—{% endif %}</td>
+            <td>{% if vm.owner and vm.owner.kind == 'Student lab' and vm.owner.lab_state == 'active' and not vm.identity_conflict %}
+              <a class="btn btn-outline-primary btn-sm"
+                 href="{% url 'admin_migrate_lab_node' instance_id=vm.owner.session_id %}?server_id={{ report.server.pk }}&amp;source={{ node.name|urlencode }}">Migrate lab from this node</a>
+            {% else %}<span class="util-muted">—</span>{% endif %}</td>
+          </tr>
+          {% empty %}<tr><td colspan="9">No VMs reported on this node.</td></tr>{% endfor %}</tbody>
+        </table></div>
+      </details>
+    {% empty %}
+    {% if not report.error %}<p>No Proxmox nodes reported.</p>{% endif %}
+    {% endfor %}
+    {% if report.unplaced %}
+    <h3>LabTech assignments without a confirmed matching VM</h3>
+    <p class="util-muted">These are database records, not confirmed active VMs. They may be building, deleting, or need investigation.</p>
+    <div class="util-table-wrap"><table class="util-table">
+      <thead><tr><th>VMID</th><th>Student</th><th>Class / lab</th><th>Machine</th><th>Session state</th><th>Expected node</th><th>VNC</th><th>Why listed</th></tr></thead>
+      <tbody>{% for vm in report.unplaced %}<tr>
+        <td>{{ vm.vmid|default:"not assigned" }}</td><td>{{ vm.owner.student }}<div class="util-muted">{{ vm.owner.student_email }}</div></td>
+        <td>{{ vm.owner.class_name }} / {{ vm.owner.lab }}</td><td>{% if vm.owner.definition_name %}{{ vm.owner.definition_name }} / {% endif %}{{ vm.owner.name }}</td>
+        <td>{{ vm.owner.lab_state }} / {{ vm.owner.machine_state }} · #{{ vm.owner.session_id }}</td>
+        <td>{{ vm.owner.db_node }}</td><td>{{ vm.owner.vnc_port|default:"—" }}</td><td>{{ vm.reason }}</td>
+      </tr>{% endfor %}</tbody>
+    </table></div>
+    {% endif %}
+  </section>
+  {% empty %}
+  <p>No Proxmox clusters are configured.</p>
+  {% endfor %}
+</div>
+{% endblock %}

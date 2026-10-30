@@ -5,6 +5,8 @@ from django.urls import path, include, re_path
 from django.conf import settings
 from django.conf.urls.static import static
 from app import views as app_views
+from app import cluster_utilization
+from app import lab_node_migration_views
 from app import audio_views
 from app import cybercity_provisioning
 from app import lab_check_views
@@ -296,6 +298,11 @@ urlpatterns = [
 
     # --- BACKEND MANAGEMENT & APIs ---
     path('proxmox/servers/', app_views.manage_proxmox_servers_list_view, name='labtech_manage_proxmox_servers_list'),
+    path('labtech/admin/cluster-utilization/', cluster_utilization.cluster_utilization_view, name='cluster_utilization'),
+    path('labtech/admin/labs/<int:instance_id>/migrate/', lab_node_migration_views.migrate_lab_view, name='admin_migrate_lab_node'),
+    path('labtech/admin/migrations/<uuid:job_id>/retry/', lab_node_migration_views.retry_migration_view, name='admin_retry_lab_migration'),
+    path('labtech/admin/migrations/<uuid:job_id>/dispatch/', lab_node_migration_views.resend_migration_view, name='admin_resend_lab_migration'),
+    path('labtech/admin/labs/<int:instance_id>/recover/', app_views.admin_recover_stuck_lab_view, name='admin_recover_stuck_lab'),
     path('labtech/guacamole/servers/', app_views.manage_guacamole_servers_list_view, name='labtech_manage_guacamole_servers_list'),
     path('labtech/template-library/', app_views.template_library_view, name='template_library'),
     path('labtech/certificates/templates/', app_views.manage_certificate_templates_view, name='manage_certificate_templates'),

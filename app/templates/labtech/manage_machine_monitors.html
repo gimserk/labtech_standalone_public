@@ -90,7 +90,8 @@
 
     <div class="page-header">
         <h1>{{ title }}</h1>
-        <p class="text-muted">Configure agent monitors to check for specific states on the machine and trigger actions.</p>
+        <p class="text-muted">A state monitor belongs to this building VM. When its reported value changes from nonmatching to matching, LabTech queues an attack command for the selected ESP32 pin in this building.</p>
+        <p class="text-muted">The downloaded agent must be running inside the VM to report service/file states. DB Query monitors are not currently supported by the downloaded agent. The city MQTT broker and background command dispatcher must also be running.</p>
     </div>
 
     <div class="row">
@@ -101,6 +102,9 @@
                     <h4>Add New Monitor</h4>
                 </div>
                 <div class="card-body">
+                    {% if not machine.building.attack_monitors.exists %}
+                    <p class="text-muted">Create an Attack Monitor on this building, with a target ESP32 pin, before linking it as a trigger.</p>
+                    {% endif %}
                     <form method="post">
                         {% csrf_token %}
                         {{ form.as_p }}
@@ -142,7 +146,7 @@ api_key = {{ machine.api_key }}
                         <div class="monitor-list-item">
                             <div class="monitor-details">
                                 <h5 class="mb-1">{{ monitor.name }}</h5>
-                                <p><small><strong>Type:</strong> {{ monitor.get_monitor_type_display }}</small></p>
+                                <p><small><strong>Type:</strong> {{ monitor.get_monitor_type_display }} — {% if monitor.is_active %}Enabled{% else %}Disabled{% endif %}</small></p>
                                 <p><small>
                                     <strong>Condition:</strong> Check if <code>{{ monitor.target }}</code> {{ monitor.get_comparison_type_display }} <code>{{ monitor.expected_value }}</code>
                                 </small></p>
@@ -153,7 +157,7 @@ api_key = {{ machine.api_key }}
                                     {% endif %}
                                 </small></p>
                                 {% if monitor.trigger_on_match %}
-                                <p><small><strong>Triggers:</strong> {{ monitor.trigger_on_match.name }}</small></p>
+                                <p><small><strong>Triggers:</strong> {{ monitor.trigger_on_match.name }}{% if monitor.trigger_on_match.target_pin %} → {{ monitor.trigger_on_match.target_pin.esp32.name }} / {{ monitor.trigger_on_match.target_pin.name }}{% else %} (no ESP32 pin configured){% endif %}</small></p>
                                 {% endif %}
                             </div>
                             <div class="monitor-actions">

@@ -91,7 +91,15 @@
                                         </div>
                                     </div>
                                 {% else %}
-                                    <button class="btn btn-sm btn-secondary" disabled>Deleting...</button>
+                                    <span class="badge bg-secondary">Deleting...</span>
+                                {% endif %}
+                                {% if instance.status == 'active' %}
+                                <a class="btn btn-sm btn-outline-primary" href="{% url 'admin_migrate_lab_node' instance_id=instance.pk %}">Migrate</a>
+                                {% endif %}
+                                {% if instance.status == 'deleting' or instance.status == 'error' %}
+                                <form method="post" action="{% url 'admin_recover_stuck_lab' instance_id=instance.pk %}" class="d-inline" onsubmit="return confirm('Recover and retry cleanup for session #{{ instance.pk }}? Confirm the build has stopped. This deletes its VMs and connections.');">
+                                    {% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-warning">Recover Cleanup</button>
+                                </form>
                                 {% endif %}
                             </td>
                         </tr>

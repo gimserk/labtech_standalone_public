@@ -33,8 +33,8 @@ class ProxmoxServer(models.Model):
     password_or_token_secret = models.CharField(max_length=255, help_text="Password for the user or the API token's secret value.")
     api_token_id = models.CharField(max_length=255, blank=True, null=True, help_text="API Token ID (e.g., 'terraform@pve!mytoken'). If using token-based auth, user might be 'terraform@pve'.")
     verify_ssl = models.BooleanField(default=True, help_text="Verify SSL certificate. Set to False for self-signed certs in dev/test only.")
-    vnc_port_start = models.PositiveIntegerField(default=5900, help_text="The starting port number for VNC allocation (e.g., 5900).")
-    vnc_port_end = models.PositiveIntegerField(default=5999, help_text="The ending port number for VNC allocation (e.g., 5999).")
+    vnc_port_start = models.PositiveIntegerField(default=6000, help_text="The starting TCP port for dedicated lab VNC connections (default: 6000).")
+    vnc_port_end = models.PositiveIntegerField(default=6999, help_text="The ending TCP port for dedicated lab VNC connections (default: 6999).")
     is_default = models.BooleanField(default=False, help_text="Is this the default Proxmox server to use for new labs?")
     assigned_guacamole_server = models.ForeignKey(
         'GuacamoleServer',
@@ -815,6 +815,8 @@ class LabInstance(models.Model):
     
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField(null=True, blank=True, help_text="For timed labs, when this instance will be automatically deleted.")
+    build_finished_at = models.DateTimeField(null=True, blank=True, editable=False, help_text="Set by the provisioning worker once it has exited.")
+    build_failed = models.BooleanField(default=False, editable=False, help_text="Build worker exited in a failed or cancelled state.")
 
     class Meta:
         # A user can only have one active instance of a specific lab at a time.
@@ -866,6 +868,51 @@ class LabInstanceMachine(models.Model):
         return f"VMID {self.proxmox_vmid} ({self.lab_machine_definition.name}) for {self.lab_instance.user.username}"
 
 
+class LabNodeMigrationJob(models.Model):
+    """Durable, admin-initiated in-cluster move of lab VMs on one source node."""
+    STATUS_QUEUED = 'queued'
+    STATUS_RUNNING = 'running'
+    STATUS_ATTENTION = 'needs_attention'
+    STATUS_FAILED = 'failed'
+    STATUS_COMPLETED = 'completed'
+    BLOCKING_STATUSES = (STATUS_QUEUED, STATUS_RUNNING, STATUS_ATTENTION)
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    instance = models.ForeignKey(
+        'LabInstance', related_name='node_migrations', null=True, blank=True,
+        on_delete=models.SET_NULL,
+    )
+    instance_id_snapshot = models.PositiveIntegerField(db_index=True)
+    proxmox_server = models.ForeignKey('ProxmoxServer', on_delete=models.PROTECT)
+    source_node = models.CharField(max_length=100)
+    target_node = models.CharField(max_length=100)
+    machine_ids = models.JSONField(default=list)
+    progress = models.JSONField(default=dict)
+    status = models.CharField(max_length=24, default=STATUS_QUEUED, db_index=True)
+    stage = models.CharField(max_length=60, default='queued')
+    last_error = models.CharField(max_length=120, blank=True)
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+    )
+    task_upid = models.CharField(max_length=255, blank=True)
+    task_node = models.CharField(max_length=100, blank=True)
+    current_machine_id = models.PositiveIntegerField(null=True, blank=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['instance'],
+                condition=models.Q(status__in=['queued', 'running', 'needs_attention']),
+                name='one_unresolved_lab_node_migration',
+            ),
+        ]
+
+
 class LabCleanupJob(models.Model):
     """Durable work order and resource inventory, retained after session deletion."""
 
@@ -895,6 +942,12 @@ class LabCleanupJob(models.Model):
 
     class Meta:
         ordering = ['-queued_at']
+
+
+class LabCleanupSweepStatus(models.Model):
+    """Single-row heartbeat proving the cleanup sweep actually executes."""
+    id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
+    last_run_at = models.DateTimeField(null=True, blank=True)
 
 
 class LabCleanupAttempt(models.Model):

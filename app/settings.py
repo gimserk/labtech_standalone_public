@@ -335,7 +335,18 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(hour=3, minute=0),
     },
 }
-if os.getenv('LAB_CLEANUP_BEAT_ENABLED', 'False').lower() in ('true', '1', 'yes'):
+# Opt-in until the Cyber City MQTT command path is validated in staging.
+# Run exactly one Celery Beat scheduler, or commands may be dispatched more than once.
+if os.getenv('CYBERCITY_COMMAND_DISPATCH_ENABLED', 'False').lower() in ('true', '1', 'yes'):
+    CELERY_BEAT_SCHEDULE['dispatch-cybercity-pending-commands'] = {
+        'task': 'app.tasks.dispatch_cybercity_pending_commands',
+        'schedule': 10.0,
+    }
+
+# Automatic timed-lab expiration and cleanup recovery are enabled by default.
+# Exactly one Celery Beat scheduler must be running; operators may opt out.
+LAB_CLEANUP_BEAT_ENABLED = os.getenv('LAB_CLEANUP_BEAT_ENABLED', 'True').lower() in ('true', '1', 'yes')
+if LAB_CLEANUP_BEAT_ENABLED:
     CELERY_BEAT_SCHEDULE['sweep-expired-lab-instances'] = {
         'task': 'app.tasks.sweep_expired_lab_instances', 'schedule': 30.0,
     }

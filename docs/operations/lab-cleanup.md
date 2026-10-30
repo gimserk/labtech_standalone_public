@@ -1,10 +1,10 @@
 # Durable lab cleanup operations
 
-Timed labs use a durable cleanup job. Student Finish Lab, instructor Finish, the recovery command, and the optional Celery Beat sweep all call the same lifecycle service. A job stores resource identifiers and append-only attempts after the live session is deleted; it never stores provider credentials. Persistent labs are excluded from expiration.
+Timed labs use a durable cleanup job. Build failures and cancellations now create cleanup jobs automatically when their provisioning task exits. Student Finish Lab, instructor Finish, the recovery command, and the optional Celery Beat sweep all call the same lifecycle service. A job stores resource identifiers and append-only attempts after the live session is deleted; it never stores provider credentials. Persistent labs are excluded from expiration.
 
 ## Rollout
 
-Deploy the schema, web and workers with `LAB_CLEANUP_BEAT_ENABLED=False` (the default). Run migrations and inspect eligible sessions before enabling the schedule:
+After deploying migration `0034_lab_build_completion`, the periodic sweep is **enabled by default** (`LAB_CLEANUP_BEAT_ENABLED=True`). Exactly **one** Celery Beat service must be running. If upgrading an older server without Beat, install/start Beat or temporarily set `LAB_CLEANUP_BEAT_ENABLED=False` until you can configure it. Before enabling automatic deletion in production, inspect eligible sessions:
 
 ```bash
 python manage.py migrate
@@ -13,7 +13,7 @@ CONTROLLED_INSTANCE_ID=123  # replace with a verified disposable, expired timed 
 python manage.py cleanup_expired_labs --instance-id "$CONTROLLED_INSTANCE_ID"
 ```
 
-The default command runs one synchronous attempt per eligible session and exits nonzero if cleanup remains unresolved. It never waits through retry delays. Manual Finish and queued jobs continue to work with the sweep disabled. Exercise a controlled lab and confirm its Guacamole connection, Proxmox VM, VNC allocation, and live session are gone; inspect the retained job. Then set `LAB_CLEANUP_BEAT_ENABLED=True` for the Beat process, restart Beat, and retire the old 10-minute cron wrapper. Keep the command for recovery.
+The default command runs one synchronous attempt per eligible session and exits nonzero if cleanup remains unresolved. It never waits through retry delays. Manual Finish and queued jobs continue to work with the sweep disabled. Exercise a controlled lab and confirm its Guacamole connection, Proxmox VM, VNC allocation, and live session are gone; inspect the retained job. Run `systemctl status labtech-beat.service` on installer-managed hosts. Older deployments may use different service names or have no Beat unit; create a matching Celery Beat systemd service with the **same Python environment, settings, broker and environment variables** as the worker, with `celery -A app beat --loglevel=INFO`. Set `LAB_CLEANUP_BEAT_ENABLED=True` in that service's environment if it is explicitly disabled, then restart Beat. Retire any old 10-minute cron cleanup wrapper to avoid competing schedules. Keep the command for recovery.
 
 The migration records the currently assigned Guacamole server for existing connections. Review preexisting live sessions if Guacamole assignments were changed before migration; an older connection may belong to a different server and require correcting its `guacamole_server` link before cleanup.
 
@@ -24,6 +24,8 @@ Alert delivery uses a reclaimable lease and a stable email Message-ID per failur
 ## Monitoring and recovery
 
 Use **Manage Labs → Lab Cleanup** to inspect job IDs, session IDs, VMIDs, attempts, safe error categories, and next retry times. Confirm Beat and worker logs show `lab_cleanup_resource` entries. Check jobs stuck in queued/retrying, old running leases, and final failures; the dashboard's **Retry Cleanup** action requeues a failed job after the provider issue is corrected.
+
+Build workers now write `LabInstance.build_finished_at` when they exit. If they fail or are cancelled, the remaining `building` machine placeholders become `error` and the durable cleanup process is enqueued automatically. The 30-second sweep also detects completed-but-unreconciled builds. This does not assume a slow clone has failed merely because it is old. Legacy sessions without a completion timestamp can be recovered by a superuser via **Manage All Labs → Recover Cleanup**. That action requires an expired age threshold, a readable Celery worker inspection, and a matching Proxmox VM name before it updates a stale machine or queues cleanup. A provider failure or identity mismatch leaves the session intact for review.
 
 For queue-only recovery:
 

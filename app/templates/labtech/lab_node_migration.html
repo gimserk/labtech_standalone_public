@@ -1,0 +1,119 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}Migrate Lab Machines{% endblock %}
+{% block labtech_content %}
+<style>
+.move-wrap{max-width:1100px;margin:1.5rem auto}
+.move-card{border:1px solid var(--lt-border);background:var(--lt-surface);border-radius:10px;padding:1.3rem;margin-bottom:1rem}
+.move-table{width:100%;border-collapse:collapse}
+.move-table th,.move-table td{text-align:left;padding:.6rem;border-bottom:1px solid var(--lt-border)}
+.move-table-wrap{overflow-x:auto}
+.move-muted{color:var(--lt-muted);font-size:.92rem}
+.move-form{display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-end}
+.move-form label{display:block;margin-bottom:.35rem}
+.move-form select{min-width:220px;width:100%;padding:.55rem}
+.move-warning{border-left:4px solid var(--lt-warning);padding:.8rem 1rem;background:var(--lt-surface-muted)}
+.move-error{color:var(--lt-danger)}
+</style>
+<div class="container-fluid move-wrap">
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h1>Migrate Lab Machines</h1>
+    <a href="{% url 'cluster_utilization' %}" class="btn btn-outline-secondary">Back to Cluster Utilization</a>
+  </div>
+  <section class="move-card">
+    <h2>{{ session.lab.title }} <small class="move-muted">Session #{{ session.pk }}</small></h2>
+    <p>Student: <strong>{{ session.user.get_full_name|default:session.user.username }}</strong> ({{ session.user.email }})</p>
+    <p>Class: {{ session.lab.course.title }} · Lab state: <strong>{{ session.status }}</strong></p>
+    <div class="move-warning">
+      <strong>Maintenance downtime required.</strong> This operation gracefully shuts down selected guests, transfers
+      their disks/configuration using Proxmox's offline migration mechanism, reasserts their existing VNC ports,
+      changes the existing Guacamole connection hostname, and restarts guests that were running before the move.
+      The VMIDs, lab session, student assignments and VNC port reservations remain unchanged.
+      Unsupported storage, passthrough devices or custom QEMU arguments block the move.
+      Do not use while students are actively modifying data.
+    </div>
+  </section>
+  <section class="move-card">
+    <h3>Source node and machines</h3>
+    <p class="move-muted">Each request moves all VMs for this lab on the selected source node. Other machines in the lab remain on their current nodes.</p>
+    <div class="d-flex flex-wrap gap-2 mb-3">
+      {% for group in groups %}
+      <a class="btn {% if group.server_id == selected_server.pk and group.source == selected_source %}btn-primary{% else %}btn-outline-secondary{% endif %}"
+         href="{% url 'admin_migrate_lab_node' instance_id=session.pk %}?server_id={{ group.server_id }}&amp;source={{ group.source|urlencode }}">
+         {{ group.server_name }} / {{ group.source }} ({{ group.machine_count }} VMs)
+      </a>
+      {% empty %}
+      <p>No machine assignments exist.</p>
+      {% endfor %}
+    </div>
+    {% if selected %}
+    <div class="move-table-wrap"><table class="move-table">
+      <thead><tr><th>VMID</th><th>Lab machine</th><th>Current node</th><th>Power state (LabTech)</th><th>VNC port</th><th>Guacamole ID</th></tr></thead>
+      <tbody>{% for machine in selected %}
+      <tr>
+        <td>{{ machine.proxmox_vmid|default:"Not assigned" }}</td>
+        <td>{{ machine.lab_machine_definition.name }}<div class="move-muted">{{ machine.name }}</div></td>
+        <td>{{ machine.proxmox_node }}</td><td>{{ machine.status }}</td>
+        <td>{{ machine.vnc_port|default:"Not assigned" }}</td>
+        <td>{{ machine.guacamole_connection_id|default:"Not configured" }}</td>
+      </tr>
+      {% endfor %}</tbody>
+    </table></div>
+    {% endif %}
+  </section>
+  <section class="move-card">
+    <h3>Move selected machines</h3>
+    {% if inventory_error %}<p class="move-error">{{ inventory_error }}</p>{% endif %}
+    {% if busy %}<p class="move-error">A migration is currently queued, running or needs repair. Complete it before starting another move.</p>{% endif %}
+    {% if session.status == 'active' and selected and destinations and not busy %}
+    <form method="post" class="move-form" onsubmit="return confirm('This will temporarily shut down the selected lab VMs and move them to the selected node. Continue?');">
+      {% csrf_token %}
+      <input type="hidden" name="server_id" value="{{ selected_server.pk }}">
+      <input type="hidden" name="source" value="{{ selected_source }}">
+      <div>
+        <label for="id_target">Destination node (same cluster)</label>
+        <select id="id_target" name="target" required>
+          <option value="">Choose destination...</option>
+          {% for node in destinations %}<option value="{{ node }}">{{ node }}</option>{% endfor %}
+        </select>
+      </div>
+      <button class="btn btn-warning" type="submit">Start Offline Lab Migration</button>
+    </form>
+    {% else %}
+    <p class="move-muted">Migration unavailable. The lab must be active, selected machines must be eligible, and Proxmox must report an online destination.</p>
+    {% endif %}
+  </section>
+  <section class="move-card">
+    <div class="d-flex justify-content-between flex-wrap gap-2 align-items-center">
+      <h3>Migration history and recovery</h3>
+      <a href="{% url 'admin_migrate_lab_node' instance_id=session.pk %}?server_id={{ selected_server.pk }}&amp;source={{ selected_source|urlencode }}" class="btn btn-outline-primary btn-sm">Refresh status</a>
+    </div>
+    <div class="move-table-wrap"><table class="move-table">
+      <thead><tr><th>Created</th><th>Source → destination</th><th>State / stage</th><th>VM progress</th><th>Error</th><th>Recovery</th></tr></thead>
+      <tbody>
+      {% for job in jobs %}
+      <tr>
+        <td>{{ job.created_at|date:"Y-m-d H:i" }}</td>
+        <td>{{ job.source_node }} → {{ job.target_node }}</td>
+        <td><strong>{{ job.status }}</strong><div class="move-muted">{{ job.stage }}</div></td>
+        <td>{% for id, item in job.progress.items %}
+           VM #{{ id }}: {{ item.phase }}{% if not forloop.last %}, {% endif %}
+           {% empty %}Not started{% endfor %}</td>
+        <td class="move-error">{{ job.last_error|default:"—" }}</td>
+        <td>{% if job.status == 'needs_attention' or job.status == 'failed' %}
+        <form method="post" action="{% url 'admin_retry_lab_migration' job_id=job.pk %}"
+              onsubmit="return confirm('Verify no Proxmox migration is still running before retrying reconciliation. Continue?');">
+          {% csrf_token %}<button type="submit" class="btn btn-outline-warning btn-sm">Retry / Reconcile</button>
+        </form>
+        {% elif job.status == 'queued' %}
+        <form method="post" action="{% url 'admin_resend_lab_migration' job_id=job.pk %}">
+          {% csrf_token %}<button type="submit" class="btn btn-outline-primary btn-sm">Resend queued job</button>
+        </form>
+        {% elif job.status == 'running' %}<span class="move-muted">In progress. Check Celery if stalled.</span>
+        {% else %}—{% endif %}</td>
+      </tr>
+      {% empty %}<tr><td colspan="6">No migrations have been started for this lab.</td></tr>{% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+</div>
+{% endblock %}

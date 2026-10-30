@@ -102,6 +102,7 @@
                 <li class="action-list-item"><a href="{% url 'manage_badges' %}"><i class="fas fa-award fa-fw"></i>Badges</a></li>
                 <li class="action-list-item"><a href="{% url 'ctf_dashboard' %}"><i class="fas fa-flag fa-fw"></i>CTF Campaigns</a></li>
                 <li class="action-list-item"><a href="{% url 'cybercity_dashboard' %}"><i class="fas fa-city fa-fw"></i>CyberCity</a></li>
+                {% if request.user.is_superuser %}<li class="action-list-item"><a href="{% url 'cluster_utilization' %}"><i class="fas fa-server fa-fw"></i>Cluster Utilization</a></li>{% endif %}
             </ul>
         </div>
     </div>
