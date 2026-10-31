@@ -1396,6 +1396,29 @@ class CyberCity(models.Model):
     control_error = models.CharField(max_length=160, blank=True, editable=False)
     control_provision_started_at = models.DateTimeField(null=True, blank=True, editable=False)
 
+    # Dedicated SOC appliances, provisioned by the existing City Service lifecycle.
+    wazuh_template = models.ForeignKey('ProxmoxVMTemplate', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='+')
+    wazuh_vmid = models.PositiveIntegerField(null=True, blank=True, unique=True)
+    wazuh_vnc_port = models.PositiveIntegerField(null=True, blank=True)
+    wazuh_status = models.CharField(max_length=20, default='stopped', editable=False)
+    wazuh_node = models.CharField(max_length=100, blank=True)
+    wazuh_error = models.CharField(max_length=160, blank=True, editable=False)
+    wazuh_provision_started_at = models.DateTimeField(null=True, blank=True, editable=False)
+    wazuh_web_url = models.URLField(max_length=500, blank=True,
+        help_text="Trusted HTTPS URL of the Wazuh web dashboard (students use their own accounts).")
+
+    checkmk_template = models.ForeignKey('ProxmoxVMTemplate', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='+')
+    checkmk_vmid = models.PositiveIntegerField(null=True, blank=True, unique=True)
+    checkmk_vnc_port = models.PositiveIntegerField(null=True, blank=True)
+    checkmk_status = models.CharField(max_length=20, default='stopped', editable=False)
+    checkmk_node = models.CharField(max_length=100, blank=True)
+    checkmk_error = models.CharField(max_length=160, blank=True, editable=False)
+    checkmk_provision_started_at = models.DateTimeField(null=True, blank=True, editable=False)
+    checkmk_web_url = models.URLField(max_length=500, blank=True,
+        help_text="Trusted HTTPS URL of the Checkmk web UI (students use their own accounts).")
+
     # Management VM Instance State
     management_vmid = models.PositiveIntegerField(null=True, blank=True, unique=True)
     management_vnc_port = models.PositiveIntegerField(null=True, blank=True)
@@ -2896,3 +2919,46 @@ class TekconIdentityLink(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
                                related_name="tekcon_identity_link")
     created_at = models.DateTimeField(auto_now_add=True)
+
+# Cyber City Security Operations Center models.
+from .cybercity_soc_models import CyberCitySOCTeam, CyberCitySOCTicket, CyberCitySOCEvent  # noqa: E402,F401
+
+from .cybercity_soc_alert_models import CyberCitySOCAlert  # noqa: E402,F401
+
+from .cybercity_soc_service_models import CyberCitySOCServiceSample  # noqa: E402,F401
+
+from .cybercity_soc_checkmk_models import CyberCitySOCCheckmkHost  # noqa: E402,F401
+
+from .cybercity_soc_checkmk_samples import CyberCitySOCCheckmkSample  # noqa: E402,F401
+
+from .cybercity_soc_checkmk_alert_models import CyberCitySOCCheckmkAlert  # noqa: E402,F401
+
+from .cybercity_soc_checkmk_triage_models import CyberCitySOCCheckmkTriage  # noqa: E402,F401
+
+from .cybercity_soc_wazuh_models import CyberCitySOCWazuhAgent  # noqa: E402,F401
+
+from .cybercity_soc_wazuh_detection_models import CyberCitySOCWazuhDetection  # noqa: E402,F401
+
+from .cybercity_soc_wazuh_evidence_models import CyberCitySOCWazuhEvidence  # noqa: E402,F401
+
+from .cybercity_soc_scenario_models import CyberCitySOCScenario  # noqa: E402,F401
+
+from .cybercity_soc_investigation_models import CyberCitySOCInvestigation  # noqa: E402,F401
+
+from .cybercity_soc_simulation_models import CyberCitySOCSimulation  # noqa: E402,F401
+
+from .cybercity_soc_simulation_models import CyberCitySOCSimulationTransition  # noqa: E402,F401
+
+from .cybercity_soc_investigation_models import CyberCitySOCInvestigationEvidence  # noqa: E402,F401
+
+from .cybercity_soc_triage_models import CyberCitySOCTriageDecision  # noqa: E402,F401
+
+from .cybercity_soc_response_models import CyberCitySOCResponsePlan  # noqa: E402,F401
+
+from .cybercity_soc_runbook_models import CyberCitySOCResponseRunbookStep  # noqa: E402,F401
+
+from .cybercity_soc_rehearsal_models import CyberCitySOCResponseRehearsal  # noqa: E402,F401
+
+from .cybercity_soc_response_rule_models import CyberCitySOCScenarioResponseRule  # noqa: E402,F401
+
+from .cybercity_soc_monitor_route_models import CyberCitySOCMonitorRoute  # noqa: E402,F401

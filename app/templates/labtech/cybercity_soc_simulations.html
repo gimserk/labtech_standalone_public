@@ -1,0 +1,42 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}SOC Exercise Events{% endblock %}
+{% block labtech_content %}
+<div class="container py-4">
+<a href="{% url 'cybercity_soc_scenarios' city.pk %}">Back to scenarios</a>
+<h1>{{ scenario.title }} — Simulated Events</h1>
+<p class="text-muted">Training-only simulated observations. No actual service, VM, network, or MQTT action is performed.</p>
+{% if instructor %}
+<p><a class="btn btn-outline-secondary" href="{% url 'cybercity_soc_simulation_timeline_export' city.pk scenario.pk %}">Export Simulation Timeline (CSV)</a></p>
+<form method="post" class="card p-3 mb-4">{% csrf_token %}
+<h2 class="h5">Draft event</h2>
+<label class="form-label">Event type</label>
+<select name="event_type" class="form-select mb-2" required>
+<option value="service_outage">Simulated service outage</option>
+<option value="suspicious_login">Simulated suspicious login</option>
+<option value="network_alert">Simulated network alert</option>
+</select>
+<label class="form-label">Sequence order (0–9999)</label><input class="form-control mb-2" type="number" name="sequence" min="0" max="9999" value="0" required>
+<label class="form-label">Summary</label><input class="form-control mb-2" name="summary" maxlength="240" required>
+<label class="form-label">Details</label><textarea class="form-control mb-2" name="details" maxlength="2000" rows="3"></textarea>
+<button class="btn btn-primary">Create draft event</button></form>
+{% endif %}
+<h2 class="h4">Exercise observations</h2>
+{% for item in simulations %}
+<div class="card p-3 mb-3">
+<h3 class="h5">Step {{ item.sequence }} — {{ item.summary }}</h3>
+<p class="small">{{ item.get_event_type_display }} — {% if item.active %}Active simulation{% else %}Inactive{% endif %}</p>
+<p style="white-space:pre-wrap">{{ item.details }}</p>
+{% if instructor %}
+<p class="small text-muted">Exercise transition history</p>
+<ul>{% for transition in item.transitions.all %}<li>{{ transition.occurred_at }} — {{ transition.get_action_display }} by {{ transition.actor.get_username|default:"Deleted instructor" }}</li>
+{% empty %}<li>No transitions recorded.</li>{% endfor %}</ul>
+{% endif %}
+{% if instructor %}
+<form method="post" action="{% url 'cybercity_soc_simulation_toggle' city.pk scenario.pk item.pk %}">{% csrf_token %}
+{% if item.active %}<button name="state" value="end" class="btn btn-outline-secondary btn-sm">End simulated event</button>
+{% else %}<button name="state" value="activate" class="btn btn-outline-primary btn-sm">Activate simulated event</button>{% endif %}
+</form>{% endif %}
+</div>
+{% empty %}<p>No active simulated events for this exercise.</p>{% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}SOC Analyst Workspace{% endblock %}
+{% block labtech_content %}
+<div class="container-fluid py-4" style="max-width:1400px">
+<a href="{% url 'cybercity_soc_dashboard' city.pk %}">SOC dashboard</a> · <a href="{% url 'cybercity_soc_wallboard' city.pk %}">Classroom Wallboard</a>
+<h1>Blue Team Analyst Workspace — {{ city.name }}</h1>
+<div class="d-flex gap-2 flex-wrap mb-3">
+{% if city.wazuh_status == 'running' and city.wazuh_web_url %}<a class="btn btn-outline-primary" target="_blank" rel="noopener noreferrer" href="{% url 'cybercity_soc_appliance_browser' city.pk 'wazuh' %}">Open Wazuh Dashboard</a>{% endif %}
+{% if city.checkmk_status == 'running' and city.checkmk_web_url %}<a class="btn btn-outline-primary" target="_blank" rel="noopener noreferrer" href="{% url 'cybercity_soc_appliance_browser' city.pk 'checkmk' %}">Open Checkmk Dashboard</a>{% endif %}
+</div>
+<p>Work the queue: review alerts and evidence, triage incidents, investigate assigned scenarios, document findings, and escalate or resolve cases. Do not assume an alert proves an attack.</p>
+<div class="row g-3 mb-4">
+<div class="col-md-6"><div class="card p-3 h-100">
+<h2 class="h5">1. Monitor and triage</h2>
+<p>Review QEMU observations, Checkmk alerts, and assigned Wazuh detection evidence on the SOC dashboard. Record severity, likely impact, and supporting evidence before changing an incident's status.</p>
+<a class="btn btn-outline-primary" href="{% url 'cybercity_soc_dashboard' city.pk %}">Open SOC monitoring console</a></div></div>
+<div class="col-md-6"><div class="card p-3 h-100">
+<h2 class="h5">2. Open or escalate an incident</h2>
+<p>Capture affected assets, indicators, scope, priority, and the next analyst action. Use the incident ticket workflow to escalate or close.</p>
+<a class="btn btn-outline-primary" href="{% url 'cybercity_soc_ticket_create' city.pk %}">Create incident ticket</a></div></div>
+</div>
+<h2 class="h4">Incident queue</h2>
+<div class="table-responsive mb-4"><table class="table"><thead><tr><th>Case</th><th>Team</th><th>Priority</th><th>Status</th><th>Assigned analyst</th></tr></thead><tbody>
+{% for item in tickets %}<tr><td><a href="{% url 'cybercity_soc_incident_evidence' city.pk item.pk %}">{{ item.title }}</a></td><td>{{ item.team.name }}</td><td>{{ item.get_priority_display }}</td><td>{{ item.get_status_display }}</td><td>{{ item.assigned_to.get_username|default:"Unassigned" }}</td></tr>
+{% empty %}<tr><td colspan="5">No incident tickets in your assigned teams.</td></tr>{% endfor %}
+</tbody></table></div>
+<h2 class="h4">Assigned investigation exercises</h2>
+<div class="table-responsive"><table class="table"><thead><tr><th>Scenario</th><th>Team</th><th>Report</th><th>Exercise actions</th></tr></thead><tbody>
+{% for row in assignments %}<tr><td>{{ row.scenario.title }}</td><td>{{ row.scenario.team.name }}</td>
+<td>{% if row.investigation %}{{ row.investigation.get_status_display }}{% else %}Not started{% endif %}</td>
+<td><a href="{% url 'cybercity_soc_student_event_feed' city.pk row.scenario.pk %}">Event feed</a> · <a href="{% url 'cybercity_soc_investigation' city.pk row.scenario.pk %}">Investigation report</a></td></tr>
+{% empty %}<tr><td colspan="4">No published exercises assigned to your teams.</td></tr>{% endfor %}
+</tbody></table></div>
+</div>
+{% endblock %}

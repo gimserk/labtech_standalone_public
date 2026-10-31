@@ -1,0 +1,61 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}SOC Scenarios — {{ city.name }}{% endblock %}
+{% block labtech_content %}
+<div class="container py-4">
+<a href="{% url 'cybercity_soc_dashboard' city.pk %}">&larr; Back to SOC</a>
+<h1 class="mt-3">SOC Training Scenarios</h1>
+<p class="text-muted">Instructor-created investigation exercises. Publishing a scenario gives a team its briefing; it does not perform actions against a VM.</p>
+{% if can_manage_soc %}<p><a class="btn btn-outline-secondary" href="{% url 'cybercity_soc_assessment_export' city.pk %}">Export SOC Assessments (CSV)</a></p><a class="btn btn-outline-secondary" href="{% url 'cybercity_soc_assessment_readiness' city.pk %}">Review Assessment Readiness</a> <a class="btn btn-outline-secondary" href="{% url 'cybercity_soc_gradebook_preview' city.pk %}">Preview Gradebook Reconciliation</a>{% endif %}
+{% if can_manage_soc %}
+<form method="post" class="card p-3 mb-4">{% csrf_token %}
+<h2 class="h5">Create scenario draft</h2>
+<label class="form-label" for="scenario-title">Title</label>
+<input class="form-control mb-2" id="scenario-title" name="title" maxlength="180" required>
+<label class="form-label" for="scenario-team">SOC team</label>
+<select class="form-select mb-2" id="scenario-team" name="team_id" required>
+{% for team in teams %}<option value="{{ team.pk }}">{{ team.name }}</option>{% endfor %}
+</select>
+<label class="form-label" for="scenario-brief">Investigation brief</label>
+<textarea class="form-control mb-3" id="scenario-brief" name="brief" maxlength="4000" rows="5" required></textarea>
+<button class="btn btn-primary" {% if not teams %}disabled{% endif %}>Create Draft</button></form>
+{% endif %}
+<h2 class="h4">Team exercises</h2>
+{% for scenario in scenarios %}
+<div class="card p-3 mb-3">
+<div class="d-flex justify-content-between"><h3 class="h5">{{ scenario.title }}</h3><span>{{ scenario.get_status_display }}</span></div>
+<p class="small text-muted">Team: {{ scenario.team.name }}</p>
+{% if scenario.incident %}<p class="small">Linked incident: <strong>{{ scenario.incident.title }}</strong></p>{% endif %}
+<p style="white-space:pre-wrap">{{ scenario.brief }}</p>
+{% if can_manage_soc or scenario.status == 'published' %}<p><a class="btn btn-outline-secondary btn-sm" href="{% url 'cybercity_soc_simulations' city.pk scenario.pk %}">Simulated Exercise Events</a> <a class="btn btn-outline-secondary btn-sm" href="{% url 'cybercity_soc_student_event_feed' city.pk scenario.pk %}">Active Event Feed</a></p>{% endif %}
+{% if can_manage_soc or scenario.status == 'published' %}<p><a class="btn btn-outline-primary btn-sm" href="{% url 'cybercity_soc_investigation' city.pk scenario.pk %}">{% if can_manage_soc %}Review Investigations{% else %}Open Investigation{% endif %}</a></p>{% endif %}
+{% if can_manage_soc %}<p><a class="btn btn-outline-primary btn-sm" href="{% url 'cybercity_soc_scenario_debrief' city.pk scenario.pk %}">Exercise Debrief</a> <a class="btn btn-outline-secondary btn-sm" href="{% url 'cybercity_soc_scenario_response_rules' city.pk scenario.pk %}">Response Rules</a></p>{% endif %}
+{% if can_manage_soc %}
+<form method="post" action="{% url 'cybercity_soc_scenario_course_activity' city.pk scenario.pk %}" class="mb-3">{% csrf_token %}
+<label class="form-label">Course assignment reference (no grade sync)</label>
+<select name="activity_id" class="form-select form-select-sm mb-2">
+<option value="">None</option>
+{% for activity in course_activities %}
+<option value="{{ activity.pk }}" {% if scenario.course_activity_id == activity.pk %}selected{% endif %}>{{ activity.course.title }} — {{ activity.title }}</option>
+{% endfor %}
+</select><button class="btn btn-outline-secondary btn-sm">Save Course Link</button>
+</form>
+<form method="post" action="{% url 'cybercity_soc_scenario_incident' city.pk scenario.pk %}" class="mb-3">{% csrf_token %}
+<label class="form-label">Associated team incident</label>
+<select name="ticket_id" class="form-select form-select-sm mb-2">
+<option value="">No incident</option>
+{% for ticket in incidents %}{% if ticket.team_id == scenario.team_id %}
+<option value="{{ ticket.pk }}" {% if scenario.incident_id == ticket.pk %}selected{% endif %}>{{ ticket.title }}</option>
+{% endif %}{% endfor %}
+</select><button class="btn btn-outline-secondary btn-sm">Save Incident Link</button>
+</form>
+<form method="post" action="{% url 'cybercity_soc_scenario_status' city.pk scenario.pk %}">{% csrf_token %}
+<select name="status" class="form-select form-select-sm mb-2" aria-label="Scenario status">
+<option value="draft" {% if scenario.status == 'draft' %}selected{% endif %}>Draft</option>
+<option value="published" {% if scenario.status == 'published' %}selected{% endif %}>Published</option>
+<option value="closed" {% if scenario.status == 'closed' %}selected{% endif %}>Closed</option>
+</select><button class="btn btn-outline-primary btn-sm">Update Status</button></form>
+{% endif %}
+</div>
+{% empty %}<p>No scenarios available to your team.</p>{% endfor %}
+</div>
+{% endblock %}

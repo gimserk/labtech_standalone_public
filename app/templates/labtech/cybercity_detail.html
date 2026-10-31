@@ -167,6 +167,8 @@
         <a href="{% url 'cybercity_edit' city.id %}" class="btn btn-secondary">Edit Settings</a>
         <a href="{% url 'cybercity_esp32_basic_firmware' city.id %}" class="btn btn-primary">Download Basic ESP32 Firmware</a>
         <a href="{% url 'cybercity_visualizer' city.id %}" class="btn btn-info">Visualizer</a>
+        <a href="{% url 'cybercity_soc_dashboard' city.id %}" class="btn btn-primary">Security Operations Center</a>
+        <a href="{% url 'cybercity_soc_wallboard' city.id %}" class="btn btn-outline-primary">Open Classroom Wallboard</a>
         <a href="{% url 'cybercity_delete' city.id %}" class="btn btn-danger" onclick="return confirm('Are you sure you want to permanently delete this city and all its assets? This cannot be undone.')">Delete City</a>
     </div>
 </div>
@@ -224,6 +226,9 @@
                     {% endif %}
                     <div class="mt-2 d-flex flex-wrap gap-2">
                         <a class="btn btn-secondary btn-sm" href="{% url 'cybercity_service_inspect' city.id service.role %}">Inspect / Recover</a>
+                        {% if service.web_url and service.status == 'running' %}
+                        <a class="btn btn-primary btn-sm" target="_blank" rel="noopener noreferrer" href="{% url 'cybercity_soc_appliance_browser' city.id service.role %}">Open Web Interface</a>
+                        {% endif %}
                         {% if service.status == 'running' %}
                             <a class="btn btn-info btn-sm" target="_blank" rel="noopener noreferrer" href="{% url 'cybercity_guacamole_sso_redirect' city_id=city.id machine_type=service.role %}">Console</a>
                         {% endif %}

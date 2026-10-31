@@ -1,0 +1,25 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}Checkmk Host Mapping{% endblock %}
+{% block labtech_content %}
+<div class="container py-4">
+<a href="{% url 'cybercity_soc_checkmk' city.pk %}">&larr; Checkmk connector</a>
+<h1 class="mt-3">Map Checkmk Hosts to Cyber City</h1>
+<p>Mappings associate an existing Checkmk configuration host with a Cyber City building VM. No VM or Checkmk settings are changed.</p>
+{% if error %}<div class="alert alert-warning">{{ error }}</div>{% endif %}
+<form method="post" class="card p-3 mb-4">{% csrf_token %}
+<label class="form-label" for="machine">Cyber City machine</label>
+<select class="form-select mb-3" id="machine" name="machine_id" required>
+{% for machine in machines %}<option value="{{ machine.id }}">{{ machine.building.name }} — {{ machine.name }}</option>{% endfor %}
+</select>
+<label class="form-label" for="hostname">Checkmk configured host</label>
+<select class="form-select mb-3" id="hostname" name="hostname" required>
+{% for host in hosts %}<option value="{{ host.name }}">{{ host.name }}</option>{% endfor %}
+</select>
+<button class="btn btn-primary" {% if error or not hosts or not machines %}disabled{% endif %}>Save Mapping</button>
+</form>
+<h2 class="h4">Current Mappings</h2>
+<table class="table"><thead><tr><th>Building</th><th>Machine</th><th>Checkmk host</th></tr></thead><tbody>
+{% for item in mappings %}<tr><td>{{ item.machine.building.name }}</td><td>{{ item.machine.name }}</td><td>{{ item.hostname }}</td></tr>
+{% empty %}<tr><td colspan="3">No Checkmk hosts mapped yet.</td></tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}

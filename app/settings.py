@@ -357,6 +357,46 @@ if CYBERCITY_QGA_AUTOPOLL_ENABLED:
         'schedule': 30.0,
     }
 
+# Separate Wazuh Indexer read-only search credentials, never reused from Manager API.
+CYBERCITY_SOC_WAZUH_INDEXER_URL = os.getenv('CYBERCITY_SOC_WAZUH_INDEXER_URL', '')
+CYBERCITY_SOC_WAZUH_INDEXER_USER = os.getenv('CYBERCITY_SOC_WAZUH_INDEXER_USER', '')
+CYBERCITY_SOC_WAZUH_INDEXER_PASSWORD = os.getenv('CYBERCITY_SOC_WAZUH_INDEXER_PASSWORD', '')
+
+# Optional Wazuh manager API diagnostics; no connection is made unless opened.
+# Credentials must come from a protected deployment environment.
+CYBERCITY_SOC_WAZUH_URL = os.getenv('CYBERCITY_SOC_WAZUH_URL', '')
+CYBERCITY_SOC_WAZUH_USER = os.getenv('CYBERCITY_SOC_WAZUH_USER', '')
+CYBERCITY_SOC_WAZUH_PASSWORD = os.getenv('CYBERCITY_SOC_WAZUH_PASSWORD', '')
+
+# Checkmk is a trusted instructor-configured internal service.
+CYBERCITY_SOC_CHECKMK_URL = os.getenv('CYBERCITY_SOC_CHECKMK_URL', '')
+CYBERCITY_SOC_CHECKMK_USER = os.getenv('CYBERCITY_SOC_CHECKMK_USER', '')
+CYBERCITY_SOC_CHECKMK_SECRET = os.getenv('CYBERCITY_SOC_CHECKMK_SECRET', '')
+CYBERCITY_SOC_CHECKMK_API_VERSION = os.getenv('CYBERCITY_SOC_CHECKMK_API_VERSION', '1.0')
+
+# Optional Cyber City SOC Checkmk service snapshot collection.
+# Configure Checkmk credentials separately through the protected server environment.
+# Requires one active Celery Beat scheduler and a shared task-lock cache.
+CYBERCITY_SOC_CHECKMK_AUTOPOLL_ENABLED = os.getenv(
+    'CYBERCITY_SOC_CHECKMK_AUTOPOLL_ENABLED', 'False'
+).lower() in ('true', '1', 'yes')
+if CYBERCITY_SOC_CHECKMK_AUTOPOLL_ENABLED:
+    CELERY_BEAT_SCHEDULE['poll-cybercity-soc-checkmk'] = {
+        'task': 'app.tasks.poll_cybercity_soc_checkmk',
+        'schedule': 120.0,
+    }
+
+# Opt-in Cyber City SOC Wazuh Indexer collection. One Beat and a shared cache
+# backend (Redis/Memcached) are required for cross-worker locking.
+CYBERCITY_SOC_WAZUH_AUTOPOLL_ENABLED = os.getenv(
+    'CYBERCITY_SOC_WAZUH_AUTOPOLL_ENABLED', 'False'
+).lower() in ('true', '1', 'yes')
+if CYBERCITY_SOC_WAZUH_AUTOPOLL_ENABLED:
+    CELERY_BEAT_SCHEDULE['poll-cybercity-soc-wazuh'] = {
+        'task': 'app.tasks.poll_cybercity_soc_wazuh',
+        'schedule': 120.0,
+    }
+
 # Automatic timed-lab expiration and cleanup recovery are enabled by default.
 # Exactly one Celery Beat scheduler must be running; operators may opt out.
 LAB_CLEANUP_BEAT_ENABLED = os.getenv('LAB_CLEANUP_BEAT_ENABLED', 'True').lower() in ('true', '1', 'yes')

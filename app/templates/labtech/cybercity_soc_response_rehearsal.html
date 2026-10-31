@@ -1,0 +1,28 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}SOC Response Rehearsal{% endblock %}
+{% block labtech_content %}
+<div class="container py-4">
+<a href="{% url 'cybercity_soc_response_runbook' city.pk ticket.pk %}">Response runbook</a>
+<h1>Blue Team Response Rehearsal — {{ ticket.title }}</h1>
+<p class="alert alert-info">Training-only dry run: this interface records response decisions but never changes VMs, networks, accounts, or services.</p>
+<form method="post" class="card p-3 mb-4">{% csrf_token %}
+<label for="action" class="form-label">Proposed response</label><select id="action" name="action" class="form-select mb-3" required>
+{% for key, label in actions %}<option value="{{ key }}">{{ label }}</option>{% endfor %}</select>
+<label for="expected_result" class="form-label">Justification, potential impact, approvals and expected result</label>
+<textarea id="expected_result" name="expected_result" class="form-control mb-3" rows="5" minlength="10" maxlength="2000" required></textarea>
+<button class="btn btn-primary">Record Dry-Run Decision</button></form>
+<h2 class="h4">Rehearsal History</h2>
+{% for item in rehearsals %}<div class="card p-3 mb-3">
+<strong>{{ item.get_action_display }}</strong><p style="white-space:pre-wrap">{{ item.expected_result }}</p>
+<p>{{ item.observed_result }}</p>
+<p><strong>Training feedback / instructor assessment:</strong> {{ item.get_scenario_outcome_display }}</p>
+{% if item.scenario_feedback %}<p style="white-space:pre-wrap">{{ item.scenario_feedback }}</p>{% endif %}
+{% if instructor %}<form method="post" action="{% url 'cybercity_soc_rehearsal_evaluate' city.pk ticket.pk item.pk %}">{% csrf_token %}
+<label class="form-label">Assess student decision</label>
+<select class="form-select mb-2" name="scenario_outcome" required><option value="appropriate">Appropriate</option><option value="risky">Risky</option><option value="needs_context">Needs more context</option></select>
+<label class="form-label">Explain expected consequences and improvements</label>
+<textarea class="form-control mb-2" name="scenario_feedback" maxlength="2000" minlength="10" required>{{ item.scenario_feedback }}</textarea>
+<button class="btn btn-outline-primary btn-sm">Save Instructor Assessment</button></form>{% endif %}
+<small>{{ item.created_at }} — {% if item.analyst %}{{ item.analyst.get_username }}{% endif %}</small>
+</div>{% empty %}<p>No response rehearsals recorded yet.</p>{% endfor %}
+</div>{% endblock %}

@@ -1,0 +1,17 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}Wazuh — {{ city.name }}{% endblock %}
+{% block labtech_content %}
+<div class="container py-4">
+<a href="{% url 'cybercity_soc_dashboard' city.pk %}">&larr; Back to SOC</a>
+<h1 class="mt-3">Wazuh Manager Connection</h1>
+<a class="btn btn-outline-primary mb-3" href="{% url 'cybercity_soc_wazuh_alerts' city.pk %}">View Security Events (Indexer)</a>
+<a class="btn btn-outline-primary mb-3" href="{% url 'cybercity_soc_wazuh_mapping' city.pk %}">Map Agents to City Machines</a>
+<p class="text-muted">Instructor-only read-only agent inventory. These agents are not yet associated with Cyber City machines. This page does not display SIEM alerts or security detections.</p>
+{% if error %}<div class="alert alert-warning">{{ error }}</div>{% else %}
+<p>{{ agents|length }} agent(s) returned (limited to 100).</p>
+<div class="table-responsive"><table class="table"><thead><tr><th>Agent ID</th><th>Name</th><th>Wazuh status</th></tr></thead><tbody>
+{% for agent in agents %}<tr><td>{{ agent.id }}</td><td>{{ agent.name }}</td><td>{{ agent.status }}</td></tr>
+{% empty %}<tr><td colspan="3">No agents returned.</td></tr>{% endfor %}
+</tbody></table></div>{% endif %}
+<p class="small text-muted">Configure CYBERCITY_SOC_WAZUH_URL, CYBERCITY_SOC_WAZUH_USER and CYBERCITY_SOC_WAZUH_PASSWORD using protected server environment variables. TLS verification must succeed.</p>
+</div>{% endblock %}

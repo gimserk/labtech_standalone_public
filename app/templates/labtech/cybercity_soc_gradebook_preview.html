@@ -1,0 +1,18 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}SOC Gradebook Preview{% endblock %}
+{% block labtech_content %}
+<div class="container py-4">
+<h1>SOC Gradebook Reconciliation Preview</h1>
+<p>This is a read-only instructor report. It does not create, modify, release, or overwrite course grades.</p>
+<p>Linked scenarios: {{ scenario_count }}</p>
+<div class="table-responsive"><table class="table">
+<thead><tr><th>Scenario</th><th>Course assignment</th><th>Student</th><th>SOC score</th><th>Gradebook state</th><th>Reconcile</th></tr></thead><tbody>
+{% for row in rows %}<tr>
+<td>{{ row.scenario.title }}</td><td>{{ row.course.title }} — {{ row.activity.title }}</td>
+<td>{{ row.investigation.student.get_username }}</td>
+<td>{{ row.investigation.score|default_if_none:"Unreviewed" }}</td>
+<td>{{ row.state }}</td><td>{% if row.can_apply %}<form method="post" action="{% url 'cybercity_soc_gradebook_apply' city.pk row.investigation.pk %}">{% csrf_token %}<button class="btn btn-outline-primary btn-sm">Apply Reviewed Score</button></form>{% else %}Not eligible{% endif %}</td></tr>
+{% empty %}<tr><td colspan="6">No linked, submitted investigations available.</td></tr>{% endfor %}
+</tbody></table></div>
+</div>
+{% endblock %}

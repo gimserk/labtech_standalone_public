@@ -1,0 +1,5 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_content %}
+<h1>SOC assessment readiness</h1>
+{% for scenario in scenarios %}<p>{{ scenario.title }}: {{ scenario.submissions }} submitted, {{ scenario.reviewed }} reviewed</p>{% endfor %}
+{% endblock %}

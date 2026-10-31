@@ -1,0 +1,24 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}SOC Response Runbook{% endblock %}
+{% block labtech_content %}
+<div class="container py-4">
+<a href="{% url 'cybercity_soc_incident_evidence' city.pk ticket.pk %}">Incident evidence</a>
+<h1>Blue Team Runbook — {{ ticket.title }}</h1>
+<p>Document response steps and verification. Completion means a training record was saved, not that any command ran on a machine.</p>
+<form method="post" class="card p-3 mb-4">{% csrf_token %}
+<label class="form-label">Response phase</label><select name="phase" class="form-select mb-3" required>
+{% for key, label in phases %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+</select>
+<label class="form-label">Evidence, actions proposed, approval considerations and observed outcome</label>
+<textarea class="form-control mb-3" name="notes" rows="5" maxlength="2000" minlength="10" required></textarea>
+<button class="btn btn-primary">Record Training Step</button>
+</form>
+<p><a class="btn btn-outline-primary" href="{% url 'cybercity_soc_response_rehearsal' city.pk ticket.pk %}">Practice Response (Dry Run)</a></p>
+<h2 class="h4">Documented Runbook Steps</h2>
+{% for item in steps %}
+<div class="card p-3 mb-2"><h3 class="h6">{{ item.get_phase_display }}</h3>
+<p style="white-space:pre-wrap">{{ item.notes }}</p>
+<p class="small text-muted">{{ item.completed_at }} — {% if item.analyst %}{{ item.analyst.get_username }}{% endif %}</p>
+</div>
+{% empty %}<p>No runbook steps recorded yet.</p>{% endfor %}
+</div>{% endblock %}

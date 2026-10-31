@@ -1,0 +1,25 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}SOC Incident Evidence{% endblock %}
+{% block labtech_content %}
+<div class="container py-4">
+<a href="{% url 'cybercity_soc_analyst_workspace' city.pk %}">Analyst workspace</a>
+<h1>Incident Evidence — {{ ticket.title }}</h1>
+<p>Investigate observations before deciding whether they constitute an attack. Linked evidence does not by itself confirm malicious activity.</p>
+<a class="btn btn-outline-primary mb-4" href="{% url 'cybercity_soc_analyst_triage' city.pk ticket.pk %}">Record triage decision</a>
+<p><a class="btn btn-outline-primary" href="{% url 'cybercity_soc_incident_response_plan' city.pk ticket.pk %}">Develop Response Plan</a></p>
+<p><a class="btn btn-outline-primary" href="{% url 'cybercity_soc_response_runbook' city.pk ticket.pk %}">Open Blue Team Runbook</a></p>
+<h2 class="h4">Checkmk Monitoring Evidence</h2>
+<table class="table"><thead><tr><th>Asset</th><th>Service</th><th>Monitoring state</th><th>Lifecycle</th></tr></thead><tbody>
+{% for item in checkmk %}<tr><td>{{ item.alert.mapping.machine.name }}</td><td>{{ item.alert.service_name }}</td><td>{{ item.alert.last_checkmk_state }}</td><td>{{ item.alert.state }}</td></tr>
+{% empty %}<tr><td colspan="4">No Checkmk observations linked to this incident.</td></tr>{% endfor %}</tbody></table>
+<h2 class="h4">Wazuh Security Detections</h2>
+<table class="table"><thead><tr><th>Time</th><th>Machine</th><th>Rule</th><th>Level</th><th>Description</th></tr></thead><tbody>
+{% for item in wazuh %}<tr><td>{{ item.detection.observed_at }}</td><td>{{ item.detection.mapping.machine.name }}</td><td>{{ item.detection.rule_id }}</td><td>{{ item.detection.rule_level }}</td><td>{{ item.detection.description }}</td></tr>
+{% empty %}<tr><td colspan="5">No Wazuh detections linked to this incident.</td></tr>{% endfor %}</tbody></table>
+<h2 class="h4">Analyst Decisions</h2>
+{% for item in analyst_decisions %}<div class="card p-3 mb-2"><strong>{{ item.get_disposition_display }}</strong> — {{ item.created_at }}<p>{{ item.rationale }}</p><small>{{ item.evidence_reference }}</small></div>
+{% empty %}<p>No analyst decisions recorded.</p>{% endfor %}
+<h2 class="h4">Incident Activity History</h2>
+{% for item in incident_history %}<p>{{ item.recorded_at }} — {{ item.action }} — {{ item.detail }}</p>
+{% empty %}<p>No activity history.</p>{% endfor %}
+</div>{% endblock %}

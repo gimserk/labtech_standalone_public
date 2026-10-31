@@ -1,0 +1,34 @@
+{% load static %}
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="refresh" content="45">
+<title>{{ city.name }} | SOC Wallboard</title>
+<style>
+:root{color-scheme:dark;--bg:#07111e;--panel:#111f31;--border:#284159;--text:#e9f2ff;--muted:#9eb4ce;--cyan:#55ddff;--red:#ff6877;--amber:#ffc16d;--green:#4be0ad}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 0 0,#123150,var(--bg) 55%);font:clamp(15px,1.15vw,22px)/1.45 system-ui,Arial,sans-serif;color:var(--text)}
+main{padding:clamp(16px,2vw,36px);max-width:2400px;margin:auto}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:25px}.eyebrow{text-transform:uppercase;letter-spacing:.22em;color:var(--cyan);font-size:.8em;font-weight:800}h1{font-size:clamp(30px,3.3vw,64px);line-height:1;margin:8px 0}h2{font-size:clamp(18px,1.5vw,30px);margin:0 0 18px}.meta{color:var(--muted)}.actions{display:flex;gap:10px;flex-wrap:wrap}a,button{border:1px solid var(--border);border-radius:9px;color:var(--text);background:#17314b;padding:10px 15px;text-decoration:none;font:inherit;cursor:pointer}.actions button{background:#155f80}button:focus,a:focus{outline:3px solid var(--cyan)}
+.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px;margin-bottom:18px}.stat,.panel{background:linear-gradient(145deg,#14273c,#0d1b2c);border:1px solid var(--border);border-radius:15px;box-shadow:0 10px 26px #0004}.stat{padding:18px}.stat .number{font-size:clamp(28px,3.3vw,66px);font-weight:850;line-height:1.2;letter-spacing:-.04em}.stat .label{font-size:.76em;color:var(--muted);text-transform:uppercase;letter-spacing:.09em}.danger .number{color:var(--red)}.warning .number{color:var(--amber)}.good .number{color:var(--green)}
+.columns{display:grid;grid-template-columns:1.25fr 1fr;gap:18px}.panel{padding:20px;min-width:0}.line{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;padding:13px 0;border-top:1px solid #284159}.line:first-of-type{border-top:0}.primary{font-weight:750;overflow-wrap:anywhere}.secondary{color:var(--muted);font-size:.8em;overflow-wrap:anywhere}.pill{display:inline-block;border-radius:40px;background:#25415c;padding:4px 12px;text-transform:uppercase;font-size:.7em;letter-spacing:.05em;font-weight:800;height:fit-content}.pill.critical,.pill.high{background:#592a36;color:#ffc1c8}.pill.medium,.pill.pending{background:#57452a;color:#ffe0a3}.empty{color:var(--muted);padding:30px 0}.foot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;color:var(--muted);font-size:.75em;margin-top:20px}
+@media(max-width:1200px){.kpis{grid-template-columns:repeat(3,1fr)}.columns{grid-template-columns:1fr}}@media(max-width:650px){.kpis{grid-template-columns:repeat(2,1fr)}}@media(prefers-reduced-motion:no-preference){.stat{transition:transform .2s}.stat:hover{transform:translateY(-2px)}}
+</style></head><body>
+<main>
+<header class="top"><div><div class="eyebrow">Cyber City • Security Operations Center</div><h1>{{ city.name }} <span style="color:var(--cyan)">/ LIVE</span></h1><div class="meta">Classroom operations wallboard · Actual recorded telemetry, not simulations</div></div>
+<nav class="actions" aria-label="Wallboard controls"><a href="{% url 'cybercity_soc_analyst_workspace' city.pk %}">Analyst workspace</a><button type="button" onclick="document.documentElement.requestFullscreen?.()">Full screen</button></nav></header>
+<section class="kpis" aria-label="Live security metrics">
+<div class="stat"><div class="number">{{ asset_count }}</div><div class="label">Visible assets</div></div>
+<div class="stat good"><div class="number">{{ running_count }}</div><div class="label">VMs reported running</div></div>
+<div class="stat danger"><div class="number">{{ open_incidents }}</div><div class="label">Open incidents</div></div>
+<div class="stat warning"><div class="number">{{ checkmk_critical }}</div><div class="label">Checkmk critical alerts</div></div>
+<div class="stat danger"><div class="number">{{ monitor_errors }}</div><div class="label">QEMU check errors</div></div>
+<div class="stat"><div class="number">{{ wazuh_recent }}</div><div class="label">Wazuh detections / 24h</div></div>
+</section>
+<section class="columns">
+<div class="panel"><h2>Active incident queue <span class="pill">{{ open_tickets }} open</span></h2>
+{% for ticket in tickets %}<div class="line"><div><div class="primary">#{{ ticket.pk }} · {{ ticket.title }}</div><div class="secondary">{{ ticket.machine.name|default:"Unassigned asset" }} · {{ ticket.team.name|default:"Unassigned team" }} · {{ ticket.get_status_display }}</div></div><span class="pill {{ ticket.priority }}">{{ ticket.get_priority_display }}</span></div>
+{% empty %}<div class="empty">No open incidents or tickets in this SOC view.</div>{% endfor %}</div>
+<div class="panel"><h2>Recent operations activity</h2>
+{% for event in events %}<div class="line"><div><div class="primary">{{ event.action|cut:"_"|title }}</div><div class="secondary">{{ event.detail|truncatechars:150 }}</div></div><div class="secondary">{{ event.recorded_at|date:"H:i:s" }}</div></div>
+{% empty %}<div class="empty">No recorded events in this SOC view.</div>{% endfor %}</div>
+</section>
+<footer class="foot"><div>QEMU service checks reporting active: {{ qga_healthy }} · Collection errors: {{ qga_errors }} · Pending/stale: {{ qga_waiting }}</div><div>Data collected {{ now|date:"M j, Y H:i:s T" }} · Refresh every 45 seconds · Read only</div></footer>
+</main></body></html>

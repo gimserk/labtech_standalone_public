@@ -1,0 +1,32 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}SOC Scenario Debrief{% endblock %}
+{% block labtech_content %}
+<div class="container py-4">
+<a href="{% url 'cybercity_soc_scenarios' city.pk %}">Back to SOC scenarios</a>
+<h1>{{ scenario.title }} — Exercise Debrief</h1>
+<p>Team: {{ scenario.team.name }} | Scenario: {{ scenario.get_status_display }}</p>
+{% if scenario.incident %}<p>Linked incident: {{ scenario.incident.title }}</p>{% endif %}
+<p class="text-muted">Instructor-only training timeline and investigation overview; no live VM effects.</p>
+<h2 class="h4">Exercise Readiness and Completion</h2>
+<ul>{% for label, passed in readiness_checks %}
+<li>{% if passed %}Ready{% else %}Needs attention{% endif %} — {{ label }}</li>
+{% endfor %}</ul>
+<p>Authored events: {{ simulation_stats.total }} | Active events: {{ simulation_stats.active }} | Submitted investigations: {{ investigation_stats.submitted }} | Reviewed: {{ investigation_stats.reviewed }}</p>
+<h2 class="h4">Simulation Timeline</h2>
+<table class="table"><thead><tr><th>Time</th><th>Step</th><th>Event</th><th>Transition</th><th>Instructor</th></tr></thead><tbody>
+{% for item in transitions %}<tr><td>{{ item.occurred_at }}</td><td>{{ item.simulation.sequence }}</td><td>{{ item.simulation.summary }}</td><td>{{ item.get_action_display }}</td><td>{% if item.actor %}{{ item.actor.get_username }}{% endif %}</td></tr>
+{% empty %}<tr><td colspan="5">No simulation transitions recorded.</td></tr>{% endfor %}
+</tbody></table>
+<h2 class="h4">Evidence Changes</h2>
+<table class="table"><thead><tr><th>Time</th><th>Student</th><th>Action</th><th>Investigation and event</th></tr></thead><tbody>
+{% for item in evidence_events %}<tr><td>{{ item.recorded_at }}</td><td>{% if item.actor %}{{ item.actor.get_username }}{% endif %}</td><td>{{ item.action }}</td><td>{{ item.detail }}</td></tr>
+{% empty %}<tr><td colspan="4">No evidence changes recorded for this exercise.</td></tr>{% endfor %}
+</tbody></table>
+<h2 class="h4">Student Investigations</h2>
+<table class="table"><thead><tr><th>Student</th><th>Status</th><th>Submitted</th><th>Score</th><th>Reviewed</th></tr></thead><tbody>
+{% for item in investigations %}<tr><td>{{ item.student.get_username }}</td><td>{{ item.get_status_display }}</td><td>{{ item.submitted_at|default:"—" }}</td><td>{{ item.score|default_if_none:"—" }}</td><td>{{ item.reviewed_at|default:"—" }}</td></tr>
+{% empty %}<tr><td colspan="5">No investigation drafts or submissions.</td></tr>{% endfor %}
+</tbody></table>
+<a class="btn btn-outline-secondary" href="{% url 'cybercity_soc_simulation_timeline_export' city.pk scenario.pk %}">Export event timeline (CSV)</a>
+</div>
+{% endblock %}

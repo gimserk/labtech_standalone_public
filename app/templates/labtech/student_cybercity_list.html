@@ -76,6 +76,14 @@
                     <a href="{% url 'student_cybercity_visualizer' city.id %}" class="btn btn-primary mt-auto">
                         <i class="fas fa-eye me-2"></i>Launch Visualizer
                     </a>
+                    {% if city.student_soc_access %}
+                    <a href="{% url 'cybercity_soc_analyst_workspace' city.id %}" class="btn btn-outline-primary mt-2">
+                        <i class="fas fa-shield-alt me-2"></i>Open Security Operations Center
+                    </a>
+                    <a href="{% url 'cybercity_soc_wallboard' city.id %}" class="btn btn-outline-info mt-2">
+                        <i class="fas fa-desktop me-2"></i>Open Classroom Wallboard
+                    </a>
+                    {% endif %}
                 </div>
             </div>
         </div>

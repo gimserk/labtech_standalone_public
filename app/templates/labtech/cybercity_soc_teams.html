@@ -1,0 +1,22 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}SOC Teams — {{ city.name }}{% endblock %}
+{% block labtech_content %}
+<div class="container py-4">
+<a href="{% url 'cybercity_soc_dashboard' city.pk %}">&larr; SOC dashboard</a>
+<h1>Manage SOC Teams</h1>
+<p class="text-muted">Instructor-only: assign members to isolated SOC queues. Students only see tickets from teams they belong to.</p>
+<form method="post" class="d-flex gap-2 mb-4">{% csrf_token %}
+<input name="name" maxlength="120" required class="form-control" placeholder="New team name" aria-label="Team name">
+<button class="btn btn-primary">Create Team</button></form>
+{% for team in teams %}
+<div class="card mb-3"><div class="card-body">
+<h2 class="h5">{{ team.name }}</h2>
+<p>Members: {% for user in team.members.all %}<span class="badge bg-secondary">{{ user.username }}</span> {% empty %}<em>None assigned</em>{% endfor %}</p>
+<form method="post" action="{% url 'cybercity_soc_team_member' city.pk team.pk %}" class="row g-2">
+{% csrf_token %}
+<div class="col-md-7"><label class="form-label">User</label><select name="user_id" class="form-select" required>{% for user in users %}<option value="{{ user.pk }}">{{ user.username }}</option>{% endfor %}</select></div>
+<div class="col-md-3"><label class="form-label">Membership action</label><select name="action" class="form-select"><option value="add">Add</option><option value="remove">Remove</option></select></div>
+<div class="col-md-2 d-flex align-items-end"><button class="btn btn-outline-primary w-100">Apply</button></div>
+</form></div></div>
+{% empty %}<p>No teams created yet.</p>{% endfor %}
+</div>{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}Investigation — {{ scenario.title }}{% endblock %}
+{% block labtech_content %}
+<div class="container py-4"><a href="{% url 'cybercity_soc_scenarios' city.pk %}">&larr; Scenarios</a>
+<h1 class="mt-3">{{ scenario.title }}</h1><p class="text-muted">Team: {{ scenario.team.name }}</p>
+<p style="white-space:pre-wrap">{{ scenario.brief }}</p>
+{% if instructor %}
+<h2 class="h4">Submitted investigations</h2>
+{% for item in investigations %}<div class="card p-3 mb-3">
+<h3 class="h5">{{ item.student.get_username }}</h3><p class="small text-muted">Submitted: {{ item.submitted_at }}</p>
+<h4 class="h6">Findings</h4><p style="white-space:pre-wrap">{{ item.findings }}</p>
+<h4 class="h6">Evidence</h4><p style="white-space:pre-wrap">{{ item.evidence }}</p>
+<h4 class="h6">Response actions</h4><p style="white-space:pre-wrap">{{ item.response_actions }}</p>
+<h4 class="h6">Saved simulated observations</h4><ul>{% for reference in item.event_evidence.all %}<li>Step {{ reference.simulation.sequence }} — {{ reference.simulation.summary }}</li>{% empty %}<li>No saved observations.</li>{% endfor %}</ul>
+<form method="post" action="{% url 'cybercity_soc_investigation_review' city.pk scenario.pk item.pk %}">{% csrf_token %}
+<p class="small text-muted">Rubric: Findings 30 points, Evidence 30, Response 25, Documentation 15. The total is calculated automatically.</p>
+<label class="form-label">Findings (0–30)</label><input class="form-control mb-2" name="findings_score" type="number" min="0" max="30" required value="{{ item.findings_score|default_if_none:'' }}">
+<label class="form-label">Evidence (0–30)</label><input class="form-control mb-2" name="evidence_score" type="number" min="0" max="30" required value="{{ item.evidence_score|default_if_none:'' }}">
+<label class="form-label">Response (0–25)</label><input class="form-control mb-2" name="response_score" type="number" min="0" max="25" required value="{{ item.response_score|default_if_none:'' }}">
+<label class="form-label">Documentation (0–15)</label><input class="form-control mb-2" name="documentation_score" type="number" min="0" max="15" required value="{{ item.documentation_score|default_if_none:'' }}">
+<label class="form-label" for="feedback-{{ item.pk }}">Instructor feedback</label>
+<textarea class="form-control mb-2" id="feedback-{{ item.pk }}" name="instructor_feedback" maxlength="3000" rows="3">{{ item.instructor_feedback }}</textarea>
+<button class="btn btn-outline-primary btn-sm">Save Assessment</button></form>
+</div>{% empty %}<p>No submitted investigations yet.</p>{% endfor %}
+{% else %}
+<p class="small text-muted">Status: {{ investigation.get_status_display }}. Submit locks your report for review.</p>
+{% if investigation.reviewed_at %}<p><strong>Instructor assessment:</strong> {{ investigation.score }}/100 (Findings {{ investigation.findings_score }}/30, Evidence {{ investigation.evidence_score }}/30, Response {{ investigation.response_score }}/25, Documentation {{ investigation.documentation_score }}/15)</p><p style="white-space:pre-wrap">{{ investigation.instructor_feedback }}</p>{% endif %}
+<h2 class="h5">Saved simulated event evidence</h2>
+<ul>{% for reference in bookmarked_events %}<li>Step {{ reference.simulation.sequence }} — {{ reference.simulation.summary }} ({{ reference.simulation.get_event_type_display }}){% if investigation.status == 'draft' %}<form method="post" action="{% url 'cybercity_soc_event_evidence_remove' city.pk scenario.pk reference.pk %}" class="d-inline ms-2">{% csrf_token %}<button class="btn btn-outline-danger btn-sm">Remove</button></form>{% endif %}</li>
+{% empty %}<li>No simulated event evidence saved.</li>{% endfor %}</ul>
+{% if investigation.status == 'submitted' %}
+<h2 class="h5">Findings</h2><p style="white-space:pre-wrap">{{ investigation.findings }}</p>
+<h2 class="h5">Evidence</h2><p style="white-space:pre-wrap">{{ investigation.evidence }}</p>
+<h2 class="h5">Response actions</h2><p style="white-space:pre-wrap">{{ investigation.response_actions }}</p>
+{% else %}
+<form method="post">{% csrf_token %}
+<label for="findings" class="form-label">Findings</label>
+<textarea id="findings" name="findings" class="form-control mb-3" maxlength="4000" rows="5">{{ investigation.findings }}</textarea>
+<label for="evidence" class="form-label">Evidence and observations</label>
+<textarea id="evidence" name="evidence" class="form-control mb-3" maxlength="4000" rows="5">{{ investigation.evidence }}</textarea>
+<label for="response_actions" class="form-label">Response actions and justification</label>
+<textarea id="response_actions" name="response_actions" class="form-control mb-3" maxlength="4000" rows="5">{{ investigation.response_actions }}</textarea>
+<button class="btn btn-outline-secondary" name="submit_action" value="draft">Save Draft</button>
+<button class="btn btn-primary" name="submit_action" value="submit">Submit for Review</button>
+</form>{% endif %}{% endif %}</div>{% endblock %}

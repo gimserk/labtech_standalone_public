@@ -1,0 +1,21 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}Incident Triage{% endblock %}
+{% block labtech_content %}
+<div class="container py-4">
+<a href="{% url 'cybercity_soc_analyst_workspace' city.pk %}">Analyst workspace</a>
+<h1>Incident Triage — {{ ticket.title }}</h1>
+<p>Priority: {{ ticket.get_priority_display }} | Case status: {{ ticket.get_status_display }}</p>
+<p>{{ ticket.description }}</p>
+<form method="post" class="card p-3 mb-4">{% csrf_token %}
+<label class="form-label">Analyst disposition</label><select class="form-select mb-2" name="disposition" required>
+{% for key, name in dispositions %}<option value="{{ key }}">{{ name }}</option>{% endfor %}</select>
+<label class="form-label">Reasoning and observations</label><textarea class="form-control mb-2" name="rationale" maxlength="2000" minlength="10" required></textarea>
+<label class="form-label">Evidence reference (optional)</label><input class="form-control mb-2" name="evidence_reference" maxlength="500">
+<button class="btn btn-primary">Record Triage Decision</button>
+</form>
+<h2 class="h4">Previous Analyst Decisions</h2>
+{% for item in decisions %}<div class="card p-3 mb-2"><strong>{{ item.get_disposition_display }}</strong>
+<p>{{ item.rationale }}</p><p class="small">{{ item.evidence_reference }}</p>
+<span class="small text-muted">{{ item.created_at }} — {% if item.analyst %}{{ item.analyst.get_username }}{% endif %}</span></div>
+{% empty %}<p>No triage decisions yet.</p>{% endfor %}
+</div>{% endblock %}

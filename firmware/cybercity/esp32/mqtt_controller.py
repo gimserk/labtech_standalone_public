@@ -75,9 +75,9 @@ class BuildingController:
         packet = {'schema': 1, 'command_id': command_id, 'status': status}
         if state is not None:
             packet['state'] = state
-        # Do not retain event acknowledgments; a new subscriber must not
+        # The LabTech live MQTT listener consumes <pin-topic>/report.\n        # Do not retain event acknowledgments; a new subscriber must not
         # interpret an old ACK as a newly executed command.
-        self.client.publish(base + '/ack', ujson.dumps(packet).encode(),
+        self.client.publish(base + '/report', ujson.dumps(packet).encode(),
                             retain=False, qos=1)
 
     def _on_message(self, topic, payload):

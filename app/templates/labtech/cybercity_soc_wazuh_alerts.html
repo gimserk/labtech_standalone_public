@@ -1,0 +1,29 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}Wazuh Security Events — {{ city.name }}{% endblock %}
+{% block labtech_content %}
+<div class="container py-4"><a href="{% url 'cybercity_soc_wazuh' city.pk %}">&larr; Wazuh</a>
+<h1 class="mt-3">Wazuh Security Events</h1>
+<form method="post" action="{% url 'cybercity_soc_wazuh_capture' city.pk %}">{% csrf_token %}<button class="btn btn-outline-primary mb-3">Record Detections</button></form>
+<p class="text-muted">Read-only Indexer results from the last 24 hours, restricted to {{ mapped_count }} explicitly mapped Wazuh agents. Security-event search does not automatically create incidents or prove an attack occurred.</p>
+{% if error %}<div class="alert alert-warning">{{ error }}</div>{% endif %}
+<div class="table-responsive"><table class="table table-hover"><thead><tr><th>Time</th><th>Agent ID</th><th>Rule</th><th>Level</th><th>Detection</th></tr></thead><tbody>
+{% for alert in alerts %}<tr><td>{{ alert.timestamp }}</td><td>{{ alert.agent_id }}</td><td>{{ alert.rule_id }}</td><td>{{ alert.level }}</td><td>{{ alert.description }}</td></tr>
+{% empty %}<tr><td colspan="5">No recent mapped-agent alerts found.</td></tr>{% endfor %}
+</tbody></table></div>
+<h2 class="h4 mt-4">Assign Stored Detection Evidence</h2>
+<p class="text-muted small">Only stored, mapped Wazuh detections can be assigned to a team incident. Use Record Detections above before assigning.</p>
+<table class="table"><thead><tr><th>Detection</th><th>Agent</th><th>Rule</th><th>Incident assignment</th></tr></thead><tbody>
+{% for evidence in assigned_evidence %}<tr><td>{{ evidence.detection.description }}</td><td>{{ evidence.detection.mapping.agent_id }}</td><td>{{ evidence.detection.rule_id }}</td><td>{{ evidence.ticket.title }}</td></tr>{% endfor %}
+</tbody></table>
+<h3 class="h5 mt-3">Assign detection to incident</h3>
+<div class="table-responsive"><table class="table"><thead><tr><th>Stored detection</th><th>Agent</th><th>Assign to SOC incident</th></tr></thead><tbody>
+{% for detection in stored_detections %}<tr>
+<td>{{ detection.description }} (rule {{ detection.rule_id }})</td><td>{{ detection.mapping.agent_id }}</td>
+<td><form method="post" action="{% url 'cybercity_soc_wazuh_assign_detection' city.pk detection.pk %}">{% csrf_token %}
+<select name="ticket_id" class="form-select form-select-sm" required><option value="">Choose incident team…</option>
+{% for ticket in incident_tickets %}<option value="{{ ticket.pk }}">{{ ticket.team.name }} — {{ ticket.title }}</option>{% endfor %}
+</select><button class="btn btn-outline-primary btn-sm mt-1" {% if not incident_tickets %}disabled{% endif %}>Assign evidence</button></form></td></tr>
+{% empty %}<tr><td colspan="3">No stored detections available for assignment.</td></tr>{% endfor %}
+</tbody></table></div>
+</div>
+{% endblock %}

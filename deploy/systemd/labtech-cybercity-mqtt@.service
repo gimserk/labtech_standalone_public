@@ -1,0 +1,23 @@
+[Unit]
+Description=LabTech Cyber City MQTT report listener (city %i)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=labtech
+Group=www-data
+WorkingDirectory=/opt/labtech
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/venv/bin/python /opt/labtech/manage.py listen_cybercity_reports --city-id %i
+Restart=on-failure
+RestartSec=10
+StartLimitIntervalSec=0
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

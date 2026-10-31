@@ -1,0 +1,29 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}SOC Incident Response Plan{% endblock %}
+{% block labtech_content %}
+<div class="container py-4">
+<a href="{% url 'cybercity_soc_incident_evidence' city.pk ticket.pk %}">Incident evidence</a>
+<h1>Response Plan — {{ ticket.title }}</h1>
+<p class="text-muted">Planning and documentation only. Submitting does not modify any VM, service, or network.</p>
+<form method="post" class="card p-3 mb-4">{% csrf_token %}
+<label for="containment">Containment strategy</label><textarea id="containment" class="form-control mb-3" name="containment" maxlength="2000" minlength="10" required></textarea>
+<label for="eradication">Eradication strategy</label><textarea id="eradication" class="form-control mb-3" name="eradication" maxlength="2000" minlength="10" required></textarea>
+<label for="recovery">Recovery strategy</label><textarea id="recovery" class="form-control mb-3" name="recovery" maxlength="2000" minlength="10" required></textarea>
+<label for="validation">How will recovery be verified?</label><textarea id="validation" class="form-control mb-3" name="validation" maxlength="2000" minlength="10" required></textarea>
+<button class="btn btn-primary">Submit proposed response plan</button></form>
+<h2 class="h4">Submitted response plans</h2>
+{% for plan in plans %}<div class="card p-3 mb-3">
+<p class="small">{{ plan.submitted_at }} — {% if plan.analyst %}{{ plan.analyst.get_username }}{% endif %}</p>
+<p><strong>Instructor review:</strong> {{ plan.get_review_status_display }}{% if plan.reviewed_at %} — {{ plan.reviewed_at }}{% endif %}</p>
+{% if plan.instructor_feedback %}<p><strong>Feedback:</strong> {{ plan.instructor_feedback }}</p>{% endif %}
+{% if instructor %}
+<form method="post" action="{% url 'cybercity_soc_response_plan_review' city.pk ticket.pk plan.pk %}">{% csrf_token %}
+<label class="form-label">Review decision</label><select class="form-select mb-2" name="review_status"><option value="approved">Approve proposal</option><option value="changes">Request changes</option></select>
+<label class="form-label">Instructor feedback</label><textarea name="instructor_feedback" maxlength="2000" class="form-control mb-2">{{ plan.instructor_feedback }}</textarea>
+<button class="btn btn-outline-primary btn-sm">Save Review (No Execution)</button></form>{% endif %}
+<h3 class="h6">Containment</h3><p>{{ plan.containment }}</p>
+<h3 class="h6">Eradication</h3><p>{{ plan.eradication }}</p>
+<h3 class="h6">Recovery</h3><p>{{ plan.recovery }}</p>
+<h3 class="h6">Verification</h3><p>{{ plan.validation }}</p></div>
+{% empty %}<p>No response plans submitted.</p>{% endfor %}
+</div>{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}SOC Scenario Response Rules{% endblock %}
+{% block labtech_content %}
+<div class="container py-4">
+<a href="{% url 'cybercity_soc_scenarios' city.pk %}">Scenarios</a>
+<h1>Response Rules — {{ scenario.title }}</h1>
+<p>Instructor-only training feedback. These rules never execute infrastructure actions. A rule applies only when this published scenario is the unique matching rule source for its linked incident.</p>
+{% if not scenario.incident_id %}<p class="alert alert-warning">Link this scenario to an incident before response rules can take effect.</p>{% endif %}
+<form method="post" class="card p-3 mb-4">{% csrf_token %}
+<label class="form-label">Rehearsal action</label>
+<select name="action" class="form-select mb-2" required>{% for key, label in actions %}<option value="{{ key }}">{{ label }}</option>{% endfor %}</select>
+<label class="form-label">Expected interpretation</label>
+<select name="outcome" class="form-select mb-2" required>{% for key, label in outcomes %}<option value="{{ key }}">{{ label }}</option>{% endfor %}</select>
+<label class="form-label">Student-facing training feedback</label>
+<textarea class="form-control mb-2" name="feedback" minlength="10" maxlength="2000" required></textarea>
+<button class="btn btn-primary">Save response rule</button>
+</form>
+<h2 class="h4">Configured rules</h2>
+{% for item in rules %}<div class="card p-3 mb-2"><strong>{{ item.get_action_display }} — {{ item.get_outcome_display }}</strong><p style="white-space:pre-wrap">{{ item.feedback }}</p></div>
+{% empty %}<p>No automated response feedback configured.</p>{% endfor %}
+</div>{% endblock %}
