@@ -53,6 +53,11 @@
 <div class="page-header">
     <h1>Manage ESP32: {{ esp32.name }}</h1>
     <p>MAC Address: {{ esp32.mac_address }}</p>
+    <p><strong>OTA target:</strong> {% if current_firmware %}v{{ current_firmware.version }}{% else %}Not published{% endif %}
+       · <strong>Reported installed:</strong> {{ esp32.firmware_reported_version|default_if_none:"Unknown" }}
+       · <strong>Last device check-in:</strong> {{ esp32.firmware_last_seen|default:"Never" }}</p>
+    <p class="text-muted">Pin configuration is served from the authenticated provisioning endpoint during ESP32 startup or an explicit configuration refresh. Saving pins does not immediately reconfigure a running device; restart or install compatible controller firmware and confirm a new report. Publishing firmware sets an OTA target, not a confirmed installation.</p>
+    <a href="{% url 'cybercity_esp32_basic_firmware' city.id %}" class="btn btn-secondary">Download Basic ESP32 Firmware</a>
     <a href="{% url 'cybercity_building_detail' city.id building.id %}" class="btn btn-secondary">Back to Building</a>
 </div>
 
@@ -70,6 +75,7 @@
                     {{ form.as_p }}
                     <hr>
                     <h4>Pins</h4>
+                    <p class="text-muted small">Pin settings are delivered in the authenticated configuration response when the ESP32 starts or its controller explicitly refreshes configuration. The bundled default controller supports LED and duty-cycle outputs; I2C screen/LED modes require compatible custom firmware. Check GPIO restrictions for your ESP32 board before assigning pins.</p>
                     {{ formset.management_form }}
                     {{ formset.non_form_errors }}
                     {% for pin_form in formset %}
@@ -147,7 +153,8 @@
             <div class="card-body">
                 <p>
                     <strong>Deployment status:</strong>
-                    {% if current_firmware %}Target v{{ current_firmware.version }} — {% endif %}{% esp32_firmware_status current_firmware esp32 %}
+                    {% if current_firmware %}
+                        Target v{{ current_firmware.version }} — {% esp32_firmware_status current_firmware esp32 %}
                     {% else %}
                         No firmware published
                     {% endif %}

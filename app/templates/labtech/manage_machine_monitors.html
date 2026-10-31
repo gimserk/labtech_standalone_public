@@ -91,7 +91,7 @@
     <div class="page-header">
         <h1>{{ title }}</h1>
         <p class="text-muted">A state monitor belongs to this building VM. When its reported value changes from nonmatching to matching, LabTech queues an attack command for the selected ESP32 pin in this building.</p>
-        <p class="text-muted">The downloaded agent must be running inside the VM to report service/file states. DB Query monitors are not currently supported by the downloaded agent. The city MQTT broker and background command dispatcher must also be running.</p>
+        <p class="text-muted">Enable automatic QEMU Guest Agent polling for this VM on the building page. Choose Linux or Windows and save. The VM must be running with the QEMU Guest Agent installed and operational. Supported checks: service state, file existence, SHA-256 hash. Database query execution is not supported. MQTT command dispatch must be enabled separately on the server.</p>
     </div>
 
     <div class="row">
@@ -113,22 +113,14 @@
                 </div>
             </div>
 
-            <!-- Agent Setup Instructions -->
             <div class="card">
-                <div class="card-header">
-                    <h4>Agent Setup</h4>
-                </div>
+                <div class="card-header"><h4>Automatic Agent Checks</h4></div>
                 <div class="card-body">
-                    <p><strong>Step 1: Download the Agent</strong></p>
-                    <a href="{% url 'download_agent_script' %}" class="btn btn-success mb-3">Download agent.py</a>
-
-                    <p><strong>Step 2: Create `config.ini`</strong></p>
-                    <p class="text-muted small">On the target VM, create a file named <code>config.ini</code> in the same directory as the agent, and paste the content below.</p>
-                    <div class="config-box">
-[labtech]
-server_url = {{ request.scheme }}://{{ request.get_host }}
-api_key = {{ machine.api_key }}
-                    </div>
+                    <p>Guest OS: <strong>{{ machine.monitor_os_family }}</strong> · Automatic polling:
+                    <strong>{% if machine.monitor_enabled %}Enabled{% else %}Disabled{% endif %}</strong></p>
+                    <p>Last poll: {{ machine.monitor_last_polled_at|date:"Y-m-d H:i:s T"|default:"Never" }}
+                    {% if machine.monitor_last_error %}· <span class="text-danger">{{ machine.monitor_last_error }}</span>{% endif %}</p>
+                    <a href="{% url 'cybercity_building_detail' machine.building.cybercity.id machine.building.id %}" class="btn btn-secondary">Configure on Building Page</a>
                 </div>
             </div>
         </div>

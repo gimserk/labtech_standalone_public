@@ -243,6 +243,7 @@
             <span id="pin-status-indicator" class="status-badge status-stopped">Loading...</span>
         </div>
         <div class="card-body">
+            <p class="small text-muted">Pin status comes from the persistent MQTT listener's last received report. A recorded value may be stale; run the `listen_cybercity_status --forever` listener on the server to ingest reports and acknowledgments. A published command is not proof of execution.</p>
             <table class="pin-status-table">
                 <thead>
                     <tr>
@@ -280,16 +281,85 @@
     </div>
 
     <div class="card">
+        <div class="card-header"><h3>Machine Monitors — Automatic QEMU Guest Agent Checks</h3></div>
+        <div class="card-body">
+            <p class="text-muted">Configure checks on existing building VMs; no agent.py installation is required.
+               An enabled running VM is polled about every 30 seconds through Proxmox QEMU Guest Agent when Celery Beat and the workers are active.
+               Triggers are sent only when a condition changes from nonmatching to matching.</p>
+            {% if not auto_monitor_enabled %}
+            <p class="text-danger">Automatic monitoring is disabled in server settings. Enable CYBERCITY_QGA_AUTOPOLL_ENABLED and restart the Celery Beat service.</p>
+            {% endif %}
+            {% for row in machine_monitor_rows %}
+            <div class="list-item" style="display:block">
+                <div class="d-flex justify-content-between gap-2 flex-wrap align-items-center mb-2">
+                    <strong>{{ row.machine.name }} — VMID {{ row.machine.proxmox_vmid|default:"Not built" }}</strong>
+                    <span class="status-badge {% if row.machine.monitor_enabled %}status-running{% else %}status-stopped{% endif %}">
+                    {% if row.machine.monitor_enabled %}Enabled{% else %}Disabled{% endif %}</span>
+                </div>
+                <p class="small text-muted">{{ row.active_count }} active check(s) · Guest OS: {{ row.machine.monitor_os_family|capfirst }}
+                    · Last polled: {{ row.machine.monitor_last_polled_at|date:"Y-m-d H:i:s T"|default:"Never" }}</p>
+                {% if row.machine.monitor_last_error %}<p class="text-danger small">Last poll: {{ row.machine.monitor_last_error }}</p>{% endif %}
+                <div class="d-flex flex-wrap gap-2 mb-2">
+                    <form method="post" action="{% url 'cybercity_machine_monitor_control' city.id building.id row.machine.id %}" class="d-flex flex-wrap gap-2 align-items-center">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="settings">
+                        <label for="os-{{ row.machine.id }}">Guest OS</label>
+                        <select name="os_family" id="os-{{ row.machine.id }}" class="form-select form-select-sm" style="width:auto">
+                            <option value="linux" {% if row.machine.monitor_os_family == 'linux' %}selected{% endif %}>Linux</option>
+                            <option value="windows" {% if row.machine.monitor_os_family == 'windows' %}selected{% endif %}>Windows</option>
+                        </select>
+                        <label><input type="checkbox" name="enabled" value="yes" {% if row.machine.monitor_enabled %}checked{% endif %}> Auto poll</label>
+                        <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                    </form>
+                    <form method="post" action="{% url 'cybercity_machine_monitor_control' city.id building.id row.machine.id %}">
+                        {% csrf_token %}<input type="hidden" name="action" value="check">
+                        <button type="submit" class="btn btn-secondary btn-sm" {% if not row.machine.monitor_enabled or row.machine.status != 'running' %}disabled{% endif %}>Check Now</button>
+                    </form>
+                    <a href="{% url 'manage_machine_monitors' city.id building.id row.machine.id %}" class="btn btn-info btn-sm">Configure Checks</a>
+                </div>
+                {% for check in row.monitors %}
+                <div class="small mb-1">
+                    <strong>{{ check.name }}</strong>
+                    {% if check.is_active %}<span class="text-success">Active</span>{% else %}<span class="text-muted">Disabled</span>{% endif %}
+                    · {{ check.get_monitor_type_display }}
+                    · {{ check.target }}
+                    · last: {{ check.last_reported_value|default:"Never observed" }}
+                    · {{ check.last_reported_at|date:"Y-m-d H:i:s T"|default:"Never" }}
+                    {% if check.last_check_error %}<span class="text-danger">· {{ check.last_check_error }}</span>{% endif %}
+                    {% if check.trigger_on_match %}· triggers {{ check.trigger_on_match.name }}{% endif %}
+                </div>
+                {% empty %}<p class="text-muted small">No checks configured.</p>{% endfor %}
+            </div>
+            {% empty %}<p>No building machines have been created.</p>{% endfor %}
+        </div>
+    </div>
+
+    <div class="card">
         <div class="card-header">
-            <h3>Attack Monitors</h3>
+            <h3>ESP Attacks</h3>
             <a href="{% url 'cybercity_attack_monitor_add' city.id building.id %}" class="btn btn-primary">Add Monitor</a>
         </div>
         <div class="card-body">
-            {% for monitor in attack_monitors %}
+            <p class="text-muted">An ESP Attack maps an observed machine change to a pin command. Command queued/published means MQTT delivery is attempted; actual device execution requires an ESP32 status report or correlated acknowledgment.</p>
+            {% if not command_dispatch_enabled %}
+            <p class="text-danger">Automatic MQTT command dispatch is disabled on this server. Set CYBERCITY_COMMAND_DISPATCH_ENABLED=True and run one Celery Beat scheduler to deliver queued monitor attacks.</p>
+            {% endif %}
+            {% for row in attack_rows %}
+            {% with monitor=row.attack %}
             <div class="list-item">
                 <div>
                     <strong>{{ monitor.name }}</strong><br>
                     <small class="text-muted">Sends '{{ monitor.attack_command }}' &rarr; {{ monitor.target_pin.name|default:'N/A' }}</small>
+                    {% if row.pin %}
+                    <div class="small text-muted">ESP32: {{ row.pin.esp32.name }} · GPIO{{ row.pin.pin_number }}
+                       · Last ESP state: {{ row.pin.last_status|default:"Not reported" }}
+                       · {{ row.pin.last_status_timestamp|date:"Y-m-d H:i:s T"|default:"Never" }}</div>
+                    {% endif %}
+                    {% if row.recent %}
+                    <div class="small">Latest matching pin command: <strong>{{ row.recent.status }}</strong>
+                        · {{ row.recent.created_at|date:"Y-m-d H:i:s T" }}
+                        · Attempts: {{ row.recent.attempts }}</div>
+                    {% else %}<div class="text-muted small">No matching commands queued yet.</div>{% endif %}
                 </div>
                 <div>
                     <div class="tooltip-container" style="display: inline-block;">
@@ -306,13 +376,16 @@
                             {{ monitor.attack_command }}
                         </span>
                     </div>
-                    <button type="button" class="btn btn-danger btn-sm trigger-attack-btn" data-url="{% url 'cybercity_trigger_attack' city.id building.id monitor.id %}">Trigger</button>
+                    <button type="button" class="btn btn-danger btn-sm trigger-attack-btn"
+                        data-url="{% url 'cybercity_trigger_attack' city.id building.id monitor.id %}"
+                        {% if not row.linked or not row.pin %}disabled title="Link a building Machine Monitor and select an ESP32 pin first"{% endif %}>Queue Test</button>
                     <a href="{% url 'cybercity_attack_monitor_edit' city.id building.id monitor.id %}" class="btn btn-secondary btn-sm">Edit</a>
                     <a href="{% url 'cybercity_attack_monitor_delete' city.id building.id monitor.id %}" class="btn btn-danger btn-sm">Delete</a>
                 </div>
             </div>
+            {% endwith %}
             {% empty %}
-                <p>No attack monitors configured.</p>
+                <p>No ESP Attacks configured.</p>
             {% endfor %}
         </div>
     </div>
@@ -403,7 +476,7 @@
                     console.error("Error fetching statuses:", data.error);
                     return;
                 }
-                statusIndicator.textContent = "Live";
+                statusIndicator.textContent = "Recorded";
                 statusIndicator.className = 'status-badge status-running';
 
                 for (const pinId in data) {
@@ -429,7 +502,7 @@
         document.querySelectorAll('.trigger-attack-btn').forEach(button => {
             button.addEventListener('click', function(event) {
                 const url = this.dataset.url;
-                this.textContent = 'Sending...';
+                this.textContent = 'Queuing...';
                 this.disabled = true;
 
                 fetch(url, {
@@ -442,7 +515,7 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        this.textContent = 'Sent!';
+                        this.textContent = 'Queued';
                         this.classList.remove('btn-danger');
                         this.classList.add('btn-success');
                         setTimeout(fetchPinStatuses, 500);
@@ -452,7 +525,7 @@
                     }
 
                     setTimeout(() => {
-                        this.textContent = 'Trigger';
+                        this.textContent = 'Queue Test';
                         this.disabled = false;
                         this.classList.remove('btn-success');
                         this.classList.add('btn-danger');
@@ -462,7 +535,7 @@
                     this.textContent = 'Error!';
                     alert(`Network error: ${error}`);
                     setTimeout(() => {
-                        this.textContent = 'Trigger';
+                        this.textContent = 'Queue Test';
                         this.disabled = false;
                     }, 2000);
                 });

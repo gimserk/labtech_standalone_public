@@ -1377,6 +1377,9 @@ class CyberCity(models.Model):
     pfsense_vmid = models.PositiveIntegerField(null=True, blank=True, unique=True)
     pfsense_vnc_port = models.PositiveIntegerField(null=True, blank=True)
     pfsense_status = models.CharField(max_length=20, default='stopped', editable=False)
+    pfsense_node = models.CharField(max_length=100, blank=True, help_text="Actual Proxmox node of the City Service clone, not the template node.")
+    pfsense_error = models.CharField(max_length=160, blank=True, editable=False)
+    pfsense_provision_started_at = models.DateTimeField(null=True, blank=True, editable=False)
     pfsense_console_port = models.PositiveIntegerField(null=True, blank=True)
     pfsense_backup_snapshot_name = models.CharField(max_length=100, null=True, blank=True, help_text="Name of the single backup snapshot.")
 
@@ -1389,11 +1392,17 @@ class CyberCity(models.Model):
     control_vmid = models.PositiveIntegerField(null=True, blank=True, unique=True)
     control_vnc_port = models.PositiveIntegerField(null=True, blank=True)
     control_status = models.CharField(max_length=20, default='stopped', editable=False)
+    control_node = models.CharField(max_length=100, blank=True, help_text="Actual Proxmox node of the City Service clone, not the template node.")
+    control_error = models.CharField(max_length=160, blank=True, editable=False)
+    control_provision_started_at = models.DateTimeField(null=True, blank=True, editable=False)
 
     # Management VM Instance State
     management_vmid = models.PositiveIntegerField(null=True, blank=True, unique=True)
     management_vnc_port = models.PositiveIntegerField(null=True, blank=True)
     management_status = models.CharField(max_length=20, default='stopped', editable=False)
+    management_node = models.CharField(max_length=100, blank=True, help_text="Actual Proxmox node of the City Service clone, not the template node.")
+    management_error = models.CharField(max_length=160, blank=True, editable=False)
+    management_provision_started_at = models.DateTimeField(null=True, blank=True, editable=False)
     management_console_port = models.PositiveIntegerField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -1470,7 +1479,18 @@ class CyberCityMachine(models.Model):
     console_port = models.PositiveIntegerField(null=True, blank=True)
     reset_started_at = models.DateTimeField(null=True, blank=True, editable=False)
     reset_error = models.TextField(blank=True, default='', editable=False)
-    
+    monitor_enabled = models.BooleanField(
+        default=False,
+        help_text="Automatically poll active QEMU Guest Agent monitors for this building VM.",
+    )
+    monitor_os_family = models.CharField(
+        max_length=8, choices=[('linux', 'Linux'), ('windows', 'Windows')],
+        default='linux',
+    )
+    monitor_poll_claimed_at = models.DateTimeField(null=True, blank=True, editable=False)
+    monitor_last_polled_at = models.DateTimeField(null=True, blank=True, editable=False)
+    monitor_last_error = models.CharField(max_length=160, blank=True, editable=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -1687,10 +1707,14 @@ class MachineStateMonitor(models.Model):
     # ... choices for monitor type and comparison ...
     MONITOR_TYPE_SERVICE = 'service'
     MONITOR_TYPE_FILE_HASH = 'file_hash'
+    MONITOR_TYPE_FILE_EXISTS = 'file_exists'
+    MONITOR_TYPE_FILE_CONTENT = 'file_content'
     MONITOR_TYPE_DB_QUERY = 'db_query'
     MONITOR_TYPE_CHOICES = [
         (MONITOR_TYPE_SERVICE, 'Service Status (e.g., sshd, apache2)'),
         (MONITOR_TYPE_FILE_HASH, 'File Content Hash (SHA-256)'),
+        (MONITOR_TYPE_FILE_EXISTS, 'File Exists / Missing (QEMU Guest Agent)'),
+        (MONITOR_TYPE_FILE_CONTENT, 'File Content (first 255 characters)'),
         (MONITOR_TYPE_DB_QUERY, 'Database Query Result'),
     ]
     
@@ -1729,7 +1753,8 @@ class MachineStateMonitor(models.Model):
     # The last known state reported by the agent
     last_reported_value = models.TextField(blank=True, null=True, editable=False)
     last_reported_at = models.DateTimeField(null=True, blank=True, editable=False)
-    
+    last_check_error = models.CharField(max_length=160, blank=True, editable=False)
+
     is_active = models.BooleanField(default=True, help_text="Enable or disable this monitor.")
 
     def __str__(self):

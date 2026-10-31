@@ -337,10 +337,24 @@ CELERY_BEAT_SCHEDULE = {
 }
 # Opt-in until the Cyber City MQTT command path is validated in staging.
 # Run exactly one Celery Beat scheduler, or commands may be dispatched more than once.
-if os.getenv('CYBERCITY_COMMAND_DISPATCH_ENABLED', 'False').lower() in ('true', '1', 'yes'):
+CYBERCITY_COMMAND_DISPATCH_ENABLED = os.getenv(
+    'CYBERCITY_COMMAND_DISPATCH_ENABLED', 'False'
+).lower() in ('true', '1', 'yes')
+if CYBERCITY_COMMAND_DISPATCH_ENABLED:
     CELERY_BEAT_SCHEDULE['dispatch-cybercity-pending-commands'] = {
         'task': 'app.tasks.dispatch_cybercity_pending_commands',
         'schedule': 10.0,
+    }
+
+# Cyber City monitors require explicit per-VM enrollment. No enabled VMs means
+# no QEMU-agent calls; one Beat process provides the repeat schedule.
+CYBERCITY_QGA_AUTOPOLL_ENABLED = os.getenv(
+    'CYBERCITY_QGA_AUTOPOLL_ENABLED', 'True'
+).lower() in ('true', '1', 'yes')
+if CYBERCITY_QGA_AUTOPOLL_ENABLED:
+    CELERY_BEAT_SCHEDULE['poll-cybercity-machine-monitors'] = {
+        'task': 'app.tasks.poll_cybercity_machine_monitors',
+        'schedule': 30.0,
     }
 
 # Automatic timed-lab expiration and cleanup recovery are enabled by default.

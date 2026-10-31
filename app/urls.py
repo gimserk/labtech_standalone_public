@@ -1,5 +1,6 @@
 from app import tekcon_nfc_auth
 from app import cybercity_firmware_bundle
+from app import cybercity_monitor_views
 from django.contrib import admin
 from django.urls import path, include, re_path
 from django.conf import settings
@@ -277,6 +278,8 @@ urlpatterns = [
     path('labtech/cybercity/<int:city_id>/buildings/<int:building_id>/machines/add/', app_views.cybercity_machine_add_view, name='cybercity_machine_add'),
     path('labtech/cybercity/<int:city_id>/buildings/<int:building_id>/machines/<int:machine_id>/edit/', app_views.cybercity_machine_edit_view, name='cybercity_machine_edit'),
     path('labtech/cybercity/<int:city_id>/buildings/<int:building_id>/machines/<int:machine_id>/delete/', app_views.cybercity_machine_delete_view, name='cybercity_machine_delete'),
+    # The static read-only /inspect/ URL must appear BEFORE the dynamic action URL.
+    path('labtech/cybercity/<int:city_id>/utility/<str:machine_type>/inspect/', app_views.cybercity_service_inspection_view, name='cybercity_service_inspect'),
     path('labtech/cybercity/<int:city_id>/utility/<str:machine_type>/<str:action>/', app_views.cybercity_utility_machine_action_view, name='cybercity_utility_action'),
     path('labtech/cybercity/<int:city_id>/buildings/<int:building_id>/machines/<int:machine_id>/<str:action>/', app_views.cybercity_machine_action_view, name='cybercity_machine_action'),
     path('labtech/cybercity/<int:city_id>/buildings/<int:building_id>/machines/<int:machine_id>/reset-diagnostics/', app_views.cybercity_machine_reset_diagnostics_view, name='cybercity_machine_reset_diagnostics'),
@@ -288,6 +291,7 @@ urlpatterns = [
     path('labtech/cybercity/<int:city_id>/buildings/<int:building_id>/monitors/<int:monitor_id>/edit/', app_views.cybercity_attack_monitor_edit_view, name='cybercity_attack_monitor_edit'),
     path('labtech/cybercity/<int:city_id>/buildings/<int:building_id>/monitors/<int:monitor_id>/delete/', app_views.cybercity_attack_monitor_delete_view, name='cybercity_attack_monitor_delete'),
     path('labtech/cybercity/<int:city_id>/buildings/<int:building_id>/monitors/<int:monitor_id>/trigger/', app_views.cybercity_trigger_attack_view, name='cybercity_trigger_attack'),
+    path('labtech/cybercity/<int:city_id>/buildings/<int:building_id>/machines/<int:machine_id>/monitor-control/', cybercity_monitor_views.configure_machine_monitor, name='cybercity_machine_monitor_control'),
     path('labtech/cybercity/<int:city_id>/buildings/<int:building_id>/machines/<int:machine_id>/monitors/', app_views.manage_machine_monitors_view, name='manage_machine_monitors'),
     path('labtech/cybercity/<int:city_id>/buildings/<int:building_id>/machines/<int:machine_id>/monitors/<int:monitor_id>/edit/', app_views.edit_machine_monitor_view, name='edit_machine_monitor'),
     path('labtech/cybercity/<int:city_id>/buildings/<int:building_id>/machines/<int:machine_id>/monitors/<int:monitor_id>/delete/', app_views.delete_machine_monitor_view, name='delete_machine_monitor'),

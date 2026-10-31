@@ -30,7 +30,7 @@ def poll_machine(machine, api, os_family, apply=False):
     observations = {}
     failures = []
     monitors = list(machine.state_monitors.filter(
-        is_active=True, monitor_type__in=("service", "file_hash")).order_by("pk"))
+        is_active=True, monitor_type__in=("service", "file_hash", "file_exists", "file_content")).order_by("pk"))
     for monitor in monitors:
         try:
             observations[monitor.pk] = collect_qga_observation(
