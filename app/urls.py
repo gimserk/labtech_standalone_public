@@ -283,7 +283,6 @@ urlpatterns = [
     # The static read-only /inspect/ URL must appear BEFORE the dynamic action URL.
     path('labtech/cybercity/<int:city_id>/utility/<str:machine_type>/inspect/', app_views.cybercity_service_inspection_view, name='cybercity_service_inspect'),
     path('labtech/cybercity/<int:city_id>/utility/<str:machine_type>/<str:action>/', app_views.cybercity_utility_machine_action_view, name='cybercity_utility_action'),
-    path('labtech/cybercity/<int:city_id>/buildings/<int:building_id>/machines/<int:machine_id>/<str:action>/', app_views.cybercity_machine_action_view, name='cybercity_machine_action'),
     path('labtech/cybercity/<int:city_id>/buildings/<int:building_id>/machines/<int:machine_id>/reset-diagnostics/', app_views.cybercity_machine_reset_diagnostics_view, name='cybercity_machine_reset_diagnostics'),
     path('labtech/cybercity/<int:city_id>/buildings/<int:building_id>/machines/<int:machine_id>/recovery-review/', app_views.cybercity_machine_recovery_review_view, name='cybercity_machine_recovery_review'),
     path('labtech/cybercity/<int:city_id>/buildings/<int:building_id>/esp32/add/', app_views.cybercity_esp32_add_view, name='cybercity_esp32_add'),
@@ -297,6 +296,8 @@ urlpatterns = [
     path('labtech/cybercity/<int:city_id>/buildings/<int:building_id>/machines/<int:machine_id>/monitors/', app_views.manage_machine_monitors_view, name='manage_machine_monitors'),
     path('labtech/cybercity/<int:city_id>/buildings/<int:building_id>/machines/<int:machine_id>/monitors/<int:monitor_id>/edit/', app_views.edit_machine_monitor_view, name='edit_machine_monitor'),
     path('labtech/cybercity/<int:city_id>/buildings/<int:building_id>/machines/<int:machine_id>/monitors/<int:monitor_id>/delete/', app_views.delete_machine_monitor_view, name='delete_machine_monitor'),
+    # Generic machine actions must follow all machine-specific routes (monitor/diagnostics/recovery).
+    path('labtech/cybercity/<int:city_id>/buildings/<int:building_id>/machines/<int:machine_id>/<str:action>/', app_views.cybercity_machine_action_view, name='cybercity_machine_action'),
     path('labtech/cybercity/<int:city_id>/visualizer/', app_views.cybercity_visualizer_view, name='cybercity_visualizer'),
     path('labtech/cybercity/<int:city_id>/feeds/', app_views.manage_video_feeds_view, name='cybercity_manage_feeds'),
     path('labtech/cybercity/<int:city_id>/feeds/<int:feed_id>/edit/', app_views.edit_video_feed_view, name='cybercity_edit_feed'),
