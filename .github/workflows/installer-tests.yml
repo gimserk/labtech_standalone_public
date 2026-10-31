@@ -10,15 +10,28 @@ on:
       - 'deploy/**'
 jobs:
   shell:
+    name: Installer & updater shell lint
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Install ShellCheck
         run: sudo apt-get update && sudo apt-get install -y shellcheck
       - name: Bash syntax and ShellCheck
-        run: bash -n deploy/install.sh deploy/tests/test_install.sh && shellcheck deploy/install.sh deploy/tests/test_install.sh
-      - name: Installer safety tests
-        run: bash deploy/tests/test_install.sh
+        run: |
+          bash -n deploy/install.sh deploy/update.sh deploy/lib/update_common.sh deploy/tests/test_install.sh deploy/tests/test_update.sh
+          shellcheck deploy/install.sh deploy/update.sh deploy/lib/update_common.sh deploy/tests/test_install.sh deploy/tests/test_update.sh
+  installer_safety:
+    name: Installer safety (mocked)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash deploy/tests/test_install.sh
+  updater_safety:
+    name: Updater safety (mocked)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash deploy/tests/test_update.sh
   django:
     runs-on: ubuntu-24.04
     steps:

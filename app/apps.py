@@ -7,3 +7,5 @@ class AppConfig(AppConfig):
     def ready(self):
         import app.signals
         import app.checks  # noqa: F401
+        import app.student_activity_signals  # noqa: F401
+        import app.student_activity_detail_signals  # noqa: F401

@@ -9,6 +9,10 @@
 <div class="content-editor">
   <h2>{{ title }}</h2>
   <p>Course: <strong>{{ course.title }}</strong></p>
+  <p class="helptext">Choose <strong>Upload</strong> to store a recording privately in LabTech, or
+     <strong>External HTTPS URL</strong> to link directly to a hosted audio file. Supported uploads:
+     MP3, M4A, AAC, OGG/OGA and WAV. A playable recording is not guaranteed to work in every browser
+     if its audio codec is unsupported.</p>
   <form method="post" enctype="multipart/form-data" novalidate>
     {% csrf_token %}
     {{ form.non_field_errors }}

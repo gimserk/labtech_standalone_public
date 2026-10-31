@@ -40,7 +40,9 @@ def poll_machine(machine, api, os_family, apply=False):
     if not observations:
         return {"observed": 0, "queued": [], "failures": failures}
     states = normalize_observations(machine, observations)
-    queued = evaluate_monitor_observations(machine, states) if apply else []
+    # The initial QGA sample arms a monitor without triggering hardware.
+    # Subsequent nonmatch-to-match transitions enqueue normally.
+    queued = evaluate_monitor_observations(machine, states, baseline_first=True) if apply else []
     return {"observed": len(states), "queued": queued, "failures": failures}
 
 

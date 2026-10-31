@@ -8,6 +8,7 @@ from django.conf.urls.static import static
 from app import views as app_views
 from app import cluster_utilization
 from app import lab_node_migration_views
+from app import course_lab_machine_mapping
 from app import audio_views
 from app import cybercity_provisioning
 from app import lab_check_views
@@ -56,6 +57,7 @@ urlpatterns = [
     path('ckeditor/', include('ckeditor_uploader.urls')),
     
     # --- INSTRUCTOR & COURSE MANAGEMENT ---
+    path('labtech/courses/<int:course_id>/machine-mapping/', course_lab_machine_mapping.course_lab_machine_mapping, name='course_lab_machine_mapping'),
     path('labtech/courses/<int:course_id>/manage-labs/', app_views.instructor_manage_labs_view, name='instructor_manage_labs'),
     path('labtech/courses/<int:course_id>/lab-cleanup/', app_views.lab_cleanup_dashboard_view, name='lab_cleanup_dashboard'),
     path('labtech/courses/<int:course_id>/lab-cleanup/<uuid:job_id>/retry/', app_views.retry_lab_cleanup_view, name='retry_lab_cleanup'),

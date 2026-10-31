@@ -1,6 +1,6 @@
 # Installing LabTech on Ubuntu 24.04 or Newer
 
-This guide installs LabTech directly on a dedicated server running Ubuntu 24.04 or a newer official Ubuntu release. The installer accepts canonical Ubuntu release identifiers (`YEAR.04` and `YEAR.10`, with release years from 24 through 9999) and rejects missing or malformed platform metadata before changing the host. It uses Python 3.12 or 3.13 for the application virtual environment. By default it selects `python3`; set `LABTECH_VENV_PYTHON` when the system default is newer than the pinned dependencies support. It manages MariaDB, Redis, Gunicorn, Celery, Nginx, and optional Let's Encrypt TLS, and it is also the supported safe-rerun and update path.
+This guide installs LabTech directly on a dedicated server running Ubuntu 24.04 or a newer official Ubuntu release. The installer accepts canonical Ubuntu release identifiers (`YEAR.04` and `YEAR.10`, with release years from 24 through 9999) and rejects missing or malformed platform metadata before changing the host. It uses Python 3.12 or 3.13 for the application virtual environment. By default it selects `python3`; set `LABTECH_VENV_PYTHON` when the system default is newer than the pinned dependencies support. It manages MariaDB, Redis, Gunicorn, Celery, Nginx, and optional Let's Encrypt TLS, and it is the supported **first-install/reconfiguration** path. Existing completed installations should use the noninteractive `deploy/update.sh` for regular code updates. Both commands invoke the same Django validation, migrations and static collection routines.
 
 ## Before you begin
 
@@ -120,22 +120,91 @@ Press Enter to accept the displayed default or retain the existing value on a re
 
 On a fresh installation, HTTPS is activated only after Certbot succeeds; the site uses HTTP until then. The installer generates the Django secret, MariaDB application password, and QEMU lab-check encryption key on the first run. It preserves them on every rerun. It never writes a superuser password to disk. An old `DJANGO_SUPERUSER_PASSWORD` value is discarded; Django asks for the password interactively. `DJANGO_DEBUG` remains `False`, and `ENABLE_MAGICLINK` remains `False`. The managed environment covers the authentication, OAuth, LDAP, licensing, SMTP, payment, Guacamole, Celery, and lab-check fields as well as the core settings. Do not paste credentials or the PEM into a command-line argument. If you already have a checkout `.env` file, move it out of the checkout after reviewing its contents; the installer refuses to overwrite it. Enter its values at the installer prompts.
 
-## Safely rerun or update the installation
+## Noninteractive production upgrades (no installer questions)
 
-Run the same command again:
+**Do not run `install.sh` for ordinary application updates.** The interactive installer manages OS packages, Nginx, virtualenv creation, service units, and `/etc/labtech` configuration. The upgrade script **does not reconfigure those components**.
+
+For an installation that already includes the updater:
 
 ```bash
-sudo /opt/labtech/deploy/install.sh
+sudo /opt/labtech/deploy/update.sh --check
+sudo /opt/labtech/deploy/update.sh
 ```
 
-The installer preserves the database, uploaded media, stable secrets, and untracked files. It collects static assets under `/var/lib/labtech/staticfiles`, outside the Git checkout. It reinstalls required packages, reconciles the virtual environment, and updates the expected branch with a fast-forward-only merge. It stops without changing the checkout when it finds:
+The updater requires a completed, installer-managed deployment:
+`/opt/labtech/venv`, `/etc/labtech/labtech.env`,
+`/etc/labtech/deployment_settings.py`, `labtech-web`,
+`labtech-worker` and `labtech-beat`. It checks they point to
+the expected runtime and are active before touching code. **Older deployments
+using `/opt/venv` or different service names are intentionally refused**;
+inspect their service layout and perform a reviewed one-time conversion
+instead of letting an updater overwrite working configuration.
 
-- modified or staged tracked files;
-- a Git remote other than `git@github.com:gimserk/labtech_standalone.git`;
-- a branch that has diverged from its remote;
-- a non-Git, nonempty installation directory.
+**One-time bootstrap when `update.sh` is not yet present:**
+From a clean main checkout, obtain the new updater once, *without* running
+the interactive installer:
 
-Resolve those conditions manually. The installer never runs `git reset --hard`, `git clean`, or a forced checkout. Before applying migrations to a database that already has tables, it creates a timestamped dump under `/var/backups/labtech/database`.
+```bash
+sudo -u labtech git -C /opt/labtech status --short
+sudo -u labtech git -C /opt/labtech pull --ff-only origin main
+sudo /opt/labtech/deploy/update.sh --reapply
+```
+
+Only pull if `git status --short` reveals no tracked changes that would
+be overwritten. `--reapply` runs the same migrations and health checks
+even though the repository is already at the latest commit.
+
+Options:
+- `--check`: fetch the latest main ref and print the change summary only;
+  no application code, DB, settings, media, or services are changed.
+- `--reapply`: recover an interrupted update or deliberately rerun migrations,
+  static collection and health checks at the current Git revision.
+- `--run-tests`: additionally run all Django tests **before** migrations
+  and fail the upgrade on test failures. The default uses deployment checks
+  without a full Django test-database run.
+
+Every update uses a fast-forward-only Git merge. Dirty/staged tracked
+changes, wrong remote or branch, and unexpected runtime/service layouts
+fail closed. Before changing checked-out code, the updater saves the
+current commit SHA, copies existing configuration into a root-only backup,
+and creates a complete MariaDB dump under
+`/var/backups/labtech/updates/<timestamp>/`. The old virtual environment
+is copied there **when pinned requirements change or when --reapply is
+requested**, before running `pip install` in the current environment. No Git clean/reset or database
+restore is performed automatically. It checks pinned dependencies and
+Django migration consistency before applying migrations; then collects
+static files, restarts the existing three LabTech services and verifies
+the local HTTP site.
+
+The updater intentionally does not rewrite `.env`, managed environment,
+`deployment_settings.py`, systemd unit files, Nginx, media, plugin
+secrets, or database configuration. Schema migrations still change the
+database structure, and `pip install` may modify the existing virtual
+environment when requirements change. Backups are mandatory for that
+reason. A failed migration does **not** automatically roll back:
+database restores may discard legitimate writes. Review the log and
+migration history first.
+
+Update logs: `/var/log/labtech/update.log`.
+If it stops, check the reported phase, backup directory, and service logs.
+Do not delete existing VMs, media, the database, or the virtual environment.
+
+## Reconfiguration / fresh installation
+
+Run `install.sh` only for a new server or a deliberate configuration
+change. It still asks its normal initial configuration questions, installs
+system packages and manages Nginx and systemd units. The installer and
+updater now share their **Django runtime validation, migrations, and static
+collection code** (`deploy/lib/update_common.sh`) so the application
+activation steps remain consistent.
+
+```bash
+sudo env LABTECH_VENV_PYTHON=python3.13 /opt/labtech/deploy/install.sh
+```
+
+This command is *not* needed for routine upgrades. It may rewrite managed
+configuration and service units, so review those changes before rerunning
+on a production host.
 
 ## Configure DNS and optional HTTPS
 

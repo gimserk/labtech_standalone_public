@@ -1,0 +1,48 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}{{ title }}{% endblock %}
+{% block labtech_content %}
+<div class="container-fluid py-3" style="max-width:1450px">
+  <a href="{% url 'labtech_manage_course_content' course_id=course.id %}">&larr; Course Content</a>
+  <h2 class="mt-2">Course Lab Machine Mapping</h2>
+  <p class="text-muted">{{ course.title }} — {{ rows|length }} labs, {{ machine_count }} assigned machine definitions.</p>
+  <div class="alert alert-info">Use this page after importing a course to verify each lab is linked to the correct Proxmox template. Passwords are not displayed; leave Replace password blank to retain a stored password. This changes machine definitions for future lab launches, not already running clones.</div>
+  {% if read_only %}<div class="alert alert-warning">This course is archived. Machine definitions are read-only.</div>{% endif %}
+  <form method="post">
+    {% csrf_token %}
+    {% for row in rows %}
+    <details class="card mb-3" {% if not row.machine_forms %}open{% endif %}>
+      <summary class="card-header" style="cursor:pointer"><strong>{{ row.lab.title }}</strong> <span class="text-muted">({{ row.machine_forms|length }} machines)</span></summary>
+      <div class="card-body">
+        {% if row.machine_forms %}
+          {% for entry in row.machine_forms %}
+            <div class="border rounded p-3 mb-3">
+              <h3 class="h6">{{ entry.machine.name }}</h3>
+              {% for error in entry.form.non_field_errors %}<div class="alert alert-danger">{{ error }}</div>{% endfor %}
+              <div class="row g-3">
+                {% for field in entry.form.visible_fields %}
+                  <div class="{% if field.field.widget.input_type == 'checkbox' %}col-lg-3{% else %}col-md-6 col-lg-4{% endif %}">
+                    {% if field.field.widget.input_type == 'checkbox' %}
+                      <div class="form-check mt-4">{{ field }} <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label></div>
+                    {% else %}
+                      <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                      {{ field }}
+                    {% endif %}
+                    {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-warning">No machines attached to this lab.</p>
+        {% endif %}
+        <a href="{% url 'labtech_manage_lab_machines' course_id=course.id lab_id=row.lab.id %}">Add or remove machines in this lab</a>
+      </div>
+    </details>
+    {% empty %}
+    <p>No labs in this course yet.</p>
+    {% endfor %}
+    {% if not read_only and machine_count %}<button type="submit" class="btn btn-primary mb-4">Save All Machine Mappings</button>{% endif %}
+  </form>
+</div>
+{% endblock %}

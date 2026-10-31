@@ -91,7 +91,7 @@
     <div class="page-header">
         <h1>{{ title }}</h1>
         <p class="text-muted">A state monitor belongs to this building VM. When its reported value changes from nonmatching to matching, LabTech queues an attack command for the selected ESP32 pin in this building.</p>
-        <p class="text-muted">Enable automatic QEMU Guest Agent polling for this VM on the building page. Choose Linux or Windows and save. The VM must be running with the QEMU Guest Agent installed and operational. Supported checks: service state, file existence, SHA-256 hash. Database query execution is not supported. MQTT command dispatch must be enabled separately on the server.</p>
+        <p class="text-muted">Set the guest OS and enable automatic QEMU Guest Agent polling below. Save settings to enroll the VM. The VM must be running with the QEMU Guest Agent installed and operational. Supported checks: service state, file existence, file content and SHA-256 hash. Database query execution is not supported. MQTT command dispatch must be enabled separately on the server.</p>
     </div>
 
     <div class="row">
@@ -99,28 +99,81 @@
         <div class="col-lg-5 mb-4">
             <div class="card">
                 <div class="card-header">
-                    <h4>Add New Monitor</h4>
+                    <h4>Create QEMU Agent Check</h4>
                 </div>
                 <div class="card-body">
                     {% if not machine.building.attack_monitors.exists %}
                     <p class="text-muted">Create an Attack Monitor on this building, with a target ESP32 pin, before linking it as a trigger.</p>
                     {% endif %}
-                    <form method="post">
+                    <form method="post" novalidate>
                         {% csrf_token %}
-                        {{ form.as_p }}
-                        <button type="submit" class="btn btn-primary mt-3 w-100">Create Monitor</button>
+                        {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+                        {% for field in form %}
+                        <div class="mb-3">
+                            {{ field.label_tag }}
+                            {{ field }}
+                            {% if field.help_text %}<div class="small text-muted">{{ field.help_text }}</div>{% endif %}
+                            {% for error in field.errors %}<div class="text-danger small" role="alert">{{ error }}</div>{% endfor %}
+                        </div>
+                        {% endfor %}
+                        <button type="submit" class="btn btn-primary w-100">Save QEMU Agent Check</button>
                     </form>
+                    <p class="small text-muted mt-3">
+                        Examples: Linux service <code>sshd</code> equals <code>inactive</code>;
+                        file <code>/etc/hosts</code> equals <code>exists</code>;
+                        file content contains <code>ALERT</code>. Each check reads the existing building VM through Proxmox QEMU Guest Agent.
+                    </p>
                 </div>
             </div>
 
             <div class="card">
-                <div class="card-header"><h4>Automatic Agent Checks</h4></div>
+                <div class="card-header"><h4>QEMU Agent — Automatic Monitoring</h4></div>
                 <div class="card-body">
-                    <p>Guest OS: <strong>{{ machine.monitor_os_family }}</strong> · Automatic polling:
-                    <strong>{% if machine.monitor_enabled %}Enabled{% else %}Disabled{% endif %}</strong></p>
-                    <p>Last poll: {{ machine.monitor_last_polled_at|date:"Y-m-d H:i:s T"|default:"Never" }}
-                    {% if machine.monitor_last_error %}· <span class="text-danger">{{ machine.monitor_last_error }}</span>{% endif %}</p>
-                    <a href="{% url 'cybercity_building_detail' machine.building.cybercity.id machine.building.id %}" class="btn btn-secondary">Configure on Building Page</a>
+                    {% if not auto_monitor_enabled %}
+                    <div class="alert alert-warning">Automatic QGA polling is disabled in server settings. Contact your LabTech administrator.</div>
+                    {% endif %}
+                    <form method="post" action="{% url 'cybercity_machine_monitor_control' machine.building.cybercity.id machine.building.id machine.id %}">
+                        {% csrf_token %}<input type="hidden" name="action" value="settings">
+                        <input type="hidden" name="return_to" value="monitors">
+                        <div class="mb-3">
+                            <label for="monitor-os" class="form-label">Guest operating system</label>
+                            <select name="os_family" id="monitor-os" class="form-select">
+                                <option value="linux" {% if machine.monitor_os_family == 'linux' %}selected{% endif %}>Linux</option>
+                                <option value="windows" {% if machine.monitor_os_family == 'windows' %}selected{% endif %}>Windows</option>
+                            </select>
+                        </div>
+                        <label class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" name="enabled" value="yes" {% if machine.monitor_enabled %}checked{% endif %}>
+                            <span class="form-check-label">Automatically check this VM through Proxmox QEMU Guest Agent</span>
+                        </label>
+                        <button type="submit" class="btn btn-primary">Save Monitoring Settings</button>
+                    </form>
+                    <hr>
+                    <p class="small">
+                        <strong>VM status:</strong> {{ machine.status }}
+                        · <strong>VMID:</strong> {{ machine.proxmox_vmid|default:"Not provisioned" }}
+                        · <strong>Monitoring:</strong> {% if machine.monitor_enabled %}Enabled{% else %}Disabled{% endif %}
+                    </p>
+                    <p class="small">Last poll: {{ machine.monitor_last_polled_at|date:"Y-m-d H:i:s T"|default:"Never" }}</p>
+                    {% if machine.monitor_poll_claimed_at %}
+                    <p class="small text-muted">Poll queued or running since {{ machine.monitor_poll_claimed_at|date:"Y-m-d H:i:s T" }}; a stale claim expires automatically.</p>
+                    {% endif %}
+                    {% if machine.monitor_last_error %}
+                    <p class="text-danger small" role="status">Last QGA error: {{ machine.monitor_last_error }}</p>
+                    {% endif %}
+                    <form method="post" action="{% url 'cybercity_machine_monitor_control' machine.building.cybercity.id machine.building.id machine.id %}">
+                        {% csrf_token %}<input type="hidden" name="action" value="check">
+                        <input type="hidden" name="return_to" value="monitors">
+                        <button type="submit" class="btn btn-secondary"
+                                {% if not machine.monitor_enabled or machine.status != 'running' or not monitors or not auto_monitor_enabled %}disabled{% endif %}>
+                            Check Now — QEMU Agent
+                        </button>
+                    </form>
+                    <p class="small text-muted mt-2">Requires a running building VM, QEMU Guest Agent installed inside the guest, and an active LabTech worker/Beat scheduler. No downloadable agent is needed.</p>
+                    {% if not command_dispatch_enabled %}
+                    <p class="small text-muted">MQTT ESP attack dispatch is disabled on this server. Observations can still be collected, but pending commands will not be published automatically.</p>
+                    {% endif %}
+                    <p class="small text-muted">The first successful QEMU Agent reading establishes a baseline without triggering. Later automatic or Check Now readings may queue a real ESP Attack when the condition changes to matching. Use a safe output for initial testing.</p>
                 </div>
             </div>
         </div>
@@ -134,20 +187,25 @@
                 
                 {% if monitors %}
                     <div class="list-group list-group-flush">
-                        {% for monitor in monitors %}
+                        {% for state in monitor_states %}
+                        {% with monitor=state.monitor %}
                         <div class="monitor-list-item">
                             <div class="monitor-details">
                                 <h5 class="mb-1">{{ monitor.name }}</h5>
+                                <p><small><strong>Current status:</strong> {{ state.label }}</small></p>
                                 <p><small><strong>Type:</strong> {{ monitor.get_monitor_type_display }} — {% if monitor.is_active %}Enabled{% else %}Disabled{% endif %}</small></p>
                                 <p><small>
                                     <strong>Condition:</strong> Check if <code>{{ monitor.target }}</code> {{ monitor.get_comparison_type_display }} <code>{{ monitor.expected_value }}</code>
                                 </small></p>
                                 <p class="text-muted"><small>
-                                    <strong>Last Value:</strong> <code>{{ monitor.last_reported_value|default:"Never reported" }}</code>
+                                    <strong>Last Value:</strong> <code>{{ monitor.last_reported_value|default:"Never observed" }}</code>
                                     {% if monitor.last_reported_at %}
                                         ({{ monitor.last_reported_at|timesince }} ago)
                                     {% endif %}
                                 </small></p>
+                                {% if monitor.last_check_error %}
+                                <p class="text-danger"><small><strong>QGA error:</strong> {{ monitor.last_check_error }}</small></p>
+                                {% endif %}
                                 {% if monitor.trigger_on_match %}
                                 <p><small><strong>Triggers:</strong> {{ monitor.trigger_on_match.name }}{% if monitor.trigger_on_match.target_pin %} → {{ monitor.trigger_on_match.target_pin.esp32.name }} / {{ monitor.trigger_on_match.target_pin.name }}{% else %} (no ESP32 pin configured){% endif %}</small></p>
                                 {% endif %}
@@ -157,6 +215,7 @@
                                 <a href="{% url 'delete_machine_monitor' machine.building.cybercity.id machine.building.id machine.id monitor.id %}" class="btn btn-sm btn-danger">Delete</a>
                             </div>
                         </div>
+                        {% endwith %}
                         {% endfor %}
                     </div>
                 {% else %}

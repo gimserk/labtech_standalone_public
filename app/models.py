@@ -2872,6 +2872,7 @@ from .rubric_models import AssignmentRubric, RubricCriterion, RubricLevel, Rubri
 from .learning_outcome_models import CourseLearningOutcome, LearningOutcomeActivity  # noqa: E402,F401
 from .cybercity_command_models import CyberCityCommand  # noqa: E402,F401
 from .plugin_models import InstalledConnector, ConnectorConfiguration, PluginInstallJob, PluginAuditEvent  # noqa: E402,F401
+from .student_activity_models import StudentActivityEvent  # noqa: E402,F401
 
 
 class TekconNFCConfiguration(models.Model):

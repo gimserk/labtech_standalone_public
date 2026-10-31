@@ -48,6 +48,7 @@
             {% if can_edit_content %}
                 <a href="{% url 'manage_course_backups' course_id=course.id %}" class="btn btn-outline-secondary">Backups & Versions</a>
                 <a href="{% url 'bulk_update_content_dates' course_id=course.id %}" class="btn btn-info">Bulk Edit Dates</a>
+                <a href="{% url 'course_lab_machine_mapping' course_id=course.id %}" class="btn btn-outline-primary">Bulk Lab Machine Mapping</a>
                 <a href="{% url 'add_chapter' course_id=course.id %}" class="btn btn-primary">Add New Chapter</a>
             {% endif %}
             <a href="{% url 'instructor_my_courses' %}" class="btn btn-secondary">Back to Courses</a>

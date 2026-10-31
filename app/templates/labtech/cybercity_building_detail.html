@@ -225,7 +225,7 @@
                             <a href="#" class="btn btn-primary" style="background-color: var(--lt-secondary); cursor: not-allowed; opacity: 0.6;" aria-disabled="true" onclick="return false;">Console</a>
                         {% endif %}
                         
-                        <a href="{% url 'manage_machine_monitors' city.id building.id machine.id %}" class="btn btn-info">Monitors</a>
+                        <a href="{% url 'manage_machine_monitors' city.id building.id machine.id %}" class="btn btn-info">Configure Monitors</a>
                         
                         <a href="{% url 'cybercity_machine_edit' city.id building.id machine.id %}" class="btn btn-secondary">Edit</a>
                         {% if machine.status != 'provisioning' %}<a href="{% url 'cybercity_machine_delete' city.id building.id machine.id %}" class="btn btn-danger">Delete</a>{% endif %}
@@ -337,7 +337,7 @@
     <div class="card">
         <div class="card-header">
             <h3>ESP Attacks</h3>
-            <a href="{% url 'cybercity_attack_monitor_add' city.id building.id %}" class="btn btn-primary">Add Monitor</a>
+            <a href="{% url 'cybercity_attack_monitor_add' city.id building.id %}" class="btn btn-primary">Add ESP Attack</a>
         </div>
         <div class="card-body">
             <p class="text-muted">An ESP Attack maps an observed machine change to a pin command. Command queued/published means MQTT delivery is attempted; actual device execution requires an ESP32 status report or correlated acknowledgment.</p>

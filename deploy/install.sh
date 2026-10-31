@@ -8,6 +8,9 @@ OS_RELEASE_FILE="${LABTECH_OS_RELEASE:-/etc/os-release}"
 EFFECTIVE_UID="${LABTECH_INSTALL_EUID:-$EUID}"
 VENV_PYTHON="${LABTECH_VENV_PYTHON:-python3}"
 INSTALL_DIR=/opt/labtech
+# Fresh installs and noninteractive updates share the same application stages.
+# shellcheck source=lib/update_common.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)/lib/update_common.sh"
 ENV_FILE=/etc/labtech/labtech.env
 SETTINGS_FILE=/etc/labtech/deployment_settings.py
 LOG_FILE=/var/log/labtech/install.log
@@ -782,9 +785,7 @@ install_nginx_site() {
 }
 
 run_required_checks() {
-  "$INSTALL_DIR/venv/bin/python" -m pip check || return 1
-  run_manage check --deploy || return 1
-  run_manage makemigrations --check --dry-run || return 1
+  labtech_validate_update_runtime
 }
 run_full_tests() {
   # Test failures are an explicit warning policy, but all setup gates above remain fatal.
@@ -885,8 +886,7 @@ run_activation_pipeline() {
     local inspection_status=$?
     [[ "$inspection_status" == 1 ]] || return "$inspection_status"
   fi
-  run_manage migrate --noinput || return 1
-  run_manage collectstatic --noinput || return 1
+  labtech_apply_update_schema_and_static || return 1
   create_superuser_if_requested || return 1
   PHASE=services
   install_systemd_units || return 1
@@ -921,6 +921,12 @@ main() {
   [[ $# -eq 0 ]] || { usage >&2; return 64; }
   trap 'on_failure "$LINENO" "$?"' ERR
   preflight
+  # Prevent the interactive installer and the noninteractive updater from
+  # modifying the same checkout or database concurrently.
+  install -d -m 0700 /run/labtech
+  [[ ! -L /run/labtech/update.lock ]] || die 'Unsafe updater lock symlink.'
+  exec 9>/run/labtech/update.lock
+  flock -n 9 || die 'Another LabTech installer/update is running.'
   PHASE=configuration
   if [[ -f "$ENV_FILE" ]]; then load_existing_config "$ENV_FILE"; fi
   collect_configuration
