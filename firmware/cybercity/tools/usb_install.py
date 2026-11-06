@@ -10,9 +10,15 @@ from pathlib import Path
 import shutil
 import subprocess
 
-APPLICATION = ("device_startup.py", "mqtt_controller.py")
-CONFIGURATION = ("bootstrap_config.py", "mqtt_secrets.py")
-OPTIONAL = ("mqtt_tls_config.py",)
+# Every baseline runtime dependency must be installed, not only the entry point.
+APPLICATION = (
+    "device_startup.py", "labtech_https.py", "mqtt_controller.py",
+    "command_protocol.py", "firmware_report.py", "ota_single_app.py",
+    "secure_stage.py", "ota_staging.py",
+)
+CONFIGURATION = ("bootstrap_config.py", "mqtt_secrets.py", "labtech-ca.der")
+OPTIONAL = ("mqtt_tls_config.py", "ota_runtime_config.py", "ota_polling.py",
+            "health_observer.py")
 
 
 def prepare_commands(port, directory):
@@ -31,10 +37,12 @@ def prepare_commands(port, directory):
             raise ValueError("Bootstrap configuration contains placeholder: " + value)
     if "REPLACE_ME" in broker:
         raise ValueError("MQTT credentials still contain placeholders")
-    if "LABTECH_URL" not in bootstrap or "DEVICE_KEY" not in bootstrap:
+    if "LABTECH_URL" not in bootstrap or "DEVICE_KEY" not in bootstrap or "LABTECH_CA_CERT_FILE" not in bootstrap:
         raise ValueError("Bootstrap configuration missing required fields")
     if "MQTT_USER" not in broker or "MQTT_PASSWORD" not in broker:
         raise ValueError("MQTT credentials missing required fields")
+    if not (directory / "labtech-ca.der").read_bytes():
+        raise ValueError("Trusted LabTech CA file is empty")
     files = list(APPLICATION + CONFIGURATION)
     files.extend(name for name in OPTIONAL if (directory / name).is_file())
     return [

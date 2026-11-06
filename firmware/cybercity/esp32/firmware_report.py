@@ -4,10 +4,7 @@ try:
 except ImportError:
     import json
 
-try:
-    import urequests as requests
-except ImportError:
-    import requests
+import labtech_https as requests
 
 from bootstrap_config import LABTECH_URL, DEVICE_KEY
 

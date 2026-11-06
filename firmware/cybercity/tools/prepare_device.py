@@ -18,7 +18,17 @@ import urllib.request
 MAC_RE = re.compile(r"^(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
 
 
-def get_config(base_url, mac, device_key):
+def _ca_der(filename):
+    """Read a public HTTPS trust certificate; MicroPython expects DER data."""
+    content = pathlib.Path(filename).read_bytes()
+    if content.startswith(b"-----BEGIN CERTIFICATE-----"):
+        content = ssl.PEM_cert_to_DER_cert(content.decode("ascii"))
+    if not content or len(content) > 16384:
+        raise ValueError("Invalid LabTech CA certificate size")
+    return content
+
+
+def get_config(base_url, mac, device_key, ca_cert=None):
     if not MAC_RE.fullmatch(mac):
         raise ValueError("MAC must be AA:BB:CC:DD:EE:FF")
     parsed = urllib.parse.urlsplit(base_url)
@@ -26,7 +36,8 @@ def get_config(base_url, mac, device_key):
         raise ValueError("LabTech URL must be an HTTPS origin without credentials")
     url = base_url.rstrip("/") + "/api/firmware/v2/config/?" + urllib.parse.urlencode({"mac": mac})
     req = urllib.request.Request(url, headers={"Authorization": "Bearer " + device_key})
-    with urllib.request.urlopen(req, timeout=20, context=ssl.create_default_context()) as response:
+    context = ssl.create_default_context(cadata=_ca_der(ca_cert)) if ca_cert else ssl.create_default_context()
+    with urllib.request.urlopen(req, timeout=20, context=context) as response:
         config = json.load(response)
     if config.get("mac_address", "").upper() != mac.upper():
         raise ValueError("LabTech assignment MAC does not match requested MAC")
@@ -41,14 +52,18 @@ def write_private(path, content):
     flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
     fd = os.open(str(path), flags, 0o600)
     try:
-        with os.fdopen(fd, "w", encoding="utf-8") as output:
-            output.write(content)
+        if isinstance(content, bytes):
+            with os.fdopen(fd, "wb") as output:
+                output.write(content)
+        else:
+            with os.fdopen(fd, "w", encoding="utf-8") as output:
+                output.write(content)
     except BaseException:
         path.unlink(missing_ok=True)
         raise
 
 
-def prepare(output_dir, config, base_url, device_key, ssid, wifi_password):
+def prepare(output_dir, config, base_url, device_key, ssid, wifi_password, ca_cert=None):
     output_dir = pathlib.Path(output_dir)
     output_dir.mkdir(mode=0o700, parents=True, exist_ok=False)
     # Prevent untrusted paths or uploaded Python from being introduced here.
@@ -56,7 +71,10 @@ def prepare(output_dir, config, base_url, device_key, ssid, wifi_password):
                   "WIFI_SSID = " + repr(ssid) + "\n" +
                   "WIFI_PASSWORD = " + repr(wifi_password) + "\n" +
                   "LABTECH_URL = " + repr(base_url.rstrip("/")) + "\n" +
-                  "DEVICE_KEY = " + repr(device_key) + "\n")
+                  "DEVICE_KEY = " + repr(device_key) + "\n" +
+                  'LABTECH_CA_CERT_FILE = "labtech-ca.der"\n')
+    if ca_cert is not None:
+        write_private(output_dir / "labtech-ca.der", _ca_der(ca_cert))
     write_private(output_dir / "local_config.py",
                   "CONFIG = " + repr(config) + "\n" +
                   "DEVICE_ID = " + repr("dncc-esp32-" + config["mac_address"].replace(":", "").lower()) + "\n" +
@@ -69,19 +87,22 @@ def main(argv=None):
     p.add_argument("--labtech", required=True, help="LabTech HTTPS origin")
     p.add_argument("--mac", required=True, help="Registered ESP32 Wi-Fi MAC")
     p.add_argument("--output", required=True, help="New private directory for the device")
+    p.add_argument("--ca-cert", help="Trusted LabTech HTTPS certificate (PEM/DER); required for board HTTPS")
     args = p.parse_args(argv)
     import getpass
     key = os.environ.get("DNCC_DEVICE_KEY") or getpass.getpass("ESP32 provisioning key: ")
     ssid = input("Wi-Fi SSID: ")
     password = getpass.getpass("Wi-Fi password: ")
     try:
-        config = get_config(args.labtech, args.mac.upper(), key)
-        prepare(args.output, config, args.labtech, key, ssid, password)
+        config = get_config(args.labtech, args.mac.upper(), key, ca_cert=args.ca_cert)
+        prepare(args.output, config, args.labtech, key, ssid, password, ca_cert=args.ca_cert)
     except (OSError, ValueError, KeyError) as exc:
         p.exit(1, "Provisioning failed: " + str(exc) + "\n")
     print("Prepared device assignment for:", config["building"]["name"])
     print("Files created in:", args.output)
     print("No firmware installed. Use trusted local flashing tools to copy files to the ESP32.")
+    if not args.ca_cert:
+        print("WARNING: Supply --ca-cert and add labtech-ca.der before USB install.")
     print("MQTT credentials must still be provisioned separately; do not use anonymous broker access.")
 
 

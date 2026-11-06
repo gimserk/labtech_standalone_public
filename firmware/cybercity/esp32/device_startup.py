@@ -6,10 +6,7 @@ authentication/TLS are validated. Does not download or execute remote code.
 import time
 import network
 import ubinascii
-try:
-    import urequests as requests
-except ImportError:
-    import requests
+import labtech_https as requests
 
 from bootstrap_config import WIFI_SSID, WIFI_PASSWORD, LABTECH_URL, DEVICE_KEY
 from mqtt_controller import BuildingController

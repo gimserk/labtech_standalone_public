@@ -1,16 +1,13 @@
 """Authenticated ESP32 firmware staging without activation.
 
-Requires firmware-specific verified HTTPS on the target MicroPython build.
+Requires the configured LabTech CA certificate on the target board.
 No downloaded main.py is executed or installed by this module.
 """
 import network
 import ubinascii
 import os
 
-try:
-    import urequests as requests
-except ImportError:
-    import requests
+import labtech_https as requests
 
 from bootstrap_config import LABTECH_URL, DEVICE_KEY
 from ota_staging import validate_manifest, prepare_staging, commit_staged_file

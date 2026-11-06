@@ -7,10 +7,7 @@ import network
 import ubinascii
 import ujson
 import time
-try:
-    import urequests as requests
-except ImportError:
-    import requests
+import labtech_https as requests
 
 # Copy the companion config.example.py to bootstrap_config.py and edit it.
 from bootstrap_config import WIFI_SSID, WIFI_PASSWORD, LABTECH_URL

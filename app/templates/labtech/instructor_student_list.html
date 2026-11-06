@@ -64,7 +64,7 @@
 
 <div class="card">
     <div class="card-header">
-        <h4 class="card-title mb-0">Enrolled Students</h4>
+        <h4 class="card-title mb-0">Enrolled Students <span class="badge bg-secondary ms-2">{{ student_count }}</span></h4>
     </div>
     <div class="table-responsive">
         <table class="table table-hover table-nowrap">
@@ -73,7 +73,7 @@
                     <th scope="col">Name</th>
                     <th scope="col">Email</th>
                     <th scope="col">Enrolled</th>
-                    <th scope="col">Status / Active Lab</th>
+                    <th scope="col">Lab Sessions / Consoles</th>
                     <th scope="col" class="text-end">Actions</th>
                 </tr>
             </thead>
@@ -81,7 +81,11 @@
                 {% for enrollment in student_enrollments %}
                 <tr>
                     <td>
-                        <img src="{{ enrollment.user.profile.profile_picture.url }}" alt="..." class="avatar avatar-sm rounded-circle me-2">
+                        {% if enrollment.user.profile.profile_picture %}
+                            <img src="{{ enrollment.user.profile.profile_picture.url }}" alt="" class="avatar avatar-sm rounded-circle me-2">
+                        {% else %}
+                            <span class="avatar avatar-sm rounded-circle me-2 bg-secondary text-white" aria-hidden="true"><i class="fas fa-user"></i></span>
+                        {% endif %}
                         <a class="text-heading font-semibold" href="{% url 'profile_detail' user_id=enrollment.user.id %}">
                             {{ enrollment.user.get_full_name|default:enrollment.user.username }}
                         </a>
@@ -89,21 +93,47 @@
                     <td>{{ enrollment.user.email }}</td>
                     <td>{{ enrollment.enrollment_date|date:"M d, Y" }}</td>
                     <td>
-                        {% with student_lab=active_labs_dict|get_item:enrollment.user.id %}
-                            {% if student_lab %}
-                                <span class="badge bg-success">Active</span>
-                                <div class="mt-1">
-                                    <small class="d-block text-muted">{{ student_lab.lab.title }}</small>
+                        {% for student_lab in enrollment.lab_instances_for_course %}
+                            <div class="border rounded p-2 mb-2">
+                                <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+                                    <strong>{{ student_lab.lab.title }}</strong>
+                                    {% if student_lab.status == 'active' and not student_lab.can_access_console %}
+                                        <span class="badge bg-secondary">Expired</span>
+                                    {% elif student_lab.status == 'active' %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% elif student_lab.status == 'building' %}
+                                        <span class="badge bg-warning text-dark">Building</span>
+                                    {% elif student_lab.status == 'deleting' %}
+                                        <span class="badge bg-secondary">Deleting</span>
+                                    {% elif student_lab.status == 'error' %}
+                                        <span class="badge bg-danger">Error</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ student_lab.get_status_display }}</span>
+                                    {% endif %}
+                                </div>
+                                <div class="d-flex flex-wrap gap-1">
                                     {% for machine in student_lab.machines.all %}
-                                        <a href="{% url 'guacamole_sso_redirect' machine.id %}" target="_blank" class="btn btn-sm btn-outline-secondary py-0 px-1" title="View Console for {{ machine.name }}">
-                                            <i class="fas fa-desktop"></i> {{ machine.name }}
-                                        </a>
+                                        {% if machine.can_access_console %}
+                                            <a href="{% url 'guacamole_sso_redirect' machine.id %}" target="_blank" rel="noopener noreferrer"
+                                               class="btn btn-sm btn-outline-primary py-1 px-2"
+                                               title="Open {{ machine.lab_machine_definition.name }} console">
+                                                <i class="fas fa-desktop" aria-hidden="true"></i>
+                                                {{ machine.lab_machine_definition.name }} Console
+                                            </a>
+                                        {% else %}
+                                            <span class="badge bg-secondary" title="Console unavailable until the lab is active and the machine is running with a VNC port.">
+                                                <i class="fas fa-desktop" aria-hidden="true"></i>
+                                                {{ machine.lab_machine_definition.name }} ({{ machine.status }})
+                                            </span>
+                                        {% endif %}
+                                    {% empty %}
+                                        <small class="text-muted">No machines provisioned yet.</small>
                                     {% endfor %}
                                 </div>
-                            {% else %}
-                                <span class="badge bg-secondary">Inactive</span>
-                            {% endif %}
-                        {% endwith %}
+                            </div>
+                        {% empty %}
+                            <span class="badge bg-secondary">No lab sessions</span>
+                        {% endfor %}
                     </td>
                     <td class="text-end">
                         {# --- UPDATED LINK --- #}
