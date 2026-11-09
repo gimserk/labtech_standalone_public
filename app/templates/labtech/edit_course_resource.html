@@ -32,14 +32,18 @@
         <div class="form-field">
             <label for="{{ form.title.id_for_label }}">{{ form.title.label }}</label>
             {{ form.title }}
+            {% if form.title.errors %}<div class="alert alert-danger" role="alert">{{ form.title.errors }}</div>{% endif %}
         </div>
         <div class="form-field">
             <label for="{{ form.category.id_for_label }}">{{ form.category.label }}</label>
             {{ form.category }}
+            {% if form.category.errors %}<div class="alert alert-danger" role="alert">{{ form.category.errors }}</div>{% endif %}
         </div>
         <div class="form-field">
             <label for="{{ form.file.id_for_label }}">{{ form.file.label }}</label>
             {{ form.file }}
+            {% if form.file.errors %}<div class="alert alert-danger" role="alert">{{ form.file.errors }}</div>{% endif %}
+            <small class="form-text text-muted">Leave the file field blank to keep the existing file.</small>
             {% if form.instance.file %}
             <div class="current-file">
                 Current file: <a href="{{ form.instance.file.url }}" target="_blank">{{ form.instance.file.name }}</a>
@@ -52,8 +56,9 @@
         <div class="form-field-checkbox">
             {{ form.visible_to_students }}
             <label for="{{ form.visible_to_students.id_for_label }}">{{ form.visible_to_students.label }}</label>
+            {% if form.visible_to_students.errors %}<div class="alert alert-danger" role="alert">{{ form.visible_to_students.errors }}</div>{% endif %}
         </div>
-        <br>
+        <p class="form-text text-muted">Uncheck to keep this resource available to instructors only; students will not see it in their course resources.</p>
         <button type="submit" class="btn btn-primary">Save Changes</button>
         <a href="{% url 'manage_course_resources' course_id=course.id %}" class="btn btn-secondary">Cancel</a>
     </form>

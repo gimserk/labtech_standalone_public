@@ -1294,11 +1294,6 @@ class CourseResource(models.Model):
     uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
-    def clean(self):
-        # Ensure that at least one visibility option is selected.
-        if not self.visible_to_students and not self.visible_to_instructors:
-            raise ValidationError("A resource must be visible to either students or instructors (or both).")
-
     def __str__(self):
         return f"{self.title} for {self.course.title}"
 
