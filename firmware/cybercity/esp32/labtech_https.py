@@ -1,8 +1,11 @@
-"""Verified HTTPS requests for the Cyber City MicroPython ESP32.
+"""Cyber City MicroPython HTTPS requests for an isolated classroom lab.
 
-Trust the LabTech server's self-signed certificate as a local CA (DER format).
-Unlike standard MicroPython requests, never silently use CERT_NONE. The same
-transport is used for configuration, status reporting, and OTA downloads.
+By default, accept any HTTPS certificate (including self-signed or expired)
+without authentication. Encryption remains, but a network attacker can
+impersonate LabTech and steal the provisioning key or tamper with OTA content.
+Set LABTECH_TLS_VERIFY = True and configure LABTECH_CA_CERT_FILE to opt in to
+certificate verification. Both modes restrict requests to the configured
+LabTech firmware API origin; neither mode follows redirects.
 """
 try:
     import usocket as socket
@@ -73,6 +76,34 @@ def _trusted_context():
         return context
     except (OSError, AttributeError, TypeError) as exc:
         raise ValueError("MicroPython TLS cannot load/verify the LabTech CA: %s" % exc)
+
+
+
+def _https_context():
+    """Select HTTPS trust behavior for the isolated Cyber City lab.
+
+    Explicitly set LABTECH_TLS_VERIFY = True in bootstrap_config.py to
+    validate the server's certificate with LABTECH_CA_CERT_FILE. Existing
+    bootstrap configs without the flag default to the requested lab mode.
+    """
+    import bootstrap_config
+    verify = getattr(bootstrap_config, "LABTECH_TLS_VERIFY", False)
+    if type(verify) is not bool:
+        raise ValueError("LABTECH_TLS_VERIFY must be True or False")
+    if verify:
+        return _trusted_context()
+    # Insecure lab-only mode: deliberately skip CA, expiry, and hostname
+    # verification. Keep HTTPS and the existing same-origin API restriction.
+    try:
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        if hasattr(context, "check_hostname"):
+            context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+        if context.verify_mode != ssl.CERT_NONE:
+            raise ValueError("TLS certificate verification could not be disabled")
+        return context
+    except (OSError, AttributeError, TypeError) as exc:
+        raise ValueError("MicroPython TLS cannot enable unverified HTTPS: %s" % exc)
 
 
 def _line(stream):
@@ -204,7 +235,7 @@ def request(method, url, headers=None, data=None, stream=False):
         plain.connect(addr[-1])
         # Verifies the configured local CA AND requests hostname checking.
         # Unsupported MicroPython ports must fail closed, not retry insecure.
-        wrapped = _trusted_context().wrap_socket(plain, server_hostname=host)
+        wrapped = _https_context().wrap_socket(plain, server_hostname=host)
         message = method + " " + path + " HTTP/1.1\r\n"
         for key, value in values.items():
             message += key + ": " + value + "\r\n"
