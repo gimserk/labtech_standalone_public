@@ -218,6 +218,13 @@ if ENABLE_LDAP:
 ACCOUNT_AUTHENTICATION_METHOD = 'username_email' 
 ACCOUNT_USER_MODEL_USERNAME_FIELD = 'username'
 LOGIN_EXEMPT_URLS = [
+    # Cyber City ESP32 devices authenticate with a per-device Bearer key at
+    # the view; do not redirect these requests to the browser login page.
+    'api_esp32_provisioning_v2',
+    'api_esp32_manifest_v2',
+    'api_esp32_firmware_report_v2',
+    'api_esp32_firmware_download_v2',
+    'api_esp32_library_download_v2',
     'account_login',
     'account_signup',
     'account_logout',
