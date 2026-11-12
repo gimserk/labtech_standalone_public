@@ -16,6 +16,8 @@ DRY_RUN=no
 REAPPLY=no
 RUN_TESTS=no
 # shellcheck source=lib/update_common.sh
+# Dynamic script-relative source path is safe after the checkout is validated.
+# shellcheck disable=SC1091
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)/lib/update_common.sh"
 log() { printf '[labtech-update] %s\n' "$*"; }
 fail() { log "ERROR: $*" >&2; return 1; }
@@ -32,7 +34,7 @@ Usage: sudo /opt/labtech/deploy/update.sh [--check | --reapply] [--run-tests]
   --check      Fetch/inspect target revision; change no app code, DB or services.
   --reapply    Retry migrations/static/restarts even when code is already current.
   --run-tests  Require entire Django suite to pass before migration.
-No prompts or changes to env/settings, systemd units, Nginx, or uploaded media.
+No prompts or changes to env/settings, core systemd units, Nginx, or uploaded media.\nInstalls/refreshes only the managed labtech-cybercity-status systemd unit.
 HELP
 }
 parse_args() {
@@ -173,6 +175,24 @@ apply_update() {
   run_manage migrate --plan || return 1
   labtech_apply_update_schema_and_static || return 1
 }
+install_cybercity_status_unit() {
+  PHASE=cybercity_status_service
+  local source_unit="$INSTALL_DIR/deploy/systemd/labtech-cybercity-status.service"
+  local target_unit=/etc/systemd/system/labtech-cybercity-status.service
+  [[ -f "$source_unit" && ! -L "$source_unit" && ! -L "$target_unit" ]] ||
+    { fail 'Missing or symlinked Cyber City status listener unit'; return 1; }
+  if [[ -f "$target_unit" ]]; then
+    grep -q '^# Managed by LabTech:' "$target_unit" ||
+      { fail 'Custom Cyber City status unit detected; refusing overwrite'; return 1; }
+    cp -p "$target_unit" "$BACKUP_DIR/labtech-cybercity-status.service" || return 1
+  fi
+  install -o root -g root -m 0644 "$source_unit" "$target_unit" || return 1
+  systemctl daemon-reload || return 1
+  systemctl enable labtech-cybercity-status.service || return 1
+  systemctl restart labtech-cybercity-status.service || return 1
+  systemctl is-active --quiet labtech-cybercity-status.service ||
+    { fail 'Cyber City status listener did not start'; return 1; }
+}
 restart_services() {
   PHASE=services
   local unit
@@ -233,6 +253,7 @@ update_main() {
   run_checks || return 1
   apply_update || return 1
   restart_services || return 1
+  install_cybercity_status_unit || return 1
   verify_health || return 1
   log "SUCCESS revision=$NEW_COMMIT backup=$BACKUP_DIR"
 }

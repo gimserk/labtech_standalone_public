@@ -1561,11 +1561,13 @@ class CyberCityESP32Pin(models.Model):
     PIN_TYPE_I2C_LED = 'I2C_LED'
     PIN_TYPE_I2C_SCREEN = 'I2C_SCREEN'
     PIN_TYPE_DUTY_CYCLE = 'DUTY_CYCLE'
+    PIN_TYPE_WS2811 = 'WS2811'
     PIN_TYPE_CHOICES = [
         (PIN_TYPE_LED, 'Simple LED (On/Off)'),
         (PIN_TYPE_I2C_LED, 'I2C LED'),
         (PIN_TYPE_I2C_SCREEN, 'I2C Screen'),
         (PIN_TYPE_DUTY_CYCLE, 'Duty Cycle (e.g., Servo/Motor)'),
+        (PIN_TYPE_WS2811, 'WS2811 addressable RGB LED strip'),
     ]
 
     esp32 = models.ForeignKey(
@@ -1577,6 +1579,20 @@ class CyberCityESP32Pin(models.Model):
     name = models.CharField(max_length=100, help_text="A functional name for the pin (e.g., 'Main Door Lock', 'Alarm Siren').")
     description = models.TextField(blank=True)
     pin_type = models.CharField(max_length=20, choices=PIN_TYPE_CHOICES, default=PIN_TYPE_LED)
+    led_count = models.PositiveSmallIntegerField(
+        default=1, help_text="WS2811 strip: number of LEDs (1–300). Ignored for other pin types."
+    )
+    led_brightness = models.PositiveSmallIntegerField(
+        default=64, help_text="WS2811 strip: maximum channel brightness (1–255; default 64)."
+    )
+
+    def clean(self):
+        super().clean()
+        if self.pin_type == self.PIN_TYPE_WS2811:
+            if self.led_count is None or not 1 <= self.led_count <= 300:
+                raise ValidationError({'led_count': 'WS2811 strips require 1 to 300 LEDs.'})
+            if self.led_brightness is None or not 1 <= self.led_brightness <= 255:
+                raise ValidationError({'led_brightness': 'Use a brightness from 1 through 255.'})
 
     mqtt_subtopic = models.CharField(
         max_length=255,

@@ -10,6 +10,8 @@ VENV_PYTHON="${LABTECH_VENV_PYTHON:-python3}"
 INSTALL_DIR=/opt/labtech
 # Fresh installs and noninteractive updates share the same application stages.
 # shellcheck source=lib/update_common.sh
+# Dynamic script-relative source path is safe after the checkout is validated.
+# shellcheck disable=SC1091
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)/lib/update_common.sh"
 ENV_FILE=/etc/labtech/labtech.env
 SETTINGS_FILE=/etc/labtech/deployment_settings.py
@@ -608,8 +610,9 @@ install_systemd_units() {
   render_web_unit > "$temp/labtech-web.service"
   render_worker_unit > "$temp/labtech-worker.service"
   render_beat_unit > "$temp/labtech-beat.service"
+  cp "$INSTALL_DIR/deploy/systemd/labtech-cybercity-status.service" "$temp/labtech-cybercity-status.service"
   systemd-analyze verify "$temp"/*.service || return 1
-  for unit in labtech-web labtech-worker labtech-beat; do
+  for unit in labtech-web labtech-worker labtech-beat labtech-cybercity-status; do
     [[ ! -L "/etc/systemd/system/$unit.service" ]] || { die 'Refusing a symlinked systemd unit.'; return 1; }
     backup_managed_file "/etc/systemd/system/$unit.service" || return 1
     install -m 0644 "$temp/$unit.service" "/etc/systemd/system/$unit.service" || return 1
@@ -823,7 +826,7 @@ create_superuser_if_requested() {
 }
 activate_services() {
   local service
-  for service in labtech-web labtech-worker labtech-beat; do
+  for service in labtech-web labtech-worker labtech-beat labtech-cybercity-status; do
     systemctl enable "$service" || return 1
     systemctl restart "$service" || return 1
   done
@@ -858,7 +861,7 @@ configure_optional_tls() {
 }
 run_health_checks() {
   local service home_status
-  for service in mariadb redis-server nginx labtech-web labtech-worker labtech-beat; do
+  for service in mariadb redis-server nginx labtech-web labtech-worker labtech-beat labtech-cybercity-status; do
     systemctl is-active --quiet "$service" || { die "$service is inactive."; return 1; }
   done
   home_status="$(curl --silent --show-error --max-time 15 -o /dev/null -w '%{http_code}' \
@@ -903,7 +906,7 @@ print_summary() {
   log "Site: ${CONFIG[SITE_URL]}"
   log "Install: $INSTALL_DIR | Config: /etc/labtech | Media: $INSTALL_DIR/app/mediafiles"
   log "Backups: $BACKUP_ROOT | Installer log: $LOG_FILE"
-  log 'Services: labtech-web, labtech-worker, labtech-beat; systemctl status labtech-web labtech-worker labtech-beat'
+  log 'Services: labtech-web, labtech-worker, labtech-beat, labtech-cybercity-status'
   log 'Live logs: journalctl -fu labtech-web (also labtech-worker and labtech-beat)'
   log 'Allow inbound SSH 22 and HTTP 80; HTTPS 443 if TLS is enabled. Configure social login in Django Admin.'
   [[ -z "$NGINX_WARNING" ]] || warn "$NGINX_WARNING"

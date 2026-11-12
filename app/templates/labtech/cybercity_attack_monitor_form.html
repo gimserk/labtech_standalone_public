@@ -42,6 +42,17 @@
                 {% for error in field.errors %}<div class="alert alert-danger">{{ error }}</div>{% endfor %}
             </div>
         {% endfor %}
+        <datalist id="ws2811-led-modes">
+            <option value="OFF"></option>
+            <option value="NORMAL"></option>
+            <option value="WARNING"></option>
+            <option value="ERROR"></option>
+            <option value="INFO"></option>
+            <option value="MAINTENANCE"></option>
+            <option value="BUSY"></option>
+            <option value="RECOVERY"></option>
+            <option value="WHITE"></option>
+        </datalist>
         <div class="form-actions">
             <a href="{% url 'cybercity_building_detail' city.id building.id %}" class="btn btn-secondary">Cancel</a>
             <button type="submit" class="btn btn-primary">Save Monitor</button>

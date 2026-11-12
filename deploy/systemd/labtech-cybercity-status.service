@@ -1,0 +1,25 @@
+# Managed by LabTech: automatically ingest live status for every Cyber City.
+[Unit]
+Description=LabTech Cyber City automatic MQTT pin status listener
+Wants=network-online.target
+After=network-online.target mariadb.service
+
+[Service]
+Type=simple
+User=labtech
+Group=labtech
+WorkingDirectory=/opt/labtech
+EnvironmentFile=-/etc/labtech/labtech.env
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/bin/bash /opt/labtech/deploy/cybercity/run_status_listener.sh
+Restart=always
+RestartSec=10
+StartLimitIntervalSec=0
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

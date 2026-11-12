@@ -75,11 +75,11 @@
                     {{ form.as_p }}
                     <hr>
                     <h4>Pins</h4>
-                    <p class="text-muted small">Pin settings are delivered in the authenticated configuration response when the ESP32 starts or its controller explicitly refreshes configuration. The bundled default controller supports LED and duty-cycle outputs; I2C screen/LED modes require compatible custom firmware. Check GPIO restrictions for your ESP32 board before assigning pins.</p>
+                    <p class="text-muted small">Pin settings are delivered in the authenticated configuration response when the ESP32 starts or its controller explicitly refreshes configuration. The bundled controller supports LED, duty-cycle, and WS2811 addressable RGB strips. When you select WS2811, set the addressable LED count and a safe brightness (default 64/255). Modes: OFF, NORMAL, WARNING, ERROR, INFO, MAINTENANCE, BUSY, RECOVERY, WHITE. I2C screen/LED modes require compatible custom firmware. For WS2811 use a safe data GPIO, shared ground, a level shifter as required, and an external power supply sized for the strip. Avoid GPIO2/3 on typical ESP32 DevKits.</p>
                     {{ formset.management_form }}
                     {{ formset.non_form_errors }}
                     {% for pin_form in formset %}
-                        <div class="form-section">
+                        <div class="form-section esp-pin-form">
                             {{ pin_form.as_p }}
                         </div>
                     {% endfor %}
@@ -212,6 +212,21 @@
 {% block labtech_extra_body %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.esp-pin-form').forEach(function(section) {
+        const type = section.querySelector('select[name$="-pin_type"]');
+        const count = section.querySelector('input[name$="-led_count"]');
+        const brightness = section.querySelector('input[name$="-led_brightness"]');
+        if (!type || !count || !brightness) return;
+        function syncStripFields() {
+            const visible = type.value === 'WS2811';
+            for (const field of [count, brightness]) {
+                const wrapper = field.closest('p') || field.parentElement;
+                if (wrapper) wrapper.hidden = !visible;
+            }
+        }
+        type.addEventListener('change', syncStripFields);
+        syncStripFields();
+    });
     const addFormBtn = document.getElementById('add-library-form');
     const formList = document.getElementById('library-form-list');
     const totalFormsInput = document.getElementById('id_library-TOTAL_FORMS');
