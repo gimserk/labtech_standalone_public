@@ -14,3 +14,8 @@ LABTECH_TLS_VERIFY = False
 
 # Generate with: python manage.py issue_cybercity_esp32_key <MAC>
 DEVICE_KEY = "REPLACE_WITH_DEVICE_KEY"
+
+# Optional: the running ESP32 fetches and applies LabTech pin/MQTT changes
+# about every 30 seconds without restarting the microcontroller.
+# Valid range: 10-3600 seconds. Short intervals increase API traffic.
+CONFIG_REFRESH_INTERVAL_SECONDS = 30

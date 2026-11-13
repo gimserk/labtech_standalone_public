@@ -63,13 +63,121 @@ def fetch_config(wlan):
     return config
 
 
+# A running ESP32 periodically reloads its authenticated LabTech
+# configuration. No hardware reset is required for pin/strip/topic changes.
+# The value can be overridden in bootstrap_config.py (10-3600 seconds).
+DEFAULT_CONFIG_REFRESH_SECONDS = 30
+
+
+def effective_config(config):
+    """Only settings that affect a connected controller trigger a rebuild.
+
+    Firmware revisions are handled by the separate OTA mechanism; they
+    must not cause GPIO outputs to cycle off during a config refresh.
+    """
+    return (
+        config.get('device_id'), config.get('mac_address'),
+        config.get('building'), config.get('city'),
+        config.get('mqtt'), config.get('pins')
+    )
+
+
+def validate_runtime_config(config):
+    """Check a prospective layout before stopping a working MQTT controller."""
+    mqtt = config.get('mqtt')
+    pins = config.get('pins')
+    if not isinstance(mqtt, dict) or not isinstance(pins, list):
+        raise ValueError('Invalid MQTT or pin configuration')
+    base = mqtt.get('base_topic', '').rstrip('/')
+    if not mqtt.get('host') or not base or '+' in base or '#' in base:
+        raise ValueError('Invalid MQTT host/base topic')
+    port = int(mqtt.get('port', 1883))
+    if not 1 <= port <= 65535:
+        raise ValueError('Invalid MQTT port')
+    if port == 8883:
+        # Reject a new TLS broker configuration before taking an existing
+        # plaintext controller offline when this device lacks TLS trust data.
+        try:
+            from mqtt_tls_config import MQTT_TLS_ENABLED, MQTT_TLS_PARAMS
+        except ImportError:
+            MQTT_TLS_ENABLED = False
+            MQTT_TLS_PARAMS = None
+        if not MQTT_TLS_ENABLED or not isinstance(MQTT_TLS_PARAMS, dict):
+            raise ValueError('Broker TLS requires installed verified TLS settings')
+        if MQTT_TLS_PARAMS.get('server_hostname') != mqtt['host']:
+            raise ValueError('Broker TLS hostname does not match device certificate settings')
+    numbers = set()
+    topics = set()
+    for entry in pins:
+        if not isinstance(entry, dict):
+            raise ValueError('Invalid pin entry')
+        kind = entry.get('type')
+        # I2C types are still only supported by custom firmware; preserve
+        # the existing behavior of skipping them in BuildingController.
+        if kind not in ('LED', 'DUTY_CYCLE', 'WS2811', 'I2C_LED', 'I2C_SCREEN'):
+            raise ValueError('Unsupported pin type')
+        number = int(entry['number'])
+        topic = entry['topic']
+        if number < 0 or number in numbers:
+            raise ValueError('Invalid or duplicate GPIO number')
+        if (not isinstance(topic, str) or not topic.startswith(base + '/')
+                or topic in topics):
+            raise ValueError('Invalid or duplicate pin MQTT topic')
+        numbers.add(number)
+        topics.add(topic)
+        if kind == 'WS2811':
+            count = int(entry.get('led_count', 0))
+            brightness = int(entry.get('led_brightness', 0))
+            if not 1 <= count <= 300 or not 1 <= brightness <= 255:
+                raise ValueError('Invalid WS2811 strip count/brightness')
+            import neopixel  # Fail before disconnecting if the driver is absent.
+    return True
+
+
+class ConfigRefresher:
+    """Fetch new pin layout while retaining the live MQTT session on errors."""
+
+    def __init__(self, wlan, config, interval_seconds=DEFAULT_CONFIG_REFRESH_SECONDS):
+        self.wlan = wlan
+        self.config = config
+        self.pending_config = None
+        try:
+            seconds = int(interval_seconds)
+        except (TypeError, ValueError):
+            seconds = DEFAULT_CONFIG_REFRESH_SECONDS
+        if not 10 <= seconds <= 3600:
+            seconds = DEFAULT_CONFIG_REFRESH_SECONDS
+        self.interval_ms = seconds * 1000
+        self.last_poll_ms = time.ticks_ms()
+
+    def poll(self):
+        if time.ticks_diff(time.ticks_ms(), self.last_poll_ms) < self.interval_ms:
+            return False
+        self.last_poll_ms = time.ticks_ms()
+        try:
+            updated = fetch_config(self.wlan)
+            if effective_config(updated) == effective_config(self.config):
+                return False
+            validate_runtime_config(updated)
+            self.pending_config = updated
+            print('DNCC pin/controller configuration changed in LabTech')
+            return True
+        except (OSError, ValueError, KeyError, TypeError, ImportError) as error:
+            # Never stop a working controller because the API was temporarily
+            # unavailable or a new layout cannot be applied.
+            print('DNCC configuration refresh skipped:', str(error))
+            return False
+
+
 def run():
     # Retry with bounded exponential backoff. Hardware resets are avoided.
     delay = 2
+    pending_config = None
     while True:
         try:
             wlan = connect_wifi()
-            config = fetch_config(wlan)
+            config = pending_config if pending_config is not None else fetch_config(wlan)
+            pending_config = None
             print("DNCC city:", config["city"]["name"])
             print("DNCC building:", config["building"]["name"])
             print("Configured GPIO pins:", len(config["pins"]))
@@ -139,12 +247,31 @@ def run():
                         return True
                     observer.poll(connected=True)
                 idle_callback = health_idle
-            controller.run(on_idle=idle_callback,
+            import bootstrap_config
+            refresh_seconds = getattr(
+                bootstrap_config, 'CONFIG_REFRESH_INTERVAL_SECONDS',
+                DEFAULT_CONFIG_REFRESH_SECONDS
+            )
+            refresher = ConfigRefresher(wlan, config, refresh_seconds)
+            def live_config_idle():
+                # Preserve existing OTA/health behavior while adding a
+                # periodic authenticated configuration refresh.
+                if idle_callback is not None and idle_callback() is True:
+                    return True
+                return refresher.poll()
+            controller.run(on_idle=live_config_idle,
                            on_connected=report_connected_runtime)
             if restart_requested[0]:
-                # MQTT controller has run its safe-output/disconnect cleanup.
+                # Firmware activation (not pin changes) may require reset.
                 from machine import reset
                 reset()
+            if refresher.pending_config is not None:
+                # BuildingController safely disables old GPIO outputs and
+                # disconnects MQTT before returning. Rebuild from the freshly
+                # verified settings without any ESP32 power cycle/reset.
+                pending_config = refresher.pending_config
+                print('DNCC applying updated pin layout without reboot')
+                continue
         except (OSError, ValueError, KeyError) as error:
             print("DNCC connection/configuration failure:", str(error))
             print("Retrying in", delay, "seconds")

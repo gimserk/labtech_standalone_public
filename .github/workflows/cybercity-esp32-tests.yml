@@ -30,6 +30,7 @@ jobs:
           python -m unittest discover -s firmware/cybercity/tools -p 'test_labtech_https.py' -v
           python -m unittest discover -s firmware/cybercity/tools -p 'test_usb_install.py' -v
           python -m unittest discover -s firmware/cybercity/tools -p 'test_ws2811_modes.py' -v
+          python -m unittest discover -s firmware/cybercity/tools -p 'test_live_config_refresh.py' -v
           python -m unittest discover -s firmware/cybercity/tools -p 'test_runtime_health_wiring.py' -v
 
   windows_guided_installer:

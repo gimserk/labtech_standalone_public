@@ -56,7 +56,7 @@
     <p><strong>OTA target:</strong> {% if current_firmware %}v{{ current_firmware.version }}{% else %}Not published{% endif %}
        · <strong>Reported installed:</strong> {{ esp32.firmware_reported_version|default_if_none:"Unknown" }}
        · <strong>Last device check-in:</strong> {{ esp32.firmware_last_seen|default:"Never" }}</p>
-    <p class="text-muted">Pin configuration is served from the authenticated provisioning endpoint during ESP32 startup or an explicit configuration refresh. Saving pins does not immediately reconfigure a running device; restart or install compatible controller firmware and confirm a new report. Publishing firmware sets an OTA target, not a confirmed installation.</p>
+    <p class="text-muted">The updated Basic ESP32 controller checks LabTech for pin layout, WS2811 strip, and MQTT configuration changes about every 30 seconds while running. No hardware reset or manual restart is needed after you save. Applying a new layout briefly reconnects MQTT and resets managed outputs to OFF; resend commands to restore active states. Older controllers still require a manual restart or firmware update. Publishing firmware sets an OTA target, not a confirmed installation.</p>
     <a href="{% url 'cybercity_esp32_basic_firmware' city.id %}" class="btn btn-secondary">Download Basic ESP32 Firmware</a>
     <a href="{% url 'cybercity_building_detail' city.id building.id %}" class="btn btn-secondary">Back to Building</a>
 </div>
@@ -75,7 +75,7 @@
                     {{ form.as_p }}
                     <hr>
                     <h4>Pins</h4>
-                    <p class="text-muted small">Pin settings are delivered in the authenticated configuration response when the ESP32 starts or its controller explicitly refreshes configuration. The bundled controller supports LED, duty-cycle, and WS2811 addressable RGB strips. When you select WS2811, set the addressable LED count and a safe brightness (default 64/255). Modes: OFF, NORMAL, WARNING, ERROR, INFO, MAINTENANCE, BUSY, RECOVERY, WHITE. I2C screen/LED modes require compatible custom firmware. For WS2811 use a safe data GPIO, shared ground, a level shifter as required, and an external power supply sized for the strip. Avoid GPIO2/3 on typical ESP32 DevKits.</p>
+                    <p class="text-muted small">With updated Basic ESP32 firmware, pin changes are picked up automatically within about 30 seconds through the authenticated configuration API; changed settings reinitialize managed GPIO outputs in their safe OFF state. The bundled controller supports LED, duty-cycle, and WS2811 addressable RGB strips. When you select WS2811, set the addressable LED count and a safe brightness (default 64/255). Modes: OFF, NORMAL, WARNING, ERROR, INFO, MAINTENANCE, BUSY, RECOVERY, WHITE. I2C screen/LED modes require compatible custom firmware. For WS2811 use a safe data GPIO, shared ground, a level shifter as required, and an external power supply sized for the strip. Avoid GPIO2/3 on typical ESP32 DevKits.</p>
                     {{ formset.management_form }}
                     {{ formset.non_form_errors }}
                     {% for pin_form in formset %}
