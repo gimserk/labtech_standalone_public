@@ -1,0 +1,18 @@
+THE CONNECTED HOME
+INSTRUCTOR-ONLY ANSWER KEY
+Chapter 12
+Source: uploaded textbook p. 246
+
+Chapter 12 Answer Key
+1. c) The Physical Layer (plugs and cables)
+2. False. The tracert / traceroute command maps the path; ping just tests for a reply.
+3. c) Modem first, then router.
+4. c) Default Gateway
+5. a) With the laptop.
+6. True.
+7. b) ipconfig
+8. c) Your device is connected to the router, but the router can't connect to the
+internet.
+9. d) Your device was able to successfully send a signal to and receive a reply from the
+destination.
+10. b) Is failing to get a valid IP address from the router.

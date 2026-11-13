@@ -1,0 +1,24 @@
+THE CONNECTED HOME
+INSTRUCTOR-ONLY ANSWER KEY
+Chapter 8
+Source: uploaded textbook p. 174
+
+Chapter 8 Answer Key
+1. b) Virus (A virus requires a host file and human interaction to spread.)
+2. c) They patch security holes (vulnerabilities) before criminals can exploit them.
+(This is the primary security function of updates.)
+3. b) 3 copies of your data, on 2 different media, with 1 copy offsite. (This is the
+core definition of the 3-2-1 rule.)
+4. b) It looks for suspicious behavior, like a program trying to encrypt all your files.
+(This allows it to detect new, unknown threats.)
+5. c) It automatically creates an offsite copy of your data, protecting it from local
+disasters. (This is the key advantage and fulfills the most important part of the 3-2-1  rule.)
+6. c) The Principle of Least Privilege (This limits the potential damage from a security
+breach.)
+7. b) Worm (A worm is defined by its ability to self-propagate across a network.)
+8. c) It limits the damage malware can do if your account is compromised.
+(Malware running on a standard account cannot access or change critical system  files.)
+9. b) It does not protect against a local disaster like a fire or theft. (It fails the "1
+offsite copy" rule.)
+10. c) A program that records every keystroke you make to steal your passwords.
+(This is a classic example of a keylogger, a type of spyware.)

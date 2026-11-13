@@ -2881,7 +2881,8 @@ class FileSubmission(models.Model):
     """The actual file submitted by the student and the instructor's grade/feedback."""
     activity = models.ForeignKey(FileSubmissionActivity, on_delete=models.CASCADE, related_name='submissions')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='file_submissions')
-    file = models.FileField(upload_to=student_submission_upload_path, validators=[validate_safe_file])
+    # Kept for existing installs and old file references; new uploads use attachments.
+    file = models.FileField(upload_to=student_submission_upload_path, validators=[validate_safe_file], blank=True)
     submitted_at = models.DateTimeField(auto_now_add=True)
     
     # Grading fields
@@ -2897,6 +2898,34 @@ class FileSubmission(models.Model):
 
     def __str__(self):
         return f"Submission by {self.user.username} for {self.activity.title}"
+
+
+def student_submission_attachment_path(instance, filename):
+    """Collision-resistant storage path for each file in a student submission."""
+    from pathlib import Path
+    extension = Path(filename).suffix.lower()
+    return (
+        f"submissions/course_{instance.submission.activity.course_id}/"
+        f"activity_{instance.submission.activity_id}/"
+        f"student_{instance.submission.user_id}/{uuid.uuid4().hex}{extension}"
+    )
+
+
+class FileSubmissionAttachment(models.Model):
+    """An uploaded file belonging to one student's assignment submission."""
+    submission = models.ForeignKey(
+        FileSubmission, on_delete=models.CASCADE, related_name='attachments')
+    file = models.FileField(
+        upload_to=student_submission_attachment_path, validators=[validate_safe_file])
+    original_filename = models.CharField(max_length=255)
+    size_bytes = models.PositiveBigIntegerField(default=0)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('uploaded_at', 'pk')
+
+    def __str__(self):
+        return f"{self.original_filename} ({self.submission})"
 
 # Keep models registered under the app label while isolating the lab check schema.
 from .lab_check_models import StepCheck, ValidationLease, ValidationRun, ValidationResult  # noqa: E402,F401

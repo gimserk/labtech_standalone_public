@@ -1,0 +1,17 @@
+THE CONNECTED HOME
+INSTRUCTOR-ONLY ANSWER KEY
+Chapter 10
+Source: uploaded textbook p. 208
+
+Chapter 10 Answer Key
+1. b) A network of physical, everyday objects that have been connected to the internet.
+2. False
+3. b) It contains a potential security breach, protecting your main computers and
+phones.
+4. c) Poor Wi-Fi Signal Strength
+5. b) Change the default administrator password.
+6. True
+7. b) Network Segmentation
+8. b) They can still have security flaws that could be exploited.
+9. b) To improve the accuracy of the voice recognition service.
+10. False

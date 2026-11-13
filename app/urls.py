@@ -413,6 +413,7 @@ urlpatterns = [
 
     # --- Student File Submission ---
     path('courses/<int:course_id>/file-submission/<int:activity_id>/take/', app_views.take_file_submission_view, name='take_file_submission'),
+    path('courses/<int:course_id>/file-submission/<int:activity_id>/attachments/<int:attachment_id>/download/', app_views.download_file_submission_attachment_view, name='download_file_submission_attachment'),
 ]
 
 urlpatterns += [

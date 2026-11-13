@@ -1,0 +1,17 @@
+THE CONNECTED HOME
+INSTRUCTOR-ONLY ANSWER KEY
+Chapter 1
+Source: uploaded textbook p. 46
+
+Chapter 1 Quiz Answer Key
+1. b) To translate signals between your ISP and your local network
+2. MAC (Media Access Control) address
+3. d) Router
+4. A Network Switch
+5. b) Gateway
+6. Coaxial, Fiber Optic, and DSL
+7. d) RJ45
+8. T568B
+9. c) The Online/Globe light
+10. The modem cannot find or lock onto a signal from the ISP. The problem is likely with
+the ISP's service or the physical line coming into the home.

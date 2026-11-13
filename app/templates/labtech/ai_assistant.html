@@ -48,6 +48,60 @@
         color: var(--lt-text);
         border-bottom-left-radius: 0.25rem;
     }
+    /* Rendered tutor Markdown must remain readable in every appearance mode. */
+    .message.assistant .content {
+        min-width: 0;
+        max-width: 100%;
+        overflow-wrap: anywhere;
+    }
+    .message.assistant .content > :last-child { margin-bottom: 0; }
+    .message.assistant .content :is(p, ul, ol, blockquote, pre, table) {
+        margin-bottom: 0.75rem;
+    }
+    .message.assistant .content :is(ul, ol) { padding-left: 1.5rem; }
+    .message.assistant .content :is(h1, h2, h3, h4, h5, h6) {
+        font-size: 1.15rem;
+        font-weight: 700;
+        line-height: 1.35;
+        margin: 0.85rem 0 0.45rem;
+    }
+    .message.assistant .content pre {
+        max-width: 100%;
+        overflow-x: auto;
+        padding: 0.75rem;
+        background: var(--lt-surface);
+        color: var(--lt-text);
+        border: 1px solid var(--lt-border);
+        border-radius: 0.375rem;
+    }
+    .message.assistant .content pre code {
+        color: inherit;
+        white-space: pre;
+        font-size: 0.9em;
+    }
+    .message.assistant .content :not(pre) > code {
+        padding: 0.1rem 0.25rem;
+        background: var(--lt-surface);
+        color: var(--lt-text);
+        border-radius: 0.25rem;
+    }
+    .message.assistant .content table {
+        display: block;
+        max-width: 100%;
+        width: max-content;
+        overflow-x: auto;
+        border-collapse: collapse;
+    }
+    .message.assistant .content :is(th, td) {
+        border: 1px solid var(--lt-border);
+        padding: 0.4rem 0.65rem;
+        text-align: left;
+    }
+    .message.assistant .content blockquote {
+        border-left: 3px solid var(--lt-border);
+        padding-left: 0.8rem;
+        color: var(--lt-text);
+    }
     [data-bs-theme="dark"] .message.assistant .content {
         background-color: var(--lt-surface-muted);
         color: var(--lt-text);
@@ -123,6 +177,9 @@
 {% endblock %}
 
 {% block labtech_extra_body %}
+<script src="{% static 'labtech/vendor/showdown-2.1.0.min.js' %}"></script>
+<script src="{% static 'labtech/vendor/dompurify-3.4.17.min.js' %}"></script>
+<script src="{% static 'labtech/js/ai_tutor_markdown.js' %}"></script>
 <script src="{% static 'labtech/js/ai_stream.js' %}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -171,6 +228,18 @@ document.addEventListener('DOMContentLoaded', function () {
         courseSelect.disabled = true;
 
         const assistantMessageContent = addMessage('assistant', '', true);
+        let renderFrame = null;
+        let latestText = '';
+
+        const renderResponse = () => {
+            renderFrame = null;
+            if (window.LabTechTutorMarkdown) {
+                LabTechTutorMarkdown.render(assistantMessageContent, latestText);
+            } else {
+                assistantMessageContent.textContent = latestText;
+            }
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        };
 
         try {
             const response = await fetch("{% url 'ai_assistant_proxy' %}", {
@@ -190,14 +259,21 @@ document.addEventListener('DOMContentLoaded', function () {
                 throw new Error(errorData.error || `Server error! Status: ${response.status}`);
             }
 
-            assistantMessageContent.innerHTML = '';
+            assistantMessageContent.replaceChildren();
             const fullResponse = await LabTechAIStream.consume(response, text => {
-                assistantMessageContent.textContent = text;
-                chatMessages.scrollTop = chatMessages.scrollHeight;
+                latestText = text;
+                // Re-parse once per animation frame instead of once per network chunk.
+                if (renderFrame === null) {
+                    renderFrame = requestAnimationFrame(renderResponse);
+                }
             });
+            if (renderFrame !== null) cancelAnimationFrame(renderFrame);
+            latestText = fullResponse;
+            renderResponse();  // Always flush the complete, final Markdown.
             conversationHistory.push({ role: 'assistant', content: fullResponse });
 
         } catch (error) {
+            if (renderFrame !== null) cancelAnimationFrame(renderFrame);
             console.error('Error communicating with AI tutor:', error);
             assistantMessageContent.textContent = `Sorry, an error occurred: ${error.message}`;
             conversationHistory.pop();

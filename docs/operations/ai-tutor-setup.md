@@ -28,3 +28,37 @@ stay out of the prompt. An uploaded scanned PDF needs OCR before it becomes
 searchable; audio and video need authored text descriptions. Retrieval is
 keyword-based and bounded; the model can still make mistakes, so instructors
 should verify consequential answers against course materials.
+
+
+## Student chat Markdown rendering
+
+The AI Tutor chat displays assistant replies as Markdown, including headings,
+bold/italic text, ordered and unordered lists, fenced code blocks, tables, and
+links. Markdown is parsed using the **locally hosted** Showdown 2.1.0 and
+sanitized using **locally hosted** DOMPurify 3.4.17. No CDN request or new
+Python package is required. Unsafe HTML, event attributes, images, forms, and
+active content are not allowed in tutor output. Student-authored messages,
+network errors, and conversation-history payloads remain plain text. If the
+renderer cannot load, answers fall back to plain text rather than trusting
+unfiltered HTML.
+
+The locally vendored JavaScript and upstream notices are under
+`app/static/labtech/vendor/`. The streaming response is
+re-rendered at most once per animation frame and flushed on completion.
+If you deploy with Django `collectstatic`, collect the new static
+files as part of the normal `deploy/update.sh` upgrade.
+
+Checks before release:
+
+```shell
+node --test tests/js/ai_tutor_markdown.test.cjs
+python manage.py test app.test_ai_tutor --settings=app.test_settings
+```
+
+For a browser acceptance test, sign in as a student and ask the tutor to
+"answer using a Markdown heading, bold text, a numbered list, a fenced
+PowerShell command, and a two-column table." Confirm all elements render in
+light, dark, and high-contrast modes; verify long code and tables scroll inside
+the chat message. Check that literal HTML such as
+`<img src=x onerror=alert(1)>` does not execute. Test both
+direct OpenAI and OpenWebUI when available, since both use the same chat page.

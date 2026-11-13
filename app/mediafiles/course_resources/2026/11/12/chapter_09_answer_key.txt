@@ -1,0 +1,17 @@
+THE CONNECTED HOME
+INSTRUCTOR-ONLY ANSWER KEY
+Chapter 9
+Source: uploaded textbook p. 192
+
+Chapter 9 Answer Key
+1. c) A long, unique passphrase with numbers and symbols
+2. False
+3. c) A VPN (Virtual Private Network)
+4. c) A major red flag that the app is deceptive and may be malicious.
+5. d) Smishing
+6. b) Remote Wipe
+7. True
+8. b) An Evil Twin attack
+9. Any two of the following: Play a sound, remotely lock the device, display a message
+on the lock screen.
+10. b) They offer a vetting and security scanning process for apps.

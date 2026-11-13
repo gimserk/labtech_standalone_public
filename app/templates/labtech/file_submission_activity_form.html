@@ -1,4 +1,4 @@
-{% extends "labtech/generic_base.html" %}
+{% extends "labtech/generic_base.html" %}{% load student_rubrics %}
 
 {% block labtech_title %}{{ title }}{% endblock %}
 
@@ -45,6 +45,11 @@
             </form>
         </div>
     </div>
+    {% if activity %}
+    <div class="mt-4">
+        {% student_rubric_card activity %}
+    </div>
+    {% endif %}
 </div>
 
 <style>

@@ -1,0 +1,62 @@
+THE CONNECTED HOME — LABTECH IMPORT & INSTRUCTOR REVIEW
+
+Course package: The_Connected_Home_LabTech_Complete.coursepkg
+Source: the_connected_home.pdf (260 pages), supplied by the course owner.
+Created from the current LabTech .coursepkg manifest schema, version 2.
+
+CONTENT COUNTS
+{
+  "course_title": "The Connected Home: A Practical Guide to Your Network and Digital Security",
+  "source_pages": 260,
+  "toc_entries": 168,
+  "chapters": 12,
+  "text_pages": 156,
+  "native_quizzes": 12,
+  "native_questions": 120,
+  "question_types": {
+    "MCQ": 89,
+    "SA": 21,
+    "TF": 10
+  },
+  "lab_walkthroughs_draft": 12,
+  "lab_steps": 35,
+  "file_submission_activities": 24,
+  "flashcards": 43,
+  "instructor_answer_keys": 12,
+  "figures_unique": 57,
+  "figures_placed": 57,
+  "resources": 14
+}
+
+IMPORT
+1. In LabTech, open Import Course as a staff user.
+2. Upload this .coursepkg file (not the original PDF).
+3. LabTech creates an INACTIVE copy with prefix "Import of ".
+4. Open the course content manager to inspect pages, resources, quizzes and labs.
+5. Activate the course after reviewing and confirming visibility.
+
+IMPORTANT CONTENT & RELEASE NOTES
+- All contents-section entries are converted to TextPage EXCEPT the twelve answer keys.
+- Answer keys are stored in Course Resources with visible_to_students=False.
+- The original PDF is stored as a student-visible textbook resource.
+- Text pages contain source prose and all embedded original figures, where present.
+- The Chapter 6 quiz is mislabeled "Chapter 5 Quiz" in the source PDF; this import
+  identifies the quiz in Chapter 6 correctly without rewriting the source book.
+- Quiz questions are copied from the text with correct multiple-choice selections.
+- Native quizzes are initially UNPUBLISHED so instructors can review exact-match
+  short-answer grading rules (and accept additional valid answers).
+- 12 native Lab objects are created as UNPUBLISHED guided lab steps with NO VM templates.
+  They are based on the textbook's physical/self-directed lab instructions. If your
+  LabTech deployment expects machines, assign templates and test prior to publishing.
+- Each lab and critical-thinking exercise also has a separate graded file-submission
+  activity for documenting student work.
+- Nothing is automatically assigned to real Proxmox templates or student accounts.
+- The current LabTech validator rejects top-level rubrics and learning_outcomes
+  despite the exporter sometimes writing them, so those sections are not present
+  in this import package. The actual textbook is reproduced in course content.
+- Figures were included from the user's PDF; there are no external dependencies.
+
+COMPLETENESS
+Each TOC section is accounted for. Test the import on a staging deployment before
+production use. This package was statically checked against the schema but was not
+executed against your deployed Django database.

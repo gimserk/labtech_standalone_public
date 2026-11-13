@@ -1,0 +1,23 @@
+THE CONNECTED HOME
+INSTRUCTOR-ONLY ANSWER KEY
+Chapter 7
+Source: uploaded textbook p. 154
+
+Chapter 7 Answer Key
+1. c) Vishing (Vishing is phishing conducted over a voice call.)
+2. d) The sender's email address domain does not match the company's official
+domain. (While the others are red flags, this is the hardest for a scammer to fake  and the easiest to verify.)
+3. c) Pretexting (Pretexting involves creating a detailed backstory or pretext to build
+trust.)
+4. d) Close the email and log into your bank's website using a trusted bookmark or
+by typing the address yourself. (This uses an independent, trusted channel for  verification.)
+5. d) Greed (The scam is appealing to the victim's desire for a prize.)
+6. a) Smishing (Smishing is phishing conducted via SMS text message.)
+7. c) Hover your mouse over the link to see its true destination URL. (This reveals if
+the link text is masking a malicious URL.)
+8. b) The IRS does not make threatening phone calls and never demands payment
+in gift cards. (This method of payment is a classic sign of a scam.)
+9. d) Your cell phone carrier (7726, which spells SPAM, is the universal number for
+reporting smishing to carriers.)
+10. a) Social Engineering (This is the umbrella term for all attacks that target human
+psychology.)

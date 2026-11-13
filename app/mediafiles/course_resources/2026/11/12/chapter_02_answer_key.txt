@@ -1,0 +1,18 @@
+THE CONNECTED HOME
+INSTRUCTOR-ONLY ANSWER KEY
+Chapter 2
+Source: uploaded textbook p. 66
+
+Chapter 2 Answer Key
+1. b) Data Packets
+2. Efficiency (multiple devices can send packets at the same time) and Reliability (only
+lost or corrupted packets need to be re-sent, not the entire file).
+3. c) MAC Address
+4. DNS stands for Domain Name System. Its function is to translate human-readable
+domain names (like www.google.com) into machine-readable IP addresses.
+5. c) Private IP Address
+6. NAT (Network Address Translation)
+7. b) IPv6
+8. The recipient's name.
+9. c) DHCP (Dynamic Host Configuration Protocol)
+10. Your network's public IP address.

@@ -1,0 +1,59 @@
+{% if rubric_missing %}
+<section class="card shadow-sm mb-4" aria-labelledby="missing-rubric-{{ rubric_activity.pk }}">
+  <div class="card-header"><h3 class="h5 mb-0" id="missing-rubric-{{ rubric_activity.pk }}">Assignment rubric</h3></div>
+  <div class="card-body">
+    <p>No rubric is attached to this assignment.</p>
+    <a href="{% url 'instructor_rubric_builder' rubric_course.id rubric_model_name rubric_activity.id %}" class="btn btn-outline-primary btn-sm">Create Rubric</a>
+  </div>
+</section>
+{% elif rubric %}
+<section class="card shadow-sm mb-4" aria-labelledby="student-rubric-title-{{ rubric.pk }}">
+  <div class="card-header">
+    <h3 class="h5 mb-0" id="student-rubric-title-{{ rubric.pk }}">Grading rubric — {{ rubric.title }}</h3>
+  </div>
+  <div class="card-body">
+    {% if rubric_is_instructor %}
+      {% if not rubric.published %}
+      <p class="text-body-secondary"><strong>Draft rubric:</strong> This rubric is not visible to students until you publish it.</p>
+      {% else %}
+      <p class="text-body-secondary"><strong>Published rubric:</strong> Students can review these criteria before submitting their work.</p>
+      {% endif %}
+      <p><a href="{% url 'instructor_rubric_builder' rubric_course.id rubric_model_name rubric_activity.id %}" class="btn btn-outline-primary btn-sm">Manage Rubric</a></p>
+    {% endif %}
+    {% if rubric.description %}<p>{{ rubric.description }}</p>{% endif %}
+    <p class="text-body-secondary">Review the criteria and performance expectations before completing this activity.</p>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle">
+        <caption>Grading criteria and performance levels for {{ rubric_activity.title }}</caption>
+        <thead><tr><th scope="col">Criterion</th><th scope="col">Expectations</th><th scope="col">Points possible</th></tr></thead>
+        <tbody>
+        {% for criterion in rubric.criteria.all %}
+          <tr>
+            <th scope="row">{{ criterion.title }}{% if criterion.description %}<div class="fw-normal text-body-secondary">{{ criterion.description }}</div>{% endif %}</th>
+            <td>
+              {% for level in criterion.levels.all %}
+                <div class="mb-2"><strong>{{ level.label }} ({{ level.points }} pts)</strong>{% if level.description %}: {{ level.description }}{% endif %}</div>
+              {% empty %}
+                <span class="text-body-secondary">Scoring is based on the criterion description.</span>
+              {% endfor %}
+            </td>
+            <td>{{ criterion.max_points }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="3">No scoring criteria are configured yet.</td></tr>
+        {% endfor %}
+        </tbody>
+        <tfoot><tr><th scope="row" colspan="2">Total possible</th><td><strong>{{ rubric.possible_points }}</strong></td></tr></tfoot>
+      </table>
+    </div>
+    {% if not rubric_is_instructor %}
+      {% if rubric_assessment %}
+      <p class="mb-2"><strong>Rubric grade:</strong> {{ rubric_assessment.awarded_points }} / {{ rubric.possible_points }}</p>
+      <a href="{% url 'student_rubric_feedback' rubric_course.id rubric_model_name rubric_activity.id %}">View detailed rubric feedback</a>
+      {% else %}
+      <p class="small text-body-secondary mb-0">Your criterion scores and feedback will appear when the instructor saves your grade.</p>
+      {% endif %}
+    {% endif %}
+  </div>
+</section>
+{% endif %}

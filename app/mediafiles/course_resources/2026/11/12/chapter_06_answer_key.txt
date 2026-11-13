@@ -1,0 +1,26 @@
+THE CONNECTED HOME
+INSTRUCTOR-ONLY ANSWER KEY
+Chapter 6
+Source: uploaded textbook p. 136
+
+Chapter 6 Answer Key
+1. c) To isolate visitor and untrusted devices from your main network. (This is the core
+security function, preventing access to your private files and devices.)
+2. d) WPA3 (WPA3 is the current standard, offering the strongest encryption and
+protection against brute-force password attacks.)
+3. b) It can be easily discovered with basic Wi-Fi scanning tools. (Because network
+traffic is still broadcast, any analyzer can detect the "hidden" network.)
+4. a) Length (A long passphrase is exponentially harder for a computer to crack than a
+short, complex one.)
+5. c) MAC Spoofing (This is the correct term for changing a device's MAC address in
+software to impersonate another device.)
+6. b) Change the default administrator password. (This is the master key to your
+network; leaving it as the default allows anyone to take control.)
+7. c) WPA2 (The mandatory implementation of AES was the key feature that made
+WPA2 the long-term, secure standard.)
+8. c) The public name of your Wi-Fi network. (This is the name that appears in the list
+of available networks.)
+9. a) Network Isolation (This is the correct term for separating one group of devices
+from another to contain potential threats.)
+10. b) Offline Brute-Force (dictionary) attacks (SAE makes it impossible to capture a
+handshake and guess the password offline, which was WPA2's main weakness.)

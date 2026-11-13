@@ -11,8 +11,8 @@
 {% for row in rows %}
 <tr>
 <td>{{ row.student.get_username }}</td>
-<td>{% if row.assessment.released %}Released{% elif row.assessment %}Draft{% else %}Not assessed{% endif %}</td>
-<td>{% if row.assessment %}{{ row.assessment.awarded_points }} / {{ rubric.possible_points }}{% else %}—{% endif %}</td>
+<td>{% if row.assessment.released %}Graded{% elif row.assessment %}Not graded{% else %}Not assessed{% endif %}</td>
+<td>{% if row.assessment.released %}{{ row.assessment.awarded_points }} / {{ rubric.possible_points }}{% else %}—{% endif %}</td>
 <td><a href="{% url 'instructor_rubric_assessment' course.id model_name activity.id row.student.pk %}">Grade rubric</a></td>
 </tr>
 {% empty %}<tr><td colspan="4">No enrolled students.</td></tr>{% endfor %}

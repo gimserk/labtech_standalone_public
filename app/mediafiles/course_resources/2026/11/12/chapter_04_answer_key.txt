@@ -1,0 +1,16 @@
+THE CONNECTED HOME
+INSTRUCTOR-ONLY ANSWER KEY
+Chapter 4
+Source: uploaded textbook p. 98
+
+Chapter 4 Answer Key
+1. b) Monitor and control network traffic based on security rules.
+2. The state table (or connection table).
+3. b) Port 443 (HTTPS)
+4. Port Forwarding
+5. c) It directly exposes a device on your private network to the internet.
+6. It allows them to automatically create port forwarding rules on the router.
+7. b) It has no authentication, so malware on any device can use it to open ports.
+8. A software firewall.
+9. b) Deny all traffic
+10. You should disable or delete the rules.

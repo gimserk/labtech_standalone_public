@@ -22,7 +22,7 @@
                     <tr>
                         <th class="ps-4">Student</th>
                         <th>Submitted At</th>
-                        <th>File</th>
+                        <th>Files</th>
                         <th>Status</th>
                         <th style="min-width: 350px;">Grade & Feedback</th>
                     </tr>
@@ -33,9 +33,17 @@
                         <td class="ps-4 fw-medium text-dark">{{ sub.user.get_full_name|default:sub.user.username }}</td>
                         <td class="text-muted small">{{ sub.submitted_at|date:"M d, Y h:i A" }}</td>
                         <td>
-                            <a href="{{ sub.file.url }}" class="btn btn-sm btn-outline-primary" target="_blank">
-                                <i class="fas fa-download me-1"></i> Download
-                            </a>
+                            <ul class="list-unstyled mb-0">
+                                {% for attachment in sub.attachments.all %}
+                                <li class="mb-2">
+                                    <a href="{% url 'download_file_submission_attachment' activity.course.id activity.id attachment.id %}" class="btn btn-sm btn-outline-primary text-break">
+                                        <i class="fas fa-download me-1" aria-hidden="true"></i> {{ attachment.original_filename }}
+                                    </a>
+                                </li>
+                                {% empty %}
+                                <li class="text-body-secondary small">No files attached.</li>
+                                {% endfor %}
+                            </ul>
                         </td>
                         <td>
                             {% if sub.is_graded %}
@@ -45,7 +53,15 @@
                             {% endif %}
                         </td>
                         <td class="pe-4">
-                            <!-- We wrap the grade/feedback in a mini-form for quick inline saving -->
+                            {% if rubric %}
+                            <div class="mb-2">
+                                <a class="btn btn-sm btn-outline-primary" href="{% url 'instructor_rubric_assessment' activity.course.id 'filesubmissionactivity' activity.id sub.user.id %}">
+                                    Grade with rubric
+                                </a>
+                                <p class="small text-body-secondary mt-1 mb-0">Saving a rubric grade immediately shows the score and feedback to the student.</p>
+                            </div>
+                            {% endif %}
+                            <!-- Quick-score form remains available for grading without detailed rubric criteria. -->
                             <form method="post" class="d-flex flex-column gap-2">
                                 {% csrf_token %}
                                 <input type="hidden" name="submission_id" value="{{ sub.id }}">

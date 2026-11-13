@@ -1,0 +1,24 @@
+THE CONNECTED HOME
+INSTRUCTOR-ONLY ANSWER KEY
+Chapter 5
+Source: uploaded textbook p. 118
+
+Chapter 5 Answer Key
+1. b) Range vs. Speed (2.4 GHz offers longer range; 5 GHz provides faster speeds.)
+2. c) 1, 6, 11 (These are the only three non-overlapping channels in the 2.4 GHz
+spectrum.)
+3. b) Microwave Oven (Microwaves operate at a frequency very close to 2.4 GHz,
+causing major interference.)
+4. d) OFDMA (This technology allows a router to deliver data to multiple devices in a
+single transmission, improving efficiency.)
+5. c) The device will connect, but only at Wi-Fi 4 speeds and capabilities. (Wi-Fi is
+backward compatible.)
+6. b) Lower frequency (A lower frequency means a longer wavelength, which is better
+at penetrating obstacles.)
+7. b) Wi-Fi 5 (802.11ac) (This standard brought gigabit speeds to the mainstream and
+is the most widely deployed technology in homes.)
+8. c) A Channel (A band is the entire highway; a channel is one of the lanes.)
+9. c) Absorbs them (Dense materials are very effective at absorbing the energy of radio
+waves, weakening the signal.)
+10. b) Modulation (This is the process of encoding digital data onto an analog carrier
+wave.)

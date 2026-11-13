@@ -1,4 +1,4 @@
-{% load static course_extras %}
+{% load static course_extras student_rubrics %}
 
 {% if not focused_content and learning_outcomes %}
 <section class="card mb-4 shadow-sm" aria-labelledby="learning-outcomes-title">
@@ -90,6 +90,7 @@
                 </a>
 
             {% endif %}
+            {% student_rubric_card focused_content %}
             <div class="content-nav">
                 <div class="nav-left">
                     {% if previous_item_url %}<a href="{{ previous_item_url }}" class="btn btn-secondary btn-nav">← Previous</a>{% endif %}

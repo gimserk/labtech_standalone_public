@@ -1,0 +1,20 @@
+THE CONNECTED HOME
+INSTRUCTOR-ONLY ANSWER KEY
+Chapter 3
+Source: uploaded textbook p. 82
+
+Chapter 3 Answer Key
+1. b) Dynamic Host Configuration Protocol
+2. Discover, Offer, Request, Acknowledge (DORA)
+3. c) 50%
+4. The pre-defined range of IP addresses that a DHCP server is allowed to assign to
+devices.
+5. c) To allow many devices on a private network to share a single public IP address.
+6. A printer (so computers can always find it) or a server (so users can always connect
+to it) or a gaming console (for port forwarding).
+7. b) It hides your private IP addresses, making your devices unreachable from the
+internet unless they initiate the connection.
+8. A DHCP reservation is configured on the router (the server), while a manual static IP
+is configured on the device itself (the client).
+9. d) The Router
+10. The Default Gateway address.
