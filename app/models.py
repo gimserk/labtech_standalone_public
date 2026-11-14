@@ -1986,6 +1986,12 @@ class CTF(models.Model):
     # Team settings
     allow_teams = models.BooleanField(default=True, help_text="Check to allow participants to form teams.")
     max_team_size = models.PositiveIntegerField(default=4, help_text="The maximum number of members allowed on a team.")
+    submissions_paused = models.BooleanField(default=False, help_text="Temporarily stop flag submissions and hint purchases without ending the event.")
+    scoreboard_frozen = models.BooleanField(default=False, help_text="Show the captured standings until the instructor unfreezes the scoreboard.")
+    scoreboard_snapshot = models.JSONField(default=list, blank=True, help_text="Standings captured when the public leaderboard was frozen.")
+    scoreboard_recent_snapshot = models.JSONField(default=list, blank=True, help_text="Recent solves captured when the public leaderboard was frozen.")
+    scoreboard_frozen_at = models.DateTimeField(null=True, blank=True)
+
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -2014,6 +2020,70 @@ class CTFTeam(models.Model):
         unique_together = ('ctf', 'name') # Team names must be unique per CTF.
 
 
+class CTFTeamInvitation(models.Model):
+    """Explicit, expiring team invitations; no membership change before acceptance."""
+    PENDING = 'pending'
+    ACCEPTED = 'accepted'
+    DECLINED = 'declined'
+    CANCELED = 'canceled'
+    STATUSES = [
+        (PENDING, 'Pending'), (ACCEPTED, 'Accepted'),
+        (DECLINED, 'Declined'), (CANCELED, 'Canceled'),
+    ]
+    ctf = models.ForeignKey(CTF, on_delete=models.CASCADE, related_name='team_invitations')
+    team = models.ForeignKey(CTFTeam, on_delete=models.CASCADE, related_name='invitations')
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='ctf_team_invitations')
+    invited_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='ctf_team_invites_sent')
+    status = models.CharField(max_length=12, choices=STATUSES, default=PENDING)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    responded_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['ctf', 'recipient'], condition=models.Q(status='pending'),
+                name='ctf_one_pending_invite_per_event_user',
+            ),
+        ]
+
+
+class CTFScoreAdjustment(models.Model):
+    """Audited score adjustments, independent from immutable successful solves."""
+    ctf = models.ForeignKey(CTF, on_delete=models.CASCADE, related_name='score_adjustments')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True, related_name='ctf_score_adjustments')
+    team = models.ForeignKey(CTFTeam, on_delete=models.CASCADE, null=True, blank=True, related_name='score_adjustments')
+    delta = models.IntegerField()
+    reason = models.CharField(max_length=500)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='ctf_adjustments_created')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(user__isnull=False, team__isnull=True) |
+                    models.Q(user__isnull=True, team__isnull=False)
+                ),
+                name='ctf_adjustment_solo_or_team',
+            ),
+        ]
+
+
+class CTFControlLog(models.Model):
+    """Auditable instructor decisions (release, pause, freeze, roster edits)."""
+    ctf = models.ForeignKey(CTF, on_delete=models.CASCADE, related_name='control_log')
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    action = models.CharField(max_length=80)
+    details = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+
 class CTFCategory(models.Model):
     """A category for challenges, like 'Crypto', 'Web', 'Forensics', etc."""
     name = models.CharField(max_length=50, unique=True)
@@ -2027,6 +2097,49 @@ class CTFCategory(models.Model):
 
 
 from .ctf_storage import CTFPrivateStorage
+
+class CTFChallengeCollection(models.Model):
+    """Instructor-owned organizational grouping for reusable challenge templates."""
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='ctf_bank_collections')
+    name = models.CharField(max_length=120)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name', 'pk']
+        constraints = [
+            models.UniqueConstraint(fields=['owner', 'name'], name='ctf_bank_unique_owner_collection'),
+        ]
+
+    def __str__(self):
+        return self.name
+
+
+class CTFChallengeTemplate(models.Model):
+    """Independent source-of-truth for CTF content; event instances remain snapshots.
+
+    Do not expose flag_hash or original challenge evidence through exports.
+    """
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='ctf_bank_templates')
+    collection = models.ForeignKey(CTFChallengeCollection, on_delete=models.SET_NULL, null=True, blank=True, related_name='templates')
+    category = models.ForeignKey('CTFCategory', on_delete=models.PROTECT, related_name='bank_templates')
+    name = models.CharField(max_length=200)
+    description = models.TextField()
+    difficulty = models.CharField(max_length=20, choices=[('beginner', 'Beginner'), ('intermediate', 'Intermediate'), ('advanced', 'Advanced')], default='intermediate')
+    points = models.PositiveIntegerField(default=100)
+    tags = models.CharField(max_length=500, blank=True, help_text='Comma-separated search tags')
+    flag_hash = models.CharField(max_length=255, blank=True)
+    hints = models.JSONField(default=list, blank=True)
+    external_link = models.URLField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['name', 'pk']
+
+    def __str__(self):
+        return self.name
+
 
 class CTFChallenge(models.Model):
     """Represents a single challenge within a CTF."""
@@ -2047,6 +2160,11 @@ class CTFChallenge(models.Model):
     external_link = models.URLField(null=True, blank=True, help_text="A link to an external challenge, like a vulnerable website.")
     linked_lab = models.ForeignKey(Lab, on_delete=models.SET_NULL, null=True, blank=True, help_text="Link to a live lab environment for this challenge.")
     
+    verification_step = models.ForeignKey(
+        'Step', on_delete=models.PROTECT, null=True, blank=True,
+        related_name='ctf_verified_challenges',
+        help_text='Optional: require successful, current QEMU guest-agent checks for this linked lab step before accepting a flag.',
+    )
     is_visible = models.BooleanField(default=True, help_text="Uncheck to hide this challenge from participants temporarily.")
 
     def __str__(self):

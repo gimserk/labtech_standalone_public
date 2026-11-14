@@ -6,17 +6,24 @@
 <section class="ctf-shell">
   <header class="ctf-headline">
     <div><h1>{{ ctf.name }} — Leaderboard</h1><p class="ctf-subtitle">{{ event_status }} · {% if ctf.allow_teams %}Team standings{% else %}Individual standings{% endif %}</p></div>
-    <a href="{% url 'ctf_detail' ctf.id %}" class="btn btn-outline-secondary">Back to Challenge Board</a>
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="{% url 'ctf_scoreboard_wall' ctf.id %}" class="btn btn-primary">Classroom Scoreboard</a>
+      <a href="{% url 'ctf_detail' ctf.id %}" class="btn btn-outline-secondary">Back to Challenge Board</a>
+    </div>
   </header>
   <div class="card"><div class="card-body">
-    <p class="small text-body-secondary">Points are awarded once per challenge per team or solo participant, after purchased hint costs.</p>
+    {% if scoreboard.frozen %}
+      <p role="status" class="alert alert-info">Standings are frozen at {{ ctf.scoreboard_frozen_at|date:"M j, H:i" }}. New results are not shown until the instructor unfreezes the board.</p>
+    {% else %}
+      <p class="small text-body-secondary">Live scores include successful solves, paid hint deductions, and audited instructor corrections. <a href="{% url 'ctf_scoreboard_wall' ctf.id %}">Open the auto-updating scoreboard</a>.</p>
+    {% endif %}
     <div class="table-responsive">
       <table class="table table-hover align-middle">
         <thead><tr><th scope="col">Rank</th><th scope="col">{% if ctf.allow_teams %}Team{% else %}Participant{% endif %}</th><th scope="col" class="text-end">Challenges solved</th><th scope="col" class="text-end">Score</th></tr></thead>
         <tbody>{% for entry in leaderboard_data %}
           <tr><th scope="row">#{{ forloop.counter }}</th>
-              <td><strong>{% if ctf.allow_teams %}{{ entry.name }}{% else %}{{ entry.username }}{% endif %}</strong></td>
-              <td class="text-end">{{ entry.solves }}</td><td class="text-end"><strong>{{ entry.total_score }}</strong></td></tr>
+              <td><strong>{{ entry.display_name }}</strong></td>
+              <td class="text-end">{{ entry.solves }}</td><td class="text-end"><strong>{{ entry.points }}</strong></td></tr>
         {% empty %}<tr><td colspan="4" class="text-center">No participants or teams have joined yet.</td></tr>{% endfor %}</tbody>
       </table>
     </div>

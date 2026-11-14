@@ -6,7 +6,7 @@
 <section class="ctf-shell">
   <header class="ctf-headline">
     <div><h1>CTF Mission Control</h1><p class="ctf-subtitle">Manage competitions, challenges, participants, and scoring from one place.</p></div>
-    <a href="{% url 'ctf_create' %}" class="btn btn-primary">Create Competition</a>
+    <div class="d-flex gap-2 flex-wrap"><a href="{% url 'ctf_bank' %}" class="btn btn-outline-primary">Challenge Bank</a><a href="{% url 'ctf_create' %}" class="btn btn-primary">Create Competition</a></div>
   </header>
   <div class="ctf-stat-grid" aria-label="Competition overview">
     <div class="ctf-stat"><strong>{{ active_count }}</strong><span>Active competitions</span></div>

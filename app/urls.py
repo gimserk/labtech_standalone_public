@@ -10,6 +10,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 from app import views as app_views
 from app import ctf_views_v2
+from app import ctf_challenge_library
+from app import ctf_bank
 from app import course_builder_views
 from app import cluster_utilization
 from app import lab_node_migration_views
@@ -269,12 +271,25 @@ urlpatterns = [
     path('ctf/', ctf_views_v2.list_competitions, name='ctf_list'),
     path('ctf/<int:ctf_id>/', ctf_views_v2.detail, name='ctf_detail'),
     path('ctf/<int:ctf_id>/leaderboard/', ctf_views_v2.scores, name='ctf_leaderboard'),
+    path('ctf/<int:ctf_id>/scoreboard/', ctf_views_v2.scoreboard_wall, name='ctf_scoreboard_wall'),
+    path('ctf/<int:ctf_id>/scoreboard/data/', ctf_views_v2.scoreboard_feed, name='ctf_scoreboard_data'),
     path('ctf/<int:ctf_id>/enroll/', ctf_views_v2.enroll, name='ctf_enroll'),
     path('labtech/ctf/dashboard/', ctf_views_v2.dashboard, name='ctf_dashboard'),
+    path('labtech/ctf/bank/', ctf_bank.bank, name='ctf_bank'),
+    path('labtech/ctf/bank/create/', ctf_bank.edit_template, name='ctf_bank_create'),
+    path('labtech/ctf/bank/<int:template_id>/edit/', ctf_bank.edit_template, name='ctf_bank_edit'),
+    path('labtech/ctf/bank/<int:template_id>/deploy/', ctf_bank.deploy, name='ctf_bank_deploy'),
+    path('labtech/ctf/bank/collections/create/', ctf_bank.create_collection, name='ctf_bank_collection_create'),
+    path('labtech/ctf/bank/import/', ctf_bank.import_bank, name='ctf_bank_import'),
+    path('labtech/ctf/bank/export/', ctf_bank.export_bank, name='ctf_bank_export'),
+    path('labtech/ctf/<int:ctf_id>/challenges/<int:challenge_id>/save-to-bank/', ctf_bank.save_from_event, name='ctf_bank_save_from_event'),
     path('labtech/ctf/create/', app_views.ctf_create_view, name='ctf_create'),
     path('labtech/ctf/<int:ctf_id>/manage/', ctf_views_v2.manage, name='ctf_manage'),
+    path('labtech/ctf/<int:ctf_id>/control/', ctf_views_v2.control, name='ctf_competition_control'),
     path('labtech/ctf/<int:ctf_id>/edit/', app_views.ctf_edit_view, name='ctf_edit'),
     path('labtech/ctf/<int:ctf_id>/delete/', app_views.ctf_delete_view, name='ctf_delete'),
+    path('labtech/ctf/<int:ctf_id>/challenges/library/', ctf_challenge_library.challenge_library, name='ctf_challenge_library'),
+    path('labtech/ctf/<int:ctf_id>/challenges/library/<int:challenge_id>/copy/', ctf_challenge_library.reuse_challenge, name='ctf_challenge_reuse'),
     path('labtech/ctf/<int:ctf_id>/challenges/add/', ctf_views_v2.challenge_form, name='ctf_challenge_create'),
     path('labtech/ctf/<int:ctf_id>/challenges/<int:challenge_id>/edit/', ctf_views_v2.challenge_form, name='ctf_challenge_edit'),
     path('labtech/ctf/<int:ctf_id>/challenges/<int:challenge_id>/delete/', app_views.ctf_challenge_delete_view, name='ctf_challenge_delete'),

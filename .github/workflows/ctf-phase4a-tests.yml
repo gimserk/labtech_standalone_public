@@ -1,0 +1,43 @@
+name: CTF Phase 4A — Verified Lab Gate
+
+on:
+  pull_request:
+    paths:
+      - 'app/models.py'
+      - 'app/forms.py'
+      - 'app/ctf_lab_verification.py'
+      - 'app/ctf_views_v2.py'
+      - 'app/ctf_foundation.py'
+      - 'app/migrations/0075_ctf_verified_lab_step.py'
+      - 'app/templates/labtech/ctf_detail.html'
+      - 'app/test_ctf_phase4a.py'
+      - '.github/workflows/ctf-phase4a-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'app/ctf_lab_verification.py'
+      - 'app/test_ctf_phase4a.py'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-lab-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: Native dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config default-libmysqlclient-dev libldap2-dev libsasl2-dev libssl-dev libxml2-dev libxslt1-dev libjpeg-dev zlib1g-dev libffi-dev
+      - name: Install application
+        run: python -m pip install -r requirements.txt
+      - name: Compile integration modules
+        run: python -m py_compile app/ctf_lab_verification.py app/ctf_views_v2.py app/ctf_foundation.py app/forms.py app/models.py app/test_ctf_phase4a.py
+      - name: Verify migration has no new CTF drift
+        run: python manage.py showmigrations app --settings=app.test_settings
+      - name: Run new and existing CTF regression tests
+        run: python manage.py test app.test_ctf_phase4a app.test_ctf_phase3b app.test_ctf_phase3 app.test_ctf_phase2 app.test_ctf2 --settings=app.test_settings -v 2

@@ -1,0 +1,38 @@
+name: CTF Phase 3 — Reusable Challenges
+
+on:
+  pull_request:
+    paths:
+      - 'app/ctf_challenge_library.py'
+      - 'app/templates/labtech/ctf_challenge_library.html'
+      - 'app/templates/labtech/ctf_manage.html'
+      - 'app/urls.py'
+      - 'app/test_ctf_phase3.py'
+      - '.github/workflows/ctf-phase3-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'app/ctf_challenge_library.py'
+      - 'app/test_ctf_phase3.py'
+
+permissions:
+  contents: read
+
+jobs:
+  ctf-phase3:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: Native dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config default-libmysqlclient-dev libldap2-dev libsasl2-dev libssl-dev libxml2-dev libxslt1-dev libjpeg-dev zlib1g-dev libffi-dev
+      - name: Install application
+        run: python -m pip install -r requirements.txt
+      - name: Compile code
+        run: python -m py_compile app/ctf_challenge_library.py app/test_ctf_phase3.py
+      - name: Run Phase 2 and Phase 3 regression suites
+        run: python manage.py test app.test_ctf_phase3 app.test_ctf_phase2 app.test_ctf2 --settings=app.test_settings -v 2

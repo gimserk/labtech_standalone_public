@@ -1,0 +1,65 @@
+{% extends "labtech/generic_base.html" %}
+{% load static %}
+{% block labtech_title %}{{ ctf.name }} — Classroom Scoreboard{% endblock %}
+{% block labtech_extra_head %}
+<link rel="stylesheet" href="{% static 'labtech/css/ctf-2.css' %}">
+<link rel="stylesheet" href="{% static 'labtech/css/ctf-scoreboard.css' %}">
+<script src="{% static 'labtech/js/ctf-scoreboard.js' %}" defer></script>
+{% endblock %}
+{% block labtech_content %}
+<section class="ctf-wall" id="ctfWall" data-feed-url="{% url 'ctf_scoreboard_data' ctf.pk %}" aria-labelledby="ctfWallHeading">
+  <header class="ctf-wall-header">
+    <div>
+      <p class="ctf-wall-kicker">LabTech • Capture the Flag</p>
+      <h1 id="ctfWallHeading">{{ ctf.name }}</h1>
+      <p class="ctf-wall-subtitle" id="ctfWallStatus">
+        {% if scoreboard.frozen %}Standings frozen{% else %}Live standings{% endif %}
+        · {{ scoreboard.status }} · {% if ctf.allow_teams %}Team competition{% else %}Individual competition{% endif %}
+      </p>
+    </div>
+    <nav class="d-flex flex-wrap gap-2" aria-label="Scoreboard navigation">
+      <button type="button" class="btn btn-outline-light" id="ctfWallFullscreen">Full Screen</button>
+      <a class="btn btn-outline-light" href="{% url 'ctf_leaderboard' ctf.pk %}">Detailed Scores</a>
+      <a class="btn btn-outline-light" href="{% url 'ctf_detail' ctf.pk %}">Challenge Board</a>
+      {% if user.pk == ctf.creator_id or user.is_superuser %}
+      <a class="btn btn-outline-light" href="{% url 'ctf_manage' ctf.pk %}">Mission Control</a>
+      {% endif %}
+    </nav>
+  </header>
+  <p class="ctf-wall-notice" id="ctfWallNotice" role="status" aria-live="polite">
+    {% if scoreboard.frozen %}Leaderboard frozen at {{ ctf.scoreboard_frozen_at|date:"M j, H:i" }}. New solves are hidden until the instructor unfreezes it.{% else %}Scoreboard updates automatically every 12 seconds.{% endif %}
+  </p>
+  <div class="ctf-wall-content">
+    <section class="ctf-wall-rankings" aria-labelledby="ctfRankingsHeading">
+      <h2 id="ctfRankingsHeading">Standings</h2>
+      <div class="table-responsive">
+        <table class="ctf-wall-table">
+          <thead><tr>
+            <th scope="col">Rank</th><th scope="col">{% if ctf.allow_teams %}Team{% else %}Participant{% endif %}</th>
+            <th scope="col" class="text-end">Solves</th><th scope="col" class="text-end">Points</th>
+          </tr></thead>
+          <tbody id="ctfWallRows">
+            {% for entry in scoreboard.rows %}
+            <tr>
+              <th scope="row">#{{ entry.rank }}</th><td>{{ entry.display_name }}</td>
+              <td class="text-end">{{ entry.solves }}</td>
+              <td class="text-end"><strong>{{ entry.points }}</strong></td>
+            </tr>
+            {% empty %}<tr><td colspan="4">No teams or participants have joined yet.</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <aside class="ctf-wall-activity" aria-labelledby="ctfActivityHeading">
+      <h2 id="ctfActivityHeading">Latest Solves</h2>
+      <ul id="ctfWallRecent" class="ctf-wall-recent">
+        {% for solve in scoreboard.recent %}
+          <li><strong>{{ solve.display_name }}</strong> solved {{ solve.challenge }}
+            <span>+{{ solve.points }} pts · {{ solve.when }}</span></li>
+        {% empty %}<li>No successful solves yet.</li>{% endfor %}
+      </ul>
+    </aside>
+  </div>
+</section>
+{{ scoreboard|json_script:"ctfWallInitial" }}
+{% endblock %}

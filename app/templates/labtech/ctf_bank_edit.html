@@ -1,0 +1,21 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}{{ title }}{% endblock %}
+{% block labtech_content %}
+<main class="container py-4">
+  <nav aria-label="Breadcrumb"><a href="{% url 'ctf_dashboard' %}">CTF Mission Control</a> / <a href="{% url 'ctf_bank' %}">Challenge Bank</a> / {{ title }}</nav>
+  <h1 class="h3 mt-3">{{ title }}</h1>
+  <p class="text-body-secondary">Changes affect this template only. Previously copied competition challenges do not change.</p>
+  <form method="post" class="card"><div class="card-body">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+    {% for field in form %}
+      <div class="mb-3"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
+        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+        {% for error in field.errors %}<p class="text-danger small">{{ error }}</p>{% endfor %}
+      </div>
+    {% endfor %}
+    <button class="btn btn-primary" type="submit">Save Template</button>
+    <a class="btn btn-outline-secondary" href="{% url 'ctf_bank' %}">Cancel</a>
+  </div></form>
+</main>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}Reuse CTF Challenges{% endblock %}
+{% block labtech_content %}
+<main class="container py-4">
+  <nav aria-label="Breadcrumb"><a href="{% url 'ctf_dashboard' %}">CTF campaigns</a> /
+    <a href="{% url 'ctf_manage' ctf.id %}">{{ ctf.name }}</a> / Reuse challenges
+  </nav>
+  <h1 class="h3 mt-3">Reuse challenges in {{ ctf.name }}</h1>
+  <p class="text-body-secondary">Copy challenges authored in your other competitions. Every new copy starts hidden. Review the flag and attach fresh evidence before publishing. Scores, submissions and teams are never copied.</p>
+  {% if sources %}
+  <div class="table-responsive">
+    <table class="table table-striped align-middle">
+      <caption>Challenges available from your other competitions</caption>
+      <thead><tr><th scope="col">Challenge</th><th scope="col">Source competition</th><th scope="col">Category</th><th scope="col">Difficulty</th><th scope="col">Points</th><th scope="col">Action</th></tr></thead>
+      <tbody>
+      {% for source in sources %}
+      <tr>
+        <th scope="row">{{ source.name }}</th>
+        <td>{{ source.ctf.name }}</td>
+        <td>{{ source.category.name }}</td>
+        <td>{{ source.get_difficulty_display }}</td>
+        <td>{{ source.points }}</td>
+        <td><form method="post" action="{% url 'ctf_challenge_reuse' ctf.id source.id %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-sm btn-outline-primary" aria-label="Copy {{ source.name }} from {{ source.ctf.name }}">Copy and review</button>
+        </form></td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p>No reusable challenges found yet. Create a challenge in another competition to populate this list.</p>
+  {% endif %}
+  <a href="{% url 'ctf_manage' ctf.id %}" class="btn btn-outline-secondary">Back to Mission Control</a>
+</main>
+{% endblock %}

@@ -11,9 +11,12 @@
     </div>
     <nav class="d-flex flex-wrap gap-2" aria-label="Competition management navigation">
       <a href="{% url 'ctf_challenge_create' ctf.id %}" class="btn btn-primary">Add Challenge</a>
+      <a href="{% url 'ctf_bank' %}" class="btn btn-outline-primary">Challenge Bank</a>
+      <a href="{% url 'ctf_challenge_library' ctf.id %}" class="btn btn-outline-primary">Reuse Previous Challenges</a>
       <a href="{% url 'ctf_edit' ctf.id %}" class="btn btn-outline-primary">Event Settings</a>
       <a href="{% url 'ctf_detail' ctf.id %}" class="btn btn-outline-secondary">View Challenge Board</a>
       <a href="{% url 'ctf_leaderboard' ctf.id %}" class="btn btn-outline-secondary">Leaderboard</a>
+      <a href="{% url 'ctf_scoreboard_wall' ctf.id %}" class="btn btn-outline-primary">Classroom Scoreboard</a>
       <a href="{% url 'ctf_dashboard' %}" class="btn btn-outline-secondary">All Campaigns</a>
     </nav>
   </header>
@@ -25,6 +28,77 @@
     <div class="ctf-stat"><strong>{{ stats.solves }}</strong><span>Completed solves</span></div>
     <div class="ctf-stat"><strong>{{ stats.hints }}</strong><span>Hints revealed</span></div>
   </div>
+
+  <section class="card mb-4" aria-labelledby="ctfControlsHeading">
+    <div class="card-body">
+      <h2 class="h5" id="ctfControlsHeading">Competition Controls</h2>
+      <p class="small text-body-secondary">All changes are logged. Pausing blocks new flags and hint purchases; freezing the leaderboard captures standings but does not stop scoring.</p>
+      <div class="d-flex flex-wrap align-items-center gap-2 mb-3" role="group" aria-label="Competition controls">
+        {% if ctf.status == 'Upcoming' %}
+        <form method="post" action="{% url 'ctf_competition_control' ctf.id %}">
+          {% csrf_token %}<input type="hidden" name="action" value="start_now">
+          <button type="submit" class="btn btn-outline-primary" onclick="return confirm('Start this CTF immediately?')">Start Now</button>
+        </form>
+        {% endif %}
+        {% if ctf.status != 'Finished' %}
+        <form method="post" action="{% url 'ctf_competition_control' ctf.id %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="{% if ctf.submissions_paused %}resume{% else %}pause{% endif %}">
+          <button class="btn {% if ctf.submissions_paused %}btn-success{% else %}btn-outline-warning{% endif %}" type="submit">
+            {% if ctf.submissions_paused %}Resume Submissions{% else %}Pause Submissions{% endif %}
+          </button>
+        </form>
+        {% endif %}
+        <form method="post" action="{% url 'ctf_competition_control' ctf.id %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="{% if ctf.scoreboard_frozen %}unfreeze{% else %}freeze{% endif %}">
+          <button class="btn btn-outline-secondary" type="submit">
+            {% if ctf.scoreboard_frozen %}Unfreeze Scoreboard{% else %}Freeze Scoreboard{% endif %}
+          </button>
+        </form>
+        {% if ctf.status == 'Active' %}
+        <form method="post" action="{% url 'ctf_competition_control' ctf.id %}" onsubmit="return confirm('End the competition immediately? Participants will no longer submit flags.')">
+          {% csrf_token %}<input type="hidden" name="action" value="end_now">
+          <button class="btn btn-outline-danger" type="submit">End Event Now</button>
+        </form>
+        {% endif %}
+      </div>
+      <p class="small" role="status">
+        Submissions: <strong>{% if ctf.submissions_paused %}Paused{% else %}Not manually paused{% endif %}</strong>
+        · Scoreboard: <strong>{% if ctf.scoreboard_frozen %}Frozen at {{ ctf.scoreboard_frozen_at|date:"M j, H:i" }}{% else %}Live{% endif %}</strong>
+      </p>
+      <details class="mt-3">
+        <summary>Manual scoring adjustment (audited)</summary>
+        <form class="row g-2 align-items-end mt-2" method="post" action="{% url 'ctf_competition_control' ctf.id %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="score_adjust">
+          <div class="col-md-4">
+            <label class="form-label" for="ctfScoreTarget">{% if ctf.allow_teams %}Team{% else %}Participant{% endif %}</label>
+            <select class="form-select" name="target_id" id="ctfScoreTarget" required>
+              <option value="">Select</option>
+              {% for target in score_targets %}
+                <option value="{% if ctf.allow_teams %}{{ target.pk }}{% else %}{{ target.user_id }}{% endif %}">
+                  {% if ctf.allow_teams %}{{ target.name }}{% else %}{{ target.user.username }}{% endif %}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-2">
+            <label for="ctfScoreDelta" class="form-label">Points (+ / -)</label>
+            <input id="ctfScoreDelta" class="form-control" type="number" name="delta" min="-10000" max="10000" step="1" required>
+          </div>
+          <div class="col-md-4">
+            <label for="ctfScoreReason" class="form-label">Reason (10–500 characters)</label>
+            <input id="ctfScoreReason" class="form-control" type="text" name="reason" minlength="10" maxlength="500" required>
+          </div>
+          <div class="col-md-2">
+            <button class="btn btn-primary w-100" type="submit" onclick="return confirm('Record this score adjustment? The original challenge submissions will not be modified.')">Record Adjustment</button>
+          </div>
+        </form>
+        <p class="small text-body-secondary mt-2">Adjustments are append-only. They affect live rankings immediately, or after a frozen leaderboard is unfrozen.</p>
+      </details>
+    </div>
+  </section>
 
   <section class="card mb-4" aria-labelledby="ctfReadinessHeading">
     <div class="card-body">
@@ -91,6 +165,16 @@
               <td>{% if challenge.is_visible %}<span class="ctf-chip">Visible</span>{% else %}<span class="ctf-chip">Hidden</span>{% endif %}</td>
               <td class="text-end">
                 <a href="{% url 'ctf_challenge_edit' ctf.id challenge.id %}" class="btn btn-sm btn-outline-primary">Edit</a>
+                <form method="post" class="d-inline" action="{% url 'ctf_bank_save_from_event' ctf.id challenge.id %}">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-outline-primary">Save to Bank</button>
+                </form>
+                <form method="post" class="d-inline" action="{% url 'ctf_competition_control' ctf.id %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="challenge_id" value="{{ challenge.pk }}">
+                  <input type="hidden" name="action" value="{% if challenge.is_visible %}hide_challenge{% else %}release_challenge{% endif %}">
+                  <button type="submit" class="btn btn-sm btn-outline-secondary">{% if challenge.is_visible %}Hide{% else %}Release{% endif %}</button>
+                </form>
                 <a href="{% url 'ctf_challenge_delete' ctf.id challenge.id %}" class="btn btn-sm btn-outline-danger">Delete</a>
               </td>
             </tr>
@@ -119,6 +203,37 @@
           {% empty %}
           <tr><td colspan="4" class="text-center text-body-secondary">No successful solves yet.</td></tr>
           {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+  <section class="card mt-4" aria-labelledby="ctfAuditHeading">
+    <div class="card-body">
+      <h2 class="h5" id="ctfAuditHeading">Competition Control Audit</h2>
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead><tr><th scope="col">When</th><th scope="col">Instructor</th><th scope="col">Action</th></tr></thead>
+          <tbody>
+            {% for log in control_events %}
+            <tr><td>{{ log.created_at|date:"M j, H:i" }}</td>
+              <td>{{ log.actor.username|default:"Former instructor" }}</td>
+              <td>{{ log.action|cut:"_" }}</td></tr>
+            {% empty %}<tr><td colspan="3">No event control changes yet.</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <h3 class="h6 mt-3">Recent manual score corrections</h3>
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead><tr><th scope="col">Recipient</th><th scope="col">Points</th><th scope="col">Reason</th><th scope="col">By</th></tr></thead>
+          <tbody>
+            {% for adjustment in score_adjustments %}
+            <tr>
+              <td>{% if adjustment.team %}{{ adjustment.team.name }}{% else %}{{ adjustment.user.username }}{% endif %}</td>
+              <td>{{ adjustment.delta }}</td><td>{{ adjustment.reason }}</td><td>{{ adjustment.created_by.username|default:"Former instructor" }}</td>
+            </tr>
+            {% empty %}<tr><td colspan="4">No manual corrections.</td></tr>{% endfor %}
           </tbody>
         </table>
       </div>

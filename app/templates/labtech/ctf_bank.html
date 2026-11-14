@@ -1,0 +1,60 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}CTF Challenge Bank{% endblock %}
+{% block labtech_content %}
+<main class="container py-4">
+  <nav aria-label="Breadcrumb"><a href="{% url 'ctf_dashboard' %}">CTF Mission Control</a> / Challenge Bank</nav>
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-3 mb-3">
+    <div><h1 class="h3">Challenge Bank</h1><p class="text-body-secondary">Permanent instructor-owned templates. Adding to a competition creates a separate hidden copy.</p></div>
+    <a class="btn btn-primary" href="{% url 'ctf_bank_create' %}">New challenge template</a>
+  </div>
+  <div class="card mb-3"><div class="card-body">
+    <form method="get" class="row g-2 align-items-end" aria-label="Filter templates">
+      <div class="col-md-4"><label for="search" class="form-label">Search</label><input class="form-control" id="search" name="q" value="{{ query }}" placeholder="Name, description or tags"></div>
+      <div class="col-md-2"><label for="category" class="form-label">Category</label><select class="form-select" id="category" name="category"><option value="">All categories</option>{% for category in categories %}<option value="{{ category.id }}" {% if request.GET.category == category.id|stringformat:"s" %}selected{% endif %}>{{ category.name }}</option>{% endfor %}</select></div>
+      <div class="col-md-2"><label for="difficulty" class="form-label">Difficulty</label><select class="form-select" id="difficulty" name="difficulty"><option value="">All</option><option value="beginner" {% if request.GET.difficulty == "beginner" %}selected{% endif %}>Beginner</option><option value="intermediate" {% if request.GET.difficulty == "intermediate" %}selected{% endif %}>Intermediate</option><option value="advanced" {% if request.GET.difficulty == "advanced" %}selected{% endif %}>Advanced</option></select></div>
+      <div class="col-md-2"><label for="collection" class="form-label">Collection</label><select class="form-select" id="collection" name="collection"><option value="">All collections</option>{% for group in collections %}<option value="{{ group.id }}" {% if request.GET.collection == group.id|stringformat:"s" %}selected{% endif %}>{{ group.name }}</option>{% endfor %}</select></div>
+      <div class="col-md-2"><button class="btn btn-outline-primary w-100" type="submit">Filter</button></div>
+    </form>
+  </div></div>
+  <div class="card mb-3"><div class="card-body">
+    <h2 class="h5">Organize collections</h2>
+    <form method="post" action="{% url 'ctf_bank_collection_create' %}" class="row g-2 align-items-end">
+      {% csrf_token %}
+      <div class="col-md-5"><label class="form-label" for="groupName">Collection name</label><input class="form-control" id="groupName" name="name" maxlength="120" required></div>
+      <div class="col-md-5"><label class="form-label" for="groupDescription">Description</label><input class="form-control" id="groupDescription" name="description"></div>
+      <div class="col-md-2"><button class="btn btn-outline-primary w-100">Create collection</button></div>
+    </form>
+  </div></div>
+  <section class="card mb-3" aria-label="Challenge templates"><div class="card-body">
+    <h2 class="h5">Templates ({{ count }} total)</h2>
+    <div class="table-responsive"><table class="table table-striped align-middle">
+      <thead><tr><th scope="col">Challenge</th><th scope="col">Collection</th><th scope="col">Category</th><th scope="col">Difficulty</th><th scope="col">Points</th><th scope="col">Actions</th></tr></thead>
+      <tbody>{% for item in items %}
+        <tr><th scope="row"><a href="{% url 'ctf_bank_edit' item.id %}">{{ item.name }}</a>{% if not item.flag_hash %}<span class="badge text-bg-warning ms-2">Flag required</span>{% endif %}<div class="small text-body-secondary">{{ item.tags }}</div></th>
+          <td>{{ item.collection.name|default:"—" }}</td><td>{{ item.category.name }}</td><td>{{ item.get_difficulty_display }}</td><td>{{ item.points }}</td>
+          <td><div class="d-flex gap-2 flex-wrap"><a class="btn btn-sm btn-outline-secondary" href="{% url 'ctf_bank_edit' item.id %}">Edit</a>
+          {% if item.flag_hash %}
+            <form method="post" action="{% url 'ctf_bank_deploy' item.id %}" class="d-flex gap-1">
+              {% csrf_token %}
+              <select class="form-select form-select-sm" name="ctf_id" aria-label="Destination competition for {{ item.name }}" required>
+                <option value="">Choose competition</option>{% for event in events %}<option value="{{ event.id }}">{{ event.name }}</option>{% endfor %}
+              </select>
+              <button type="submit" class="btn btn-sm btn-primary">Add</button>
+            </form>
+          {% endif %}
+          </div></td>
+        </tr>
+      {% empty %}<tr><td colspan="6" class="text-center">No templates found. Create one or import a bank.</td></tr>{% endfor %}</tbody>
+    </table></div>
+  </div></section>
+  <section class="card"><div class="card-body">
+    <h2 class="h5">Import and export</h2>
+    <p class="small text-body-secondary">Exports contain prompts, tags, collections and hints but never flags, password hashes, or private evidence. Imports create drafts that require a new flag before use.</p>
+    <div class="d-flex gap-2 mb-3"><a href="{% url 'ctf_bank_export' %}?format=json" class="btn btn-outline-secondary">Export JSON</a><a href="{% url 'ctf_bank_export' %}?format=csv" class="btn btn-outline-secondary">Export CSV</a></div>
+    <form method="post" action="{% url 'ctf_bank_import' %}" enctype="multipart/form-data" class="d-flex gap-2 flex-wrap align-items-end">
+      {% csrf_token %}<div><label for="bankFile" class="form-label">Challenge bank file (max 1 MB; up to 200 records)</label><input id="bankFile" class="form-control" type="file" name="file" accept=".json,.csv" required></div>
+      <button type="submit" class="btn btn-outline-primary">Import drafts</button>
+    </form>
+  </div></section>
+</main>
+{% endblock %}

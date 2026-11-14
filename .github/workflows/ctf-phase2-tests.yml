@@ -1,0 +1,52 @@
+name: CTF Phase 2 — Teams, Scoreboard and Controls
+
+on:
+  pull_request:
+    paths:
+      - 'app/models.py'
+      - 'app/migrations/0073_ctf_team_invitations_scoreboard_controls.py'
+      - 'app/ctf_teams.py'
+      - 'app/ctf_controls.py'
+      - 'app/ctf_scoreboard.py'
+      - 'app/ctf_foundation.py'
+      - 'app/ctf_views_v2.py'
+      - 'app/urls.py'
+      - 'app/templates/labtech/ctf_*.html'
+      - 'app/static/labtech/css/ctf-scoreboard.css'
+      - 'app/static/labtech/js/ctf-scoreboard.js'
+      - 'app/test_ctf_phase2.py'
+      - '.github/workflows/ctf-phase2-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'app/ctf_teams.py'
+      - 'app/ctf_controls.py'
+      - 'app/ctf_scoreboard.py'
+      - 'app/test_ctf_phase2.py'
+
+permissions:
+  contents: read
+
+jobs:
+  ctf-phase2:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Native dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config default-libmysqlclient-dev libldap2-dev libsasl2-dev libssl-dev libxml2-dev libxslt1-dev libjpeg-dev zlib1g-dev libffi-dev
+      - name: Install application
+        run: python -m pip install -r requirements.txt
+      - name: Python and JavaScript syntax
+        run: |
+          python -m py_compile app/models.py app/ctf_teams.py app/ctf_controls.py app/ctf_scoreboard.py app/ctf_foundation.py app/ctf_views_v2.py app/urls.py app/test_ctf_phase2.py
+          node --check app/static/labtech/js/ctf-scoreboard.js
+      - name: CTF Phase 2 and existing integration tests
+        run: python manage.py test app.test_ctf_phase2 app.test_ctf2 app.test_tekcon_nfc_scoped_ctf app.test_course_builder --settings=app.test_settings -v 2
