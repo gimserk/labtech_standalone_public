@@ -1,0 +1,49 @@
+name: CTF 2.0 Foundation and UI
+
+on:
+  pull_request:
+    paths:
+      - 'app/ctf_*'
+      - 'app/models.py'
+      - 'app/forms.py'
+      - 'app/views.py'
+      - 'app/urls.py'
+      - 'app/migrations/0072_ctf_foundation.py'
+      - 'app/templates/labtech/ctf_*.html'
+      - 'app/static/labtech/css/ctf-2.css'
+      - 'app/static/labtech/js/ctf-2.js'
+      - 'app/test_ctf2.py'
+      - '.github/workflows/ctf2-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'app/ctf_*'
+      - 'app/test_ctf2.py'
+      - 'app/templates/labtech/ctf_*.html'
+
+permissions:
+  contents: read
+
+jobs:
+  ctf2:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install native dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config default-libmysqlclient-dev libldap2-dev libsasl2-dev libssl-dev libxml2-dev libxslt1-dev libjpeg-dev zlib1g-dev libffi-dev
+      - name: Install application
+        run: python -m pip install -r requirements.txt
+      - name: Validate syntax
+        run: |
+          python -m py_compile app/ctf_foundation.py app/ctf_views_v2.py app/ctf_storage.py app/models.py app/forms.py app/views.py app/urls.py app/test_ctf2.py
+          node --check app/static/labtech/js/ctf-2.js
+      - name: CTF and course regressions
+        run: python manage.py test app.test_ctf2 app.test_tekcon_nfc_scoped_ctf app.test_course_builder app.test_course_curriculum_navigation --settings=app.test_settings -v 2

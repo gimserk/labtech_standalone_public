@@ -2026,6 +2026,8 @@ class CTFCategory(models.Model):
         verbose_name_plural = "CTF Challenge Categories"
 
 
+from .ctf_storage import CTFPrivateStorage
+
 class CTFChallenge(models.Model):
     """Represents a single challenge within a CTF."""
     ctf = models.ForeignKey(CTF, on_delete=models.CASCADE, related_name='challenges')
@@ -2033,10 +2035,15 @@ class CTFChallenge(models.Model):
     name = models.CharField(max_length=200)
     description = RichTextUploadingField(help_text="The challenge prompt, story, and instructions.")
     points = models.PositiveIntegerField(help_text="Points awarded for a correct submission.")
-    flag = models.CharField(max_length=255, help_text="The correct flag (answer) for this challenge.")
+    DIFFICULTY_CHOICES = [('beginner', 'Beginner'), ('intermediate', 'Intermediate'), ('advanced', 'Advanced')]
+    difficulty = models.CharField(max_length=20, choices=DIFFICULTY_CHOICES, default='intermediate')
+    # Retained as a blank compatibility column so old application references
+    # cannot expose flags following the data migration. Never read/write secrets here.
+    flag = models.CharField(max_length=255, blank=True, default='', help_text="Legacy flag field; flags are now stored as one-way password hashes.")
+    flag_hash = models.CharField(max_length=255, blank=True, default='', help_text="One-way salted hash of the challenge flag.")
     
     # Optional fields for different challenge types
-    attached_file = models.FileField(upload_to='ctf_files/', null=True, blank=True, help_text="A file for participants to download (e.g., forensics image, pcap file).")
+    attached_file = models.FileField(storage=CTFPrivateStorage(), upload_to='ctf_files/', null=True, blank=True, help_text="Private evidence delivered only to eligible participants (e.g. PCAP or forensic image).")
     external_link = models.URLField(null=True, blank=True, help_text="A link to an external challenge, like a vulnerable website.")
     linked_lab = models.ForeignKey(Lab, on_delete=models.SET_NULL, null=True, blank=True, help_text="Link to a live lab environment for this challenge.")
     
@@ -2062,10 +2069,36 @@ class CTFSubmission(models.Model):
         return f"Correct submission for '{self.challenge.name}' by {self.user.username} ({team_name})"
 
     class Meta:
-        # A user/team can only solve a challenge once.
-        unique_together = ('challenge', 'user') 
-        unique_together = ('challenge', 'team')
+        # Legacy unique_together is corrected to cover both cases. See the
+        # data migration, which archives duplicate historical solves first.
+        constraints = [
+            models.UniqueConstraint(fields=['challenge', 'team'], condition=models.Q(team__isnull=False), name='ctf_unique_team_solve'),
+            models.UniqueConstraint(fields=['challenge', 'user'], condition=models.Q(team__isnull=True), name='ctf_unique_solo_solve'),
+        ]
         ordering = ['submitted_at']
+
+class CTFSubmissionDuplicate(models.Model):
+    """Audit record for legacy duplicate solves migrated to unique score rows."""
+    challenge_id_snapshot = models.PositiveIntegerField()
+    user_id_snapshot = models.PositiveIntegerField()
+    team_id_snapshot = models.PositiveIntegerField(null=True, blank=True)
+    points_awarded = models.IntegerField(default=0)
+    submitted_at = models.DateTimeField()
+    original_submission_id = models.PositiveIntegerField(unique=True)
+
+    class Meta:
+        ordering = ['original_submission_id']
+
+
+class CTFInvalidFlagAttempt(models.Model):
+    """Rate-limit incorrect guesses without storing submitted secret text."""
+    challenge = models.ForeignKey(CTFChallenge, on_delete=models.CASCADE, related_name='invalid_attempts')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='ctf_invalid_attempts')
+    attempted_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        indexes = [models.Index(fields=['user', 'challenge', 'attempted_at'], name='ctf_wrong_flag_window')]
+
 
 class CTFHint(models.Model):
     """Represents a single hint for a CTF challenge."""

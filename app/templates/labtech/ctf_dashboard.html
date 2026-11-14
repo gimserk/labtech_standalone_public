@@ -1,65 +1,39 @@
 {% extends "labtech/generic_base.html" %}
-
-{% block labtech_title %}{{ title }}{% endblock %}
-
-{% block labtech_extra_head %}
-<style>
-    /* Simple colored badges for status */
-    .status-badge {
-        padding: 5px 10px;
-        border-radius: 15px;
-        font-size: 0.8em;
-        font-weight: 600;
-        color: var(--lt-on-accent);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    .status-active { background-color: var(--lt-success); color: var(--lt-on-accent); } /* Green */
-    .status-upcoming { background-color: var(--lt-warning); color: var(--lt-on-warning); } /* Yellow */
-    .status-finished { background-color: var(--lt-secondary); color: var(--lt-on-accent); } /* Gray */
-</style>
-{% endblock %}
-
+{% load static %}
+{% block labtech_title %}CTF Mission Control{% endblock %}
+{% block labtech_extra_head %}<link rel="stylesheet" href="{% static 'labtech/css/ctf-2.css' %}">{% endblock %}
 {% block labtech_content %}
-<div class="page-header">
-    <h2>{{ title }}</h2>
-    <a href="{% url 'ctf_create' %}" class="btn btn-primary">Create New CTF Campaign</a>
-</div>
-
-<div class="table-responsive mt-4">
-    <table class="table table-hover align-middle">
-        <thead class="table-light">
-            <tr>
-                <th>Name</th>
-                <th>Status</th>
-                <th>Start Time</th>
-                <th>End Time</th>
-                <th>Visibility</th>
-                <th>Creator</th>
-                <th class="text-end">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for ctf in ctf_campaigns %}
-            <tr>
-                <td><strong>{{ ctf.name }}</strong></td>
-                <td><span class="status-badge status-{{ ctf.status|lower }}">{{ ctf.status }}</span></td>
-                <td>{{ ctf.start_time|date:"M d, Y, P" }}</td>
-                <td>{{ ctf.end_time|date:"M d, Y, P" }}</td>
-                <td>{{ ctf.get_visibility_display }}</td>
-                <td>{{ ctf.creator.username|default:"N/A" }}</td>
-                <td class="text-end">
-    <a href="{% url 'ctf_manage' ctf_id=ctf.id %}" class="btn btn-sm btn-secondary">Manage</a>
-    <a href="{% url 'ctf_edit' ctf_id=ctf.id %}" class="btn btn-sm btn-info">Edit</a>
-    <a href="{% url 'ctf_delete' ctf_id=ctf.id %}" class="btn btn-sm btn-danger">Delete</a>
-</td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="7" class="text-center p-4">You have not created or been assigned to any CTF campaigns yet.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+<section class="ctf-shell">
+  <header class="ctf-headline">
+    <div><h1>CTF Mission Control</h1><p class="ctf-subtitle">Manage competitions, challenges, participants, and scoring from one place.</p></div>
+    <a href="{% url 'ctf_create' %}" class="btn btn-primary">Create Competition</a>
+  </header>
+  <div class="ctf-stat-grid" aria-label="Competition overview">
+    <div class="ctf-stat"><strong>{{ active_count }}</strong><span>Active competitions</span></div>
+    <div class="ctf-stat"><strong>{{ upcoming_count }}</strong><span>Upcoming competitions</span></div>
+    <div class="ctf-stat"><strong>{{ finished_count }}</strong><span>Finished competitions</span></div>
+  </div>
+  <div class="card"><div class="card-body">
+    <h2 class="h5">Your competitions</h2>
+    <p class="small text-body-secondary">Select Manage to see readiness checks, challenge progress, and recent successful solves.</p>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead><tr><th scope="col">Competition</th><th scope="col">Status</th><th scope="col">Challenges</th><th scope="col">Participants</th><th scope="col">Teams</th><th scope="col">Visibility</th><th scope="col">Dates</th><th scope="col">Actions</th></tr></thead>
+        <tbody>{% for ctf in ctf_campaigns %}
+        <tr><td><strong>{{ ctf.name }}</strong></td>
+          <td><span class="ctf-chip">{{ ctf.status }}</span></td>
+          <td>{{ ctf.challenge_count }}</td><td>{{ ctf.participant_count }}</td><td>{{ ctf.team_count }}</td>
+          <td>{{ ctf.get_visibility_display }}</td>
+          <td><small>{{ ctf.start_time|date:"M j, Y" }} – {{ ctf.end_time|date:"M j, Y" }}</small></td>
+          <td><div class="d-flex gap-1 flex-wrap">
+            <a class="btn btn-sm btn-primary" href="{% url 'ctf_manage' ctf.id %}">Manage</a>
+            <a class="btn btn-sm btn-outline-secondary" href="{% url 'ctf_edit' ctf.id %}">Settings</a>
+            <a class="btn btn-sm btn-outline-danger" href="{% url 'ctf_delete' ctf.id %}">Delete</a>
+          </div></td>
+        </tr>
+        {% empty %}<tr><td colspan="8" class="text-center p-4">No competitions yet. Create a competition to begin.</td></tr>{% endfor %}</tbody>
+      </table>
+    </div>
+  </div></div>
+</section>
 {% endblock %}

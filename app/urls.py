@@ -9,6 +9,7 @@ from django.urls import path, include, re_path
 from django.conf import settings
 from django.conf.urls.static import static
 from app import views as app_views
+from app import ctf_views_v2
 from app import course_builder_views
 from app import cluster_utilization
 from app import lab_node_migration_views
@@ -265,18 +266,19 @@ urlpatterns = [
     path('labtech/lab-console/auth/<int:machine_instance_id>/', app_views.lab_console_auth_view, name='lab_console_auth'),
 
     # --- CTF & CYBERCITY PLATFORMS ---
-    path('ctf/', app_views.ctf_list_view, name='ctf_list'),
-    path('ctf/<int:ctf_id>/', app_views.ctf_detail_view, name='ctf_detail'),
-    path('ctf/<int:ctf_id>/leaderboard/', app_views.ctf_leaderboard_view, name='ctf_leaderboard'),
-    path('ctf/<int:ctf_id>/enroll/', app_views.ctf_enroll_view, name='ctf_enroll'),
-    path('labtech/ctf/dashboard/', app_views.ctf_dashboard_view, name='ctf_dashboard'),
+    path('ctf/', ctf_views_v2.list_competitions, name='ctf_list'),
+    path('ctf/<int:ctf_id>/', ctf_views_v2.detail, name='ctf_detail'),
+    path('ctf/<int:ctf_id>/leaderboard/', ctf_views_v2.scores, name='ctf_leaderboard'),
+    path('ctf/<int:ctf_id>/enroll/', ctf_views_v2.enroll, name='ctf_enroll'),
+    path('labtech/ctf/dashboard/', ctf_views_v2.dashboard, name='ctf_dashboard'),
     path('labtech/ctf/create/', app_views.ctf_create_view, name='ctf_create'),
-    path('labtech/ctf/<int:ctf_id>/manage/', app_views.ctf_manage_view, name='ctf_manage'),
+    path('labtech/ctf/<int:ctf_id>/manage/', ctf_views_v2.manage, name='ctf_manage'),
     path('labtech/ctf/<int:ctf_id>/edit/', app_views.ctf_edit_view, name='ctf_edit'),
     path('labtech/ctf/<int:ctf_id>/delete/', app_views.ctf_delete_view, name='ctf_delete'),
-    path('labtech/ctf/<int:ctf_id>/challenges/add/', app_views.ctf_challenge_create_view, name='ctf_challenge_create'),
-    path('labtech/ctf/<int:ctf_id>/challenges/<int:challenge_id>/edit/', app_views.ctf_challenge_edit_view, name='ctf_challenge_edit'),
+    path('labtech/ctf/<int:ctf_id>/challenges/add/', ctf_views_v2.challenge_form, name='ctf_challenge_create'),
+    path('labtech/ctf/<int:ctf_id>/challenges/<int:challenge_id>/edit/', ctf_views_v2.challenge_form, name='ctf_challenge_edit'),
     path('labtech/ctf/<int:ctf_id>/challenges/<int:challenge_id>/delete/', app_views.ctf_challenge_delete_view, name='ctf_challenge_delete'),
+    path('ctf/<int:ctf_id>/challenges/<int:challenge_id>/evidence/', ctf_views_v2.download_evidence, name='ctf_challenge_evidence'),
     path('cybercity/dashboard/', app_views.student_cybercity_list_view, name='student_cybercity_list'),
     path('cybercity/<int:city_id>/visualizer/', app_views.student_cybercity_visualizer_view, name='student_cybercity_visualizer'),
     path('labtech/cybercity/', app_views.cybercity_dashboard_view, name='cybercity_dashboard'),
@@ -395,8 +397,8 @@ urlpatterns = [
     path('api/coding/<int:activity_id>/run/', app_views.run_code_view, name='api_run_code'),
     path('api/flashcards/<int:flashcard_id>/update_mastery/', app_views.update_flashcard_mastery_view, name='update_flashcard_mastery'),
     path('api/scenario/<int:activity_id>/chat/', app_views.scenario_chat_api_view, name='scenario_chat_api'),
-    path('api/ctf/submit_flag/', app_views.ctf_submit_flag_view, name='ctf_submit_flag'),
-    path('api/ctf/hint/<int:hint_id>/unveil/', app_views.ctf_unveil_hint_view, name='ctf_unveil_hint'),
+    path('api/ctf/submit_flag/', ctf_views_v2.submit_flag, name='ctf_submit_flag'),
+    path('api/ctf/hint/<int:hint_id>/unveil/', ctf_views_v2.unveil_hint, name='ctf_unveil_hint'),
     path('api/firmware/check/', app_views.api_check_firmware_update, name='api_check_firmware_update'),
     path('api/firmware/v2/config/', cybercity_provisioning.api_esp32_provisioning_v2, name='api_esp32_provisioning_v2'),
     path('api/firmware/v2/manifest/', cybercity_provisioning.api_esp32_manifest_v2, name='api_esp32_manifest_v2'),

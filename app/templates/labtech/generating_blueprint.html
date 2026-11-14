@@ -1,15 +1,30 @@
 {% extends "labtech/generic_base.html" %}
-{% block content %}
-<div class="container mt-5 text-center">
-    <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
-    </div>
-    <h4 class="mt-3">Generating Blueprint...</h4>
-    <p>The AI architect is designing your course. Please wait a moment.</p>
-    <script>
-        setTimeout(function(){
-           window.location.reload();
-        }, 5000); // Refresh the page every 5 seconds
-    </script>
-</div>
+{% block labtech_title %}Generating Course Blueprint{% endblock %}
+{% block labtech_content %}
+<section class="container mt-5" style="max-width:780px" aria-labelledby="aiBlueprintProgressTitle">
+    <div class="card"><div class="card-body text-center p-4">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Generating blueprint</span>
+        </div>
+        <h1 class="h4 mt-3" id="aiBlueprintProgressTitle">Generating your course blueprint</h1>
+        {% if job.ai_blueprint._progress %}
+        <p role="status" class="mb-2">{{ job.ai_blueprint._progress.stage }}</p>
+        {% if job.ai_blueprint._progress.total %}
+            {% widthratio job.ai_blueprint._progress.completed job.ai_blueprint._progress.total 100 as percentage %}
+            <div class="progress mt-3 mb-2" role="progressbar" aria-label="Chapters planned"
+                 aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ percentage }}">
+                <div class="progress-bar" style="width:{{ percentage }}%"></div>
+            </div>
+            <p class="small text-body-secondary">{{ job.ai_blueprint._progress.completed }} of {{ job.ai_blueprint._progress.total }} chapters planned</p>
+        {% endif %}
+        {% else %}
+            <p>The AI is creating the course outline. The chapter-by-chapter plan will follow.</p>
+        {% endif %}
+        <p class="small text-body-secondary">You can leave this page and check the AI Course Generation Queue later. Your course remains private until you review it.</p>
+        <a href="{% url 'ai_jobs_dashboard' %}" class="btn btn-outline-secondary mt-1">View Generation Queue</a>
+    </div></div>
+</section>
+<script>
+window.setTimeout(function () { window.location.reload(); }, 7000);
+</script>
 {% endblock %}

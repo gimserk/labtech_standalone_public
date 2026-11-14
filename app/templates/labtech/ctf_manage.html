@@ -1,82 +1,148 @@
 {% extends "labtech/generic_base.html" %}
-
+{% load static %}
 {% block labtech_title %}{{ title }}{% endblock %}
-
-{% block labtech_extra_head %}
-<style>
-    .ctf-header {
-        background-color: var(--lt-surface-muted);
-        padding: 20px;
-        border-radius: 8px;
-        margin-bottom: 30px;
-        border: 1px solid var(--lt-border);
-    }
-    .ctf-header h2 { margin-top: 0; }
-    .category-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-        gap: 20px;
-    }
-    .category-card {
-        border: 1px solid var(--lt-border);
-        border-radius: 8px;
-        background-color: var(--lt-surface);
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
-    .category-header {
-        font-size: 1.2rem;
-        font-weight: 600;
-        padding: 12px 15px;
-        background-color: var(--lt-surface-muted);
-        border-bottom: 1px solid var(--lt-border);
-    }
-    .challenge-list { list-style: none; padding: 0; margin: 0; }
-    .challenge-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px 15px;
-        border-bottom: 1px solid var(--lt-border);
-    }
-    .challenge-item:last-child { border-bottom: none; }
-</style>
-{% endblock %}
-
+{% block labtech_extra_head %}<link rel="stylesheet" href="{% static 'labtech/css/ctf-2.css' %}">{% endblock %}
 {% block labtech_content %}
-<div class="page-header">
-    <h2>{{ title }}</h2>
+<section class="ctf-shell" aria-labelledby="ctfManageHeading">
+  <header class="ctf-headline">
     <div>
-        <a href="{% url 'ctf_challenge_create' ctf_id=ctf.id %}" class="btn btn-primary">Add New Challenge</a>
-        <a href="{% url 'ctf_dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+      <h1 id="ctfManageHeading">Mission Control: {{ ctf.name }}</h1>
+      <p class="ctf-subtitle mb-0">{{ ctf.get_visibility_display }} · {{ ctf.status }} · {{ ctf.start_time|date:"M j, Y, g:i A" }} – {{ ctf.end_time|date:"M j, Y, g:i A" }}</p>
     </div>
-</div>
+    <nav class="d-flex flex-wrap gap-2" aria-label="Competition management navigation">
+      <a href="{% url 'ctf_challenge_create' ctf.id %}" class="btn btn-primary">Add Challenge</a>
+      <a href="{% url 'ctf_edit' ctf.id %}" class="btn btn-outline-primary">Event Settings</a>
+      <a href="{% url 'ctf_detail' ctf.id %}" class="btn btn-outline-secondary">View Challenge Board</a>
+      <a href="{% url 'ctf_leaderboard' ctf.id %}" class="btn btn-outline-secondary">Leaderboard</a>
+      <a href="{% url 'ctf_dashboard' %}" class="btn btn-outline-secondary">All Campaigns</a>
+    </nav>
+  </header>
 
-<div class="ctf-header">
-    <p class="mb-0"><strong>Status:</strong> {{ ctf.status }} | <strong>Visibility:</strong> {{ ctf.get_visibility_display }} | <strong>Teams Allowed:</strong> {{ ctf.allow_teams|yesno:"Yes,No" }}</p>
-    <div class="mt-2">{{ ctf.description|safe }}</div>
-</div>
+  <div class="ctf-stat-grid" aria-label="Event statistics">
+    <div class="ctf-stat"><strong>{{ stats.participants }}</strong><span>Enrolled participants</span></div>
+    <div class="ctf-stat"><strong>{{ stats.teams }}</strong><span>Teams</span></div>
+    <div class="ctf-stat"><strong>{{ stats.challenges }}</strong><span>Challenges</span></div>
+    <div class="ctf-stat"><strong>{{ stats.solves }}</strong><span>Completed solves</span></div>
+    <div class="ctf-stat"><strong>{{ stats.hints }}</strong><span>Hints revealed</span></div>
+  </div>
 
-<h3>Challenges</h3>
-<div class="category-grid">
-    {% for category_name, challenges in challenges_by_category.items %}
-        <div class="category-card">
-            <div class="category-header">{{ category_name }}</div>
-            <ul class="challenge-list">
-                {% for challenge in challenges %}
-                    <li class="challenge-item">
-                        <span>{{ challenge.name }} ({{ challenge.points }} pts)</span>
-                        <span>
-                            <a href="{% url 'ctf_challenge_edit' ctf_id=ctf.id challenge_id=challenge.id %}" class="btn btn-sm btn-info">Edit</a>
-                            <a href="{% url 'ctf_challenge_delete' ctf_id=ctf.id challenge_id=challenge.id %}" class="btn btn-sm btn-danger">Delete</a>
-                        </span>
-                    </li>
-                {% endfor %}
-            </ul>
+  <section class="card mb-4" aria-labelledby="ctfReadinessHeading">
+    <div class="card-body">
+      <div class="d-flex justify-content-between gap-2 align-items-start flex-wrap">
+        <div>
+          <h2 class="h5" id="ctfReadinessHeading">Competition readiness</h2>
+          <p class="text-body-secondary small mb-0">Check challenges, evidence files, flags, eligibility, and event dates before the competition begins.</p>
         </div>
-    {% empty %}
-        <div class="col-12">
-             <div class="alert alert-info">No challenges have been added to this CTF yet.</div>
+        <div><strong>{{ readiness.blockers }}</strong> blockers · <strong>{{ readiness.warnings }}</strong> warnings</div>
+      </div>
+      {% if readiness.ready %}<p class="text-success mt-2 mb-0">All readiness checks passed.</p>{% endif %}
+      {% if readiness.issues %}
+      <details class="mt-3" open>
+        <summary>Review {{ readiness.issues|length }} finding{{ readiness.issues|pluralize }}</summary>
+        <div class="mt-2">
+        {% for issue in readiness.issues %}
+          <div class="ctf-review"><strong>{% if issue.severity == 'blocker' %}Fix required{% else %}Review{% endif %}:</strong> {{ issue.label }} — {{ issue.message }}</div>
+        {% endfor %}
         </div>
-    {% endfor %}
-</div>
+      </details>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="card mb-4" aria-labelledby="ctfChallengesHeading">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <h2 id="ctfChallengesHeading" class="h5 mb-0">Challenge Management</h2>
+        <div class="d-flex flex-wrap gap-2">
+          <label class="visually-hidden" for="ctfManageSearch">Search challenge name or category</label>
+          <input type="search" id="ctfManageSearch" class="form-control" placeholder="Search challenges">
+          <label class="visually-hidden" for="ctfManageStatus">Filter visibility</label>
+          <select id="ctfManageStatus" class="form-select">
+            <option value="">All challenges</option>
+            <option value="visible">Visible</option>
+            <option value="hidden">Hidden</option>
+          </select>
+        </div>
+      </div>
+      <p class="small text-body-secondary mt-2" id="ctfManageCount" aria-live="polite"></p>
+      <div class="table-responsive mt-2">
+        <table class="ctf-admin-challenges">
+          <thead><tr>
+            <th scope="col">Challenge</th><th scope="col">Category / difficulty</th>
+            <th scope="col">Points</th><th scope="col">Solves</th>
+            <th scope="col">Visibility</th><th scope="col" class="text-end">Actions</th>
+          </tr></thead>
+          <tbody>
+          {% for category_name, challenges in challenges_by_category.items %}
+            {% for challenge in challenges %}
+            <tr class="ctf-manage-row" data-search="{{ challenge.name }} {{ category_name }}" data-state="{% if challenge.is_visible %}visible{% else %}hidden{% endif %}">
+              <td>
+                <strong>{{ challenge.name }}</strong>
+                <details class="small mt-1"><summary>Preview student instructions</summary>
+                  <div class="ctf-detail-html mt-2">{{ challenge.description|safe }}</div>
+                  {% if challenge.attached_file %}<span class="ctf-chip">Evidence attached</span>{% endif %}
+                  {% if challenge.external_link %}<span class="ctf-chip">External target</span>{% endif %}
+                  {% if challenge.linked_lab %}<span class="ctf-chip">Lab: {{ challenge.linked_lab.title }}</span>{% endif %}
+                </details>
+              </td>
+              <td>{{ category_name }}<div class="small text-body-secondary">{{ challenge.get_difficulty_display }}</div></td>
+              <td>{{ challenge.points }}</td>
+              <td>{{ challenge.solve_count }}</td>
+              <td>{% if challenge.is_visible %}<span class="ctf-chip">Visible</span>{% else %}<span class="ctf-chip">Hidden</span>{% endif %}</td>
+              <td class="text-end">
+                <a href="{% url 'ctf_challenge_edit' ctf.id challenge.id %}" class="btn btn-sm btn-outline-primary">Edit</a>
+                <a href="{% url 'ctf_challenge_delete' ctf.id challenge.id %}" class="btn btn-sm btn-outline-danger">Delete</a>
+              </td>
+            </tr>
+            {% endfor %}
+          {% empty %}
+            <tr><td colspan="6"><div class="ctf-empty">No challenges yet. <a href="{% url 'ctf_challenge_create' ctf.id %}">Create your first challenge</a>.</div></td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+  <section class="card" aria-labelledby="ctfActivityHeading">
+    <div class="card-body">
+      <h2 class="h5" id="ctfActivityHeading">Recent successful solves</h2>
+      <p class="small text-body-secondary">Most recent submissions and earned scores. Incorrect attempts are not shown here.</p>
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead><tr><th>When</th><th>Participant / team</th><th>Challenge</th><th class="text-end">Points earned</th></tr></thead>
+          <tbody>
+          {% for solve in recent_submissions %}
+          <tr><td>{{ solve.submitted_at|date:"M j, H:i" }}</td>
+              <td>{% if solve.team %}{{ solve.team.name }}{% else %}{{ solve.user.username }}{% endif %}</td>
+              <td>{{ solve.challenge.name }}</td>
+              <td class="text-end">{{ solve.points_awarded }}</td></tr>
+          {% empty %}
+          <tr><td colspan="4" class="text-center text-body-secondary">No successful solves yet.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</section>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const search = document.getElementById('ctfManageSearch');
+  const state = document.getElementById('ctfManageStatus');
+  if (!search || !state) return;
+  const rows = [...document.querySelectorAll('.ctf-manage-row')];
+  function filter() {
+    const term = search.value.trim().toLowerCase(), visibility = state.value;
+    let visible = 0;
+    for (const row of rows) {
+      const yes = (!term || row.dataset.search.toLowerCase().includes(term)) &&
+        (!visibility || row.dataset.state === visibility);
+      row.hidden = !yes;
+      if (yes) visible++;
+    }
+    document.getElementById('ctfManageCount').textContent = visible + ' of ' + rows.length + ' challenges shown.';
+  }
+  search.addEventListener('input', filter); state.addEventListener('change', filter); filter();
+});
+</script>
 {% endblock %}

@@ -21,6 +21,7 @@
     <form method="post">
         {% csrf_token %}
         {{ form.media }}
+        {{ form.non_field_errors }}
         
         <div class="form-group">
             <label for="{{ form.name.id_for_label }}" class="form-label">Campaign Name</label>
@@ -48,18 +49,18 @@
         </div>
 
         <div class="form-group">
-            <label for="{{ form.visibility.id_for_label }}" class="form-label">Visibility</label>
+            <label for="{{ form.visibility.id_for_label }}" class="form-label">Who can join this competition?</label>
             {{ form.visibility }}
             {{ form.visibility.errors }}
         </div>
         
         <div class="form-group">
-            <label for="{{ form.course.id_for_label }}" class="form-label">Link to Course (for Private CTFs)</label>
+            <label for="{{ form.course.id_for_label }}" class="form-label">Eligible course (required for institutional/private CTFs)</label>
             {{ form.course }}
             {{ form.course.errors }}
         </div>
 
-        {{ form.institution }}
+        <p class="small text-body-secondary">Public events are visible to logged-in participants. For institutional and private events, select a course: eligible participants must be enrolled in that course. LabTech does not currently store verified institution memberships.</p>
         
         <hr>
         <h4>Team Settings</h4>

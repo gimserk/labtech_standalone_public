@@ -5,6 +5,10 @@ on:
     paths:
       - 'app/ai_course_book.py'
       - 'app/ai_course_generation.py'
+      - 'app/services.py'
+      - 'app/ai_provider.py'
+      - 'app/test_ai_blueprint_gateway.py'
+      - 'app/templates/labtech/generating_blueprint.html'
       - 'app/models.py'
       - 'app/migrations/**'
       - 'app/tasks.py'
@@ -44,9 +48,9 @@ jobs:
       - name: Install application
         run: python -m pip install -r requirements.txt
       - name: Validate Python syntax
-        run: python -m py_compile app/ai_course_book.py app/ai_course_generation.py app/tasks.py app/views.py app/test_ai_course_generation_full.py
+        run: python -m py_compile app/ai_course_book.py app/ai_course_generation.py app/tasks.py app/views.py app/test_ai_course_generation_full.py app/test_ai_blueprint_gateway.py app/services.py app/ai_provider.py
       - name: Run AI course and instructor workflow tests
-        run: python manage.py test app.test_ai_course_generation_full app.test_ai_tutor app.test_scenario_management --settings=app.test_settings -v 2
+        run: python manage.py test app.test_ai_blueprint_gateway app.test_ai_course_generation_full app.test_ai_tutor app.test_scenario_management --settings=app.test_settings -v 2
       - name: Verify private textbook migration SQL
         # The repository already has unrelated legacy Cyber City SOC id-field drift.
         # Test migrations are also applied in the Django test step above.

@@ -1,8 +1,10 @@
 {% extends "labtech/generic_base.html" %}
+{% load static %}
 
 {% block labtech_title %}{{ title }}{% endblock %}
 
 {% block labtech_extra_head %}
+<link rel="stylesheet" href="{% static 'labtech/css/ctf-2.css' %}">
 <style>
     .form-container { max-width: 900px; margin: 0 auto; padding: 25px; background-color: var(--lt-surface); border: 1px solid var(--lt-border); border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
     .form-group { margin-bottom: 1.5rem; }
@@ -22,6 +24,8 @@
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         {{ form.media }}
+        {{ form.non_field_errors }}
+        <p class="text-body-secondary small">Set the flag once. The stored answer is protected; leave the flag field blank when editing to keep the existing answer.</p>
         
         <div class="row">
             <div class="col-md-8 form-group">
@@ -51,6 +55,11 @@
         </div>
 
         <div class="form-group">
+            <label for="{{ form.difficulty.id_for_label }}" class="form-label">Difficulty</label>
+            {{ form.difficulty }}
+            {{ form.difficulty.errors }}
+        </div>
+        <div class="form-group">
             <label for="{{ form.description.id_for_label }}" class="form-label">Description / Prompt</label>
             {{ form.description }}
             {{ form.description.errors }}
@@ -59,7 +68,7 @@
         <div class="form-group">
             <label for="{{ form.flag.id_for_label }}" class="form-label">Flag</label>
             {{ form.flag }}
-            <small class="form-text">The exact string students must submit to solve the challenge.</small>
+            <small class="form-text">{{ form.flag.help_text }}</small>
             {{ form.flag.errors }}
         </div>
 
@@ -90,6 +99,8 @@
         </div>
 <hr>
         <h4>Manage Hints</h4>
+        <p class="small text-body-secondary">Hints are optional. Enter a point cost and order for each hint. Add more hints without leaving this form.</p>
+        {{ hint_formset.non_form_errors }}
         <div id="hint-forms-container">
             {{ hint_formset.management_form }}
             {% for form in hint_formset %}
@@ -99,14 +110,17 @@
                     <div class="col-md-8 form-group">
                         <label>Hint Text</label>
                         {{ form.text }}
+                        {{ form.text.errors }}
                     </div>
                     <div class="col-md-2 form-group">
                         <label>Point Cost</label>
                         {{ form.cost }}
+                        {{ form.cost.errors }}
                     </div>
                      <div class="col-md-2 form-group">
                         <label>Order</label>
                         {{ form.order }}
+                        {{ form.order.errors }}
                     </div>
                 </div>
                  {% if form.instance.pk %}
@@ -118,6 +132,26 @@
             </div>
             {% endfor %}
         </div>
+        <template id="ctfNewHintTemplate">
+            <div class="card card-body mb-3 ctf-hint-form">
+                {{ hint_formset.empty_form.id }}
+                <div class="row">
+                    <div class="col-md-8 form-group">
+                        <label for="{{ hint_formset.empty_form.text.id_for_label }}">Hint text</label>
+                        {{ hint_formset.empty_form.text }}
+                    </div>
+                    <div class="col-md-2 form-group">
+                        <label for="{{ hint_formset.empty_form.cost.id_for_label }}">Point cost</label>
+                        {{ hint_formset.empty_form.cost }}
+                    </div>
+                    <div class="col-md-2 form-group">
+                        <label for="{{ hint_formset.empty_form.order.id_for_label }}">Order</label>
+                        {{ hint_formset.empty_form.order }}
+                    </div>
+                </div>
+            </div>
+        </template>
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="ctfAddHint">Add another hint</button>
 <div class="btn-container">
     <button type="submit" class="btn btn-primary">
         {% if form.instance.pk %}Update Challenge{% else %}Add Challenge{% endif %}
@@ -126,4 +160,24 @@
 </div>
     </form>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const add = document.getElementById('ctfAddHint');
+  const template = document.getElementById('ctfNewHintTemplate');
+  const total = document.getElementById('id_hints-TOTAL_FORMS');
+  const container = document.getElementById('hint-forms-container');
+  if (!add || !template || !total || !container) return;
+  add.addEventListener('click', () => {
+    const index = Number(total.value);
+    const markup = template.innerHTML.replace(/__prefix__/g, String(index));
+    const holder = document.createElement('div');
+    holder.innerHTML = markup.trim();
+    const entry = holder.firstElementChild;
+    if (!entry) return;
+    container.appendChild(entry);
+    total.value = String(index + 1);
+    entry.querySelector('textarea, input')?.focus();
+  });
+});
+</script>
 {% endblock %}

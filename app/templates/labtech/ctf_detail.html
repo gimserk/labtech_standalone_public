@@ -1,284 +1,165 @@
 {% extends "labtech/generic_base.html" %}
-
-{% block labtech_title %}{{ title }}{% endblock %}
-
+{% load static %}
+{% block labtech_title %}{{ ctf.name }} — CTF{% endblock %}
 {% block labtech_extra_head %}
-<style>
-    .challenge-board { display: flex; flex-direction: column; gap: 25px; }
-    .category-row { background-color: var(--lt-surface); border: 1px solid var(--lt-border); border-radius: 8px; }
-    .category-title { font-size: 1.5rem; font-weight: 600; padding: 15px 20px; background-color: var(--lt-surface-muted); border-bottom: 1px solid var(--lt-border); }
-    .challenges-grid { display: flex; flex-wrap: wrap; gap: 15px; padding: 20px; }
-    .challenge-card {
-        flex: 0 0 150px; height: 100px; background-color: var(--lt-primary); color: var(--lt-on-accent);
-        border-radius: 8px; cursor: pointer; display: flex; flex-direction: column;
-        justify-content: center; align-items: center; text-align: center;
-        transition: transform 0.2s ease, background-color 0.2s ease;
-    }
-    .challenge-card:hover { transform: scale(1.05); }
-    .challenge-card.solved { background-color: var(--lt-success); border: 2px solid var(--lt-success); cursor: not-allowed; color: var(--lt-on-accent); }
-    .challenge-card-name { font-weight: 500; font-size: 1rem; }
-    .challenge-card-points { font-weight: 700; font-size: 1.8rem; }
-    #challenge-modal .modal-body .description-content img { max-width: 100%; height: auto; }
-    .sidebar-card {
-        position: sticky; top: 20px; border: 1px solid var(--lt-border);
-        border-radius: 8px; background-color: var(--lt-surface);
-    }
-    .sidebar-card .card-header { font-size: 1.2rem; font-weight: 600; background-color: var(--lt-surface-muted); }
-    .sidebar-card .card-body ul { list-style: none; padding-left: 0; }
-    .sidebar-card .card-body li { padding: 5px 0; }
-    .hints-section { margin-top: 15px; }
-    .hint-unlocked { padding: 10px; background-color: var(--lt-surface-muted); border: 1px solid var(--lt-border); border-radius: 5px; }
-</style>
+<link rel="stylesheet" href="{% static 'labtech/css/ctf-2.css' %}">
+<script src="{% static 'labtech/js/ctf-2.js' %}" defer></script>
 {% endblock %}
 
 {% block labtech_content %}
-<div class="page-header">
-    <h2>{{ ctf.name }}</h2>
+<section class="ctf-shell" id="ctfBoard" data-csrf="{{ csrf_token }}" data-submit-url="{% url 'ctf_submit_flag' %}" data-hint-prefix="/api/ctf/hint/" data-active="{{ is_competition_active|yesno:'true,false' }}" aria-labelledby="ctfHeading">
+  <header class="ctf-headline">
     <div>
-        <a href="{% url 'ctf_leaderboard' ctf_id=ctf.id %}" class="btn btn-info">View Leaderboard</a>
-        <a href="{% url 'ctf_list' %}" class="btn btn-secondary">Back to All Competitions</a>
+      <h1 id="ctfHeading">{{ ctf.name }}</h1>
+      <p class="ctf-subtitle mb-0">{{ ctf.start_time|date:"M j, Y, g:i A" }} – {{ ctf.end_time|date:"M j, Y, g:i A" }}</p>
     </div>
-</div>
+    <nav class="d-flex gap-2 flex-wrap" aria-label="CTF competition navigation">
+      <a class="btn btn-outline-primary" href="{% url 'ctf_leaderboard' ctf.id %}"><i class="fas fa-trophy me-1" aria-hidden="true"></i> Leaderboard</a>
+      {% if can_manage %}<a class="btn btn-outline-secondary" href="{% url 'ctf_manage' ctf.id %}">Mission Control</a>{% endif %}
+      <a class="btn btn-outline-secondary" href="{% url 'ctf_list' %}">All Competitions</a>
+    </nav>
+  </header>
+  {% if not is_competition_active %}
+  <div class="alert alert-info" role="status">This competition is no longer accepting flag submissions or new hints.</div>
+  {% endif %}
 
-{% if not is_competition_active and ctf.start_time > now %}
-    <div class="alert alert-warning">
-        This competition has not started yet. It will begin on {{ ctf.start_time|date:"M d, Y, P" }}.
+  <div class="ctf-stat-grid" aria-label="Competition progress">
+    <div class="ctf-stat"><strong>{{ solved_count }}</strong><span>Challenges solved</span></div>
+    <div class="ctf-stat"><strong>{{ challenge_count }}</strong><span>Available challenges</span></div>
+    <div class="ctf-stat"><strong>{% if ctf.allow_teams %}Team{% else %}Solo{% endif %}</strong><span>Competition mode</span></div>
+    <div class="ctf-stat"><strong>{% if is_competition_active %}Live{% else %}Closed{% endif %}</strong><span>Submission status</span></div>
+  </div>
+
+  <section class="ctf-tools" aria-label="Filter challenges">
+    <div class="ctf-search">
+      <label for="ctfSearch">Search challenges</label>
+      <input id="ctfSearch" class="form-control" type="search" placeholder="Find a challenge by name">
     </div>
-{% endif %}
-
-<div class="row mt-4">
-    <div class="col-lg-8">
-        <div class="challenge-board">
-            {% for category_name, challenges in challenges_by_category.items %}
-                <div class="category-row">
-                    <div class="category-title">{{ category_name }}</div>
-                    <div class="challenges-grid">
-                        {% for challenge in challenges %}
-                            <div class="challenge-card {% if challenge.id in solved_challenge_ids %}solved{% endif %}"
-                                 data-bs-toggle="modal" 
-                                 data-bs-target="#challenge-modal"
-                                 data-challenge-id="{{ challenge.id }}"
-                                 data-name="{{ challenge.name }}"
-                                 data-points="{{ challenge.points }}"
-                                 data-description="{{ challenge.description|safe }}"
-                                 data-file-url="{% if challenge.attached_file %}{{ challenge.attached_file.url }}{% endif %}"
-                                 data-file-name="{% if challenge.attached_file %}{{ challenge.attached_file.name|cut:'ctf_files/' }}{% endif %}"
-                                 data-external-link="{{ challenge.external_link|default:'' }}"
-                                 data-lab-url="{% if challenge.linked_lab %}{% url 'view_lab' course_id=challenge.linked_lab.course.id lab_id=challenge.linked_lab.id %}{% endif %}">
-                                
-                                <div class="challenge-card-name">{{ challenge.name }}</div>
-                                <div class="challenge-card-points">{{ challenge.points }}</div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            {% empty %}
-                <p>There are no challenges available for this competition yet. Please check back later.</p>
-            {% endfor %}
-        </div>
+    <div class="ctf-filter">
+      <label for="ctfCategoryFilter">Category</label>
+      <select id="ctfCategoryFilter" class="form-select"><option value="">All categories</option>
+      {% for category_name, challenges in challenges_by_category.items %}<option value="{{ category_name }}">{{ category_name }}</option>{% endfor %}
+      </select>
     </div>
+    <div class="ctf-filter">
+      <label for="ctfDifficultyFilter">Difficulty</label>
+      <select id="ctfDifficultyFilter" class="form-select">
+        <option value="">All difficulties</option>
+        <option value="beginner">Beginner</option>
+        <option value="intermediate">Intermediate</option>
+        <option value="advanced">Advanced</option>
+      </select>
+    </div>
+    <div class="ctf-filter">
+      <label for="ctfSolveFilter">Progress</label>
+      <select id="ctfSolveFilter" class="form-select">
+        <option value="">All challenges</option>
+        <option value="unsolved">Unsolved</option>
+        <option value="solved">Solved</option>
+      </select>
+    </div>
+  </section>
+  <p class="small text-body-secondary" id="ctfFilterCount" aria-live="polite"></p>
 
-    <div class="col-lg-4">
-        <div class="sidebar-card">
-            <div class="card-header">
-                {% if ctf.allow_teams %}Team Status{% else %}Your Status{% endif %}
+  <div class="ctf-board-layout">
+    <div id="ctfCategories">
+      {% for category_name, challenges in challenges_by_category.items %}
+      <section class="ctf-category" data-category="{{ category_name }}" aria-label="{{ category_name }} challenges">
+        <h2>{{ category_name }}</h2>
+        <div class="ctf-challenges">
+          {% for challenge in challenges %}
+          <button type="button" class="ctf-challenge {% if challenge.is_solved %}solved{% endif %}"
+                  data-bs-toggle="modal" data-bs-target="#ctfChallengeModal"
+                  data-id="{{ challenge.id }}" data-title="{{ challenge.name }}"
+                  data-points="{{ challenge.points }}" data-difficulty="{{ challenge.difficulty }}"
+                  data-category="{{ category_name }}" data-solved="{{ challenge.is_solved|yesno:'true,false' }}"
+                  data-file-url="{% if challenge.attached_file %}{% url 'ctf_challenge_evidence' ctf.id challenge.id %}{% endif %}"
+                  data-file-name="{% if challenge.attached_file %}{{ challenge.attached_file.name|cut:'ctf_files/' }}{% endif %}"
+                  data-external-url="{{ challenge.external_link|default:'' }}"
+                  data-lab-url="{% if challenge.linked_lab %}{% url 'view_lab' course_id=challenge.linked_lab.course_id lab_id=challenge.linked_lab_id %}{% endif %}"
+                  aria-label="{{ challenge.name }}, {{ challenge.points }} points, {{ challenge.get_difficulty_display }}{% if challenge.is_solved %}, solved{% endif %}">
+            <h3>{{ challenge.name }}</h3>
+            <span class="ctf-chip">{{ challenge.get_difficulty_display }}</span>
+            <div class="ctf-card-meta">
+              <span class="ctf-points">{{ challenge.points }} pts</span>
+              {% if challenge.is_solved %}<span class="ctf-chip solved"><i class="fas fa-check me-1" aria-hidden="true"></i>Solved</span>{% else %}<span class="ctf-chip">Unsolved</span>{% endif %}
             </div>
-            <div class="card-body">
-                {% if ctf.allow_teams %}
-                    {% if user_team %}
-                        <h4>{{ user_team.name }}</h4>
-                        <p><strong>Members:</strong></p>
-                        <ul>
-                        {% for member in user_team.members.all %}
-                           <li>{{ member.username }}{% if member == user_team.leader %} (Leader) ⭐{% endif %}</li>
-                        {% endfor %}
-                        </ul>
-                        <hr>
-                        {% if user == user_team.leader and user_team.members.count < ctf.max_team_size %}
-                            <h6>Invite a New Member</h6>
-                            <form method="post">
-                                {% csrf_token %}
-                                <input type="hidden" name="action" value="invite_member">
-                                <div class="input-group">
-                                    {{ invite_form.email }}
-                                    <button class="btn btn-sm btn-outline-secondary" type="submit">Invite</button>
-                                </div>
-                                {{ invite_form.email.errors }}
-                            </form>
-                            <hr>
-                        {% endif %}
-                        <form method="post" onsubmit="return confirm('Are you sure you want to leave this team?');">
-                             {% csrf_token %}
-                            <input type="hidden" name="action" value="leave_team">
-                            <button type="submit" class="btn btn-sm btn-danger w-100">Leave Team</button>
-                        </form>
-                    {% else %}
-                        <h6>You are not on a team.</h6>
-                        <p>Create a team to start competing with others.</p>
-                        <form method="post" class="mt-3">
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="create_team">
-                            <div class="mb-2">
-                                {{ team_form.name }}
-                                {% for error in team_form.name.errors %}
-                                    <div class="form-text text-danger">{{ error }}</div>
-                                {% endfor %}
-                            </div>
-                            <button type="submit" class="btn btn-primary w-100">Create Team</button>
-                        </form>
-                    {% endif %}
-                {% else %}
-                    <p>This is a solo competition. Good luck!</p>
-                {% endif %}
-            </div>
+          </button>
+          <template id="ctf-desc-{{ challenge.id }}">{{ challenge.description|safe }}</template>
+          {% endfor %}
         </div>
+      </section>
+      {% empty %}
+      <div class="ctf-empty">There are no visible challenges yet. Check back after your instructor releases them.</div>
+      {% endfor %}
     </div>
-</div>
 
-<div class="modal fade" id="challenge-modal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
+    <aside class="ctf-sidebar" aria-labelledby="ctfTeamHeading">
+      <h2 id="ctfTeamHeading">{% if ctf.allow_teams %}Your team{% else %}Your competition{% endif %}</h2>
+      {% if ctf.allow_teams %}
+        {% if user_team %}
+          <h3 class="h5">{{ user_team.name }}</h3>
+          <p class="small text-body-secondary mb-1">{{ user_team.members.count }} / {{ ctf.max_team_size }} members</p>
+          <ul>{% for member in user_team.members.all %}<li>{{ member.username }}{% if member == user_team.leader %} <span class="ctf-chip">Captain</span>{% endif %}</li>{% endfor %}</ul>
+          {% if is_competition_active and user == user_team.leader and user_team.members.count < ctf.max_team_size %}
+            <form method="post" class="mb-3">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="invite_member">
+              <label for="{{ invite_form.email.id_for_label }}" class="form-label">Add enrolled teammate by email</label>
+              {{ invite_form.email }}
+              {% for err in invite_form.email.errors %}<div class="text-danger small">{{ err }}</div>{% endfor %}
+              <button class="btn btn-outline-primary btn-sm mt-2" type="submit">Add teammate</button>
+              <p class="small text-body-secondary mt-1">The participant must already be eligible and enrolled in this CTF.</p>
+            </form>
+          {% endif %}
+          {% if is_competition_active %}<form method="post" onsubmit="return confirm('Leave this team? Your team score remains with the team.')">
+            {% csrf_token %}<input type="hidden" name="action" value="leave_team">
+            <button type="submit" class="btn btn-outline-danger btn-sm">Leave team</button>
+          </form>{% endif %}
+        {% else %}
+          <p>Join a team before submitting flags in this competition.</p>
+          {% if is_competition_active %}
+          <form method="post">
+            {% csrf_token %}<input type="hidden" name="action" value="create_team">
+            <label for="{{ team_form.name.id_for_label }}" class="form-label">New team name</label>
+            {{ team_form.name }}
+            {% for err in team_form.name.errors %}<div class="text-danger small">{{ err }}</div>{% endfor %}
+            <button type="submit" class="btn btn-primary mt-2">Create team</button>
+          </form>
+          {% endif %}
+        {% endif %}
+      {% else %}
+        <p>Your individual solves and score are recorded separately from team competitions.</p>
+      {% endif %}
+      <hr>
+      <p class="small text-body-secondary">Hints cost points on a solved challenge. Reveal only when needed.</p>
+    </aside>
+  </div>
+</section>
+
+<div class="modal fade" id="ctfChallengeModal" tabindex="-1" aria-labelledby="ctfModalTitle" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="modal-challenge-name">Challenge Title</h5>
-        <span class="badge bg-primary ms-3" id="modal-challenge-points"></span>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <h2 class="modal-title h5" id="ctfModalTitle">Challenge</h2>
+        <span class="ctf-chip ms-2" id="ctfModalPoints"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close challenge"></button>
       </div>
       <div class="modal-body">
-        <div id="modal-challenge-description" class="description-content mb-3"></div>
-        <div id="modal-resources"></div>
-        <div class="hints-section" id="modal-hints-container"></div>
-        <hr>
-        <div id="modal-submission-form">
-            <div class="input-group">
-                <input type="text" class="form-control" id="flag-input" placeholder="flag{...}">
-                <button class="btn btn-primary" type="button" id="submit-flag-btn">Submit</button>
-            </div>
-            <div id="modal-feedback" class="form-text mt-2"></div>
-        </div>
+        <div id="ctfModalDescription" class="ctf-detail-html mb-3"></div>
+        <div id="ctfModalResources" class="mb-3"></div>
+        <section aria-label="Challenge hints" id="ctfModalHints"></section>
+        <form id="ctfFlagForm" class="mt-3">
+          <label for="ctfFlagInput" class="form-label">Submit your flag</label>
+          <div class="input-group">
+            <input id="ctfFlagInput" name="flag" type="text" class="form-control" maxlength="255" autocomplete="off" placeholder="flag{...}" required>
+            <button id="ctfFlagSubmit" type="submit" class="btn btn-primary">Submit Flag</button>
+          </div>
+        </form>
+        <div id="ctfFlagFeedback" role="status" aria-live="polite" class="ctf-feedback small mt-2"></div>
       </div>
     </div>
   </div>
 </div>
-{% endblock %}
-
-{% block labtech_extra_body %}
-<script id="all-hints-data" type="application/json">{{ all_hints_json|safe }}</script>
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const challengeModal = document.getElementById('challenge-modal');
-    const csrfToken = '{{ csrf_token }}';
-    let currentChallengeId = null;
-
-    // Load all hint data into a JavaScript variable once
-    const allHints = JSON.parse(document.getElementById('all-hints-data').textContent);
-
-    challengeModal.addEventListener('show.bs.modal', function (event) {
-        const card = event.relatedTarget;
-        currentChallengeId = parseInt(card.dataset.challengeId);
-
-        // Populate main modal content
-        document.getElementById('modal-challenge-name').textContent = card.dataset.name;
-        document.getElementById('modal-challenge-points').textContent = card.dataset.points + ' pts';
-        document.getElementById('modal-challenge-description').innerHTML = card.dataset.description;
-        
-        const resourcesDiv = document.getElementById('modal-resources');
-        resourcesDiv.innerHTML = '';
-        if (card.dataset.fileUrl) {
-            resourcesDiv.innerHTML += `<p><strong>Attachment:</strong> <a href="${card.dataset.fileUrl}" download>${card.dataset.fileName}</a></p>`;
-        }
-        if (card.dataset.externalLink) {
-            resourcesDiv.innerHTML += `<p><strong>Link:</strong> <a href="${card.dataset.externalLink}" target="_blank">Open Challenge Site</a></p>`;
-        }
-        if (card.dataset.labUrl) {
-            resourcesDiv.innerHTML += `<p><strong>Required Lab:</strong> <a href="${card.dataset.labUrl}" target="_blank">Go to Lab Environment</a></p>`;
-        }
-
-        // Populate Hints by filtering the global hint object
-        const hintsContainer = document.getElementById('modal-hints-container');
-        hintsContainer.innerHTML = '';
-        const hintsForThisChallenge = allHints.filter(h => h.challenge_id === currentChallengeId);
-        
-        if (hintsForThisChallenge.length > 0) {
-            hintsContainer.innerHTML += '<hr><h6>Hints:</h6>';
-            hintsForThisChallenge.forEach(hint => {
-                const hintEl = document.createElement('div');
-                hintEl.classList.add('mb-2');
-                if (hint.is_unveiled) {
-                    hintEl.className = 'hint-unlocked';
-                    hintEl.innerHTML = `<strong>Hint ${hint.order}:</strong> ${hint.text}`;
-                } else {
-                    hintEl.innerHTML = `<button class="btn btn-sm btn-outline-secondary unveil-hint-btn" data-hint-id="${hint.id}">Reveal Hint #${hint.order} (Cost: ${hint.cost} pts)</button>`;
-                }
-                hintsContainer.appendChild(hintEl);
-            });
-        }
-        
-        // Reset feedback and input form state
-        document.getElementById('modal-feedback').textContent = '';
-        document.getElementById('flag-input').value = '';
-        const submissionForm = document.getElementById('modal-submission-form');
-        const isSolved = card.classList.contains('solved');
-        if (isSolved || !{{ is_competition_active|yesno:"true,false" }}) {
-            submissionForm.style.display = 'none';
-            if(isSolved) document.getElementById('modal-feedback').textContent = "You have already solved this challenge.";
-        } else {
-            submissionForm.style.display = 'block';
-        }
-    });
-
-    // Event listener for clicking a "Reveal Hint" button
-    document.body.addEventListener('click', function(event) {
-    if (event.target.classList.contains('unveil-hint-btn')) {
-        const button = event.target;
-        const hintId = button.dataset.hintId;
-        
-        // --- NEW CONFIRMATION DIALOG ---
-        const confirmationMessage = "Are you sure you want to reveal this hint? Its point cost will be deducted from your score for this challenge if you solve it.";
-        if (confirm(confirmationMessage)) {
-            button.disabled = true;
-            button.textContent = 'Unveiling...';
-            
-            fetch(`/api/ctf/hint/${hintId}/unveil/`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-            })
-            .then(res => res.json())
-            .then(data => {
-                const hintContainer = button.parentElement;
-                if (data.status === 'success') {
-                    hintContainer.className = 'hint-unlocked';
-                    hintContainer.innerHTML = `<strong>Hint:</strong> ${data.hint_text}`;
-                } else {
-                    hintContainer.innerHTML = `<span class="text-danger">Error: ${data.message}</span>`;
-                }
-            });
-        }
-        // If user clicks "Cancel", nothing happens.
-    }
-});
-
-    // Event listener for submitting a flag
-    document.getElementById('submit-flag-btn').addEventListener('click', function () {
-        const flag = document.getElementById('flag-input').value;
-        const feedbackEl = document.getElementById('modal-feedback');
-
-        fetch(`{% url 'ctf_submit_flag' %}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken, },
-            body: JSON.stringify({ challenge_id: currentChallengeId, flag: flag, }),
-        })
-        .then(response => response.json())
-        .then(data => {
-            feedbackEl.textContent = data.message;
-            if (data.status === 'success') {
-                feedbackEl.className = 'form-text mt-2 text-success fw-bold';
-                setTimeout(() => { window.location.reload(); }, 1500);
-            } else {
-                feedbackEl.className = 'form-text mt-2 text-danger fw-bold';
-            }
-        });
-    });
-});
-</script>
+{{ all_hints|json_script:"ctfHintsData" }}
 {% endblock %}

@@ -1,153 +1,74 @@
 {% extends "labtech/generic_base.html" %}
-
-{% block labtech_title %}{{ title }}{% endblock %}
-
-{% block labtech_extra_head %}
-<style>
-    .ctf-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-        gap: 25px;
-    }
-    .ctf-card {
-        display: flex;
-        flex-direction: column;
-        border: 1px solid var(--lt-border);
-        border-radius: 8px;
-        background-color: var(--lt-surface);
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .ctf-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    .ctf-card-header { padding: 20px; border-bottom: 1px solid var(--lt-border); }
-    .ctf-card-header h3 { margin: 0; font-size: 1.3rem; }
-    .ctf-card-body { padding: 20px; flex-grow: 1; color: var(--lt-muted); }
-    .ctf-card-footer {
-        padding: 15px 20px;
-        background-color: var(--lt-surface-muted);
-        border-top: 1px solid var(--lt-border);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .status-badge {
-        padding: 5px 10px; border-radius: 15px; font-size: 0.8em;
-        font-weight: 600; color: var(--lt-on-accent); text-transform: uppercase;
-    }
-    .status-active { background-color: var(--lt-success); color: var(--lt-on-accent); }
-    .status-upcoming { background-color: var(--lt-warning); color: var(--lt-on-warning); }
-    .status-finished { background-color: var(--lt-secondary); color: var(--lt-on-accent); }
-
-    /* Ensure modal content with images doesn't overflow */
-    #descriptionModalBody img {
-        max-width: 100%;
-        height: auto;
-    }
-    .ctf-details {
-    font-size: 0.9em;
-    color: var(--lt-text);
-    border-top: 1px solid var(--lt-border);
-    margin-top: auto; /* Pushes details to the bottom of the card body */
-    padding-top: 15px;
-}
-.ctf-details p {
-    margin-bottom: 5px;
-    display: flex;
-    align-items: center;
-}
-.ctf-details strong {
-    margin-left: 8px;
-}
-</style>
-{% endblock %}
-
+{% load static %}
+{% block labtech_title %}CTF Competitions{% endblock %}
+{% block labtech_extra_head %}<link rel="stylesheet" href="{% static 'labtech/css/ctf-2.css' %}">{% endblock %}
 {% block labtech_content %}
-<div class="page-header">
-    <h2>{{ title }}</h2>
-</div>
-
-<div class="ctf-grid">
-    {% for ctf in ctf_campaigns %}
-        <div class="ctf-card">
-            <div class="ctf-card-header">
-                <h3>{{ ctf.name }}</h3>
-            </div>
-            <div class="ctf-card-body">
- <p>{{ ctf.description|truncatewords_html:20|safe }}</p>
-
-    <div class="ctf-details">
-        <p>🌐 <strong>Visibility:</strong> {{ ctf.get_visibility_display }}</p>
-        <p>📅 <strong>Active:</strong> {{ ctf.start_time|date:"M d, Y" }} - {{ ctf.end_time|date:"M d, Y" }}</p>
-    </div>
-
-    <div class="full-description" style="display: none;">{{ ctf.description|safe }}</div>
-</div>
-            <div class="ctf-card-footer">
-                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#descriptionModal">
-                    Read More
-                </button>
-                
-                {% if ctf.is_enrolled %}
-                    <a href="{% url 'ctf_detail' ctf_id=ctf.id %}" class="btn btn-secondary btn-sm">View Competition</a>
-                {% else %}
-                    <form action="{% url 'ctf_enroll' ctf_id=ctf.id %}" method="post" style="margin: 0;">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-primary btn-sm">Enroll Now</button>
-                    </form>
-                {% endif %}
-            </div>
-        </div>
-    {% empty %}
-        <div class="col-12">
-             <p>There are currently no CTF competitions available for you to join.</p>
-        </div>
-    {% endfor %}
-</div>
-
-<div class="modal fade" id="descriptionModal" tabindex="-1">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="descriptionModalLabel">CTF Details</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body" id="descriptionModalBody">
-        </div>
-    </div>
+<section class="ctf-shell">
+  <header class="ctf-headline">
+    <div><h1>CTF Competitions</h1><p class="ctf-subtitle">Join an eligible event, solve challenges, and work with your team.</p></div>
+  </header>
+  <div class="ctf-tools" aria-label="Competition filters">
+    <div class="ctf-search"><label for="ctfListSearch">Find competition</label><input class="form-control" id="ctfListSearch" type="search" placeholder="Search event names"></div>
+    <div class="ctf-filter"><label for="ctfListStatus">Status</label><select id="ctfListStatus" class="form-select">
+      <option value="">All statuses</option><option value="Active">Active</option><option value="Upcoming">Upcoming</option><option value="Finished">Finished</option>
+    </select></div>
+    <div class="ctf-filter"><label for="ctfListJoined">Enrollment</label><select id="ctfListJoined" class="form-select">
+      <option value="">All eligible events</option><option value="joined">Enrolled</option><option value="new">Not yet enrolled</option>
+    </select></div>
   </div>
-</div>
-{% endblock %}
-
-
-{% block labtech_extra_body %}
+  <p class="small text-body-secondary" id="ctfListCount" aria-live="polite"></p>
+  <div class="row g-3">
+    {% for ctf in ctf_campaigns %}
+    <div class="col-md-6 col-xl-4 ctf-list-item" data-search="{{ ctf.name }}" data-status="{{ ctf.status }}" data-joined="{% if ctf.is_enrolled %}joined{% else %}new{% endif %}">
+      <article class="card h-100"><div class="card-body d-flex flex-column">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <span class="ctf-chip">{{ ctf.status }}</span>
+          <span class="ctf-chip">{{ ctf.get_visibility_display }}</span>
+        </div>
+        <h2 class="h5 mt-3">{{ ctf.name }}</h2>
+        <p class="small text-body-secondary">{{ ctf.start_time|date:"M j, Y, g:i A" }} – {{ ctf.end_time|date:"M j, Y, g:i A" }}</p>
+        <div class="small">{{ ctf.description|striptags|truncatewords:30 }}</div>
+        <details class="mt-2"><summary>Full competition rules</summary><div class="ctf-detail-html mt-2">{{ ctf.description|safe }}</div></details>
+        <div class="mt-auto pt-3 d-flex flex-wrap gap-2">
+          {% if ctf.is_enrolled %}
+            {% if ctf.status == 'Upcoming' %}
+              <span class="text-body-secondary small">Enrolled — begins on {{ ctf.start_time|date:"M j" }}</span>
+            {% else %}
+              <a href="{% url 'ctf_detail' ctf.id %}" class="btn btn-primary">Open Competition</a>
+            {% endif %}
+          {% elif ctf.can_enroll %}
+            <form method="post" action="{% url 'ctf_enroll' ctf.id %}">{% csrf_token %}
+              <button class="btn btn-primary" type="submit">Enroll</button>
+            </form>
+          {% else %}
+            <span class="text-body-secondary small">Enrollment closed</span>
+          {% endif %}
+          {% if ctf.status == 'Finished' and ctf.is_enrolled %}
+            <a class="btn btn-outline-secondary" href="{% url 'ctf_leaderboard' ctf.id %}">Final Scores</a>
+          {% endif %}
+        </div>
+      </div></article>
+    </div>
+    {% empty %}
+    <div class="col-12"><p class="ctf-empty">No eligible competitions are available right now. Your instructor can assign a course-based competition.</p></div>
+    {% endfor %}
+  </div>
+</section>
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const descriptionModal = document.getElementById('descriptionModal');
-    // This event fires whenever the modal is about to be shown
-    descriptionModal.addEventListener('show.bs.modal', function (event) {
-        // Button that triggered the modal
-        const button = event.relatedTarget;
-        
-        // Find the parent card of the button that was clicked
-        const card = button.closest('.ctf-card');
-        
-        // Get the title from the card's header
-        const title = card.querySelector('.ctf-card-header h3').textContent;
-        
-        // Get the full HTML content from the hidden div inside the card
-        const content = card.querySelector('.full-description').innerHTML;
-        
-        // Get the elements inside the modal to update
-        const modalTitle = descriptionModal.querySelector('.modal-title');
-        const modalBody = descriptionModal.querySelector('.modal-body');
-        
-        // Update the modal's content
-        modalTitle.textContent = title;
-        modalBody.innerHTML = content;
-    });
+document.addEventListener('DOMContentLoaded', () => {
+  const search = document.getElementById('ctfListSearch'), status = document.getElementById('ctfListStatus'), joined = document.getElementById('ctfListJoined');
+  if (!search) return;
+  const cards = [...document.querySelectorAll('.ctf-list-item')];
+  function run() {
+    let shown = 0, term = search.value.trim().toLowerCase();
+    for (const card of cards) {
+      const show = (!term || card.dataset.search.toLowerCase().includes(term)) && (!status.value || card.dataset.status === status.value) && (!joined.value || card.dataset.joined === joined.value);
+      card.hidden = !show;
+      if (show) shown++;
+    }
+    document.getElementById('ctfListCount').textContent = shown + ' of ' + cards.length + ' competitions shown.';
+  }
+  search.addEventListener('input', run); status.addEventListener('change',run); joined.addEventListener('change',run); run();
 });
 </script>
 {% endblock %}
