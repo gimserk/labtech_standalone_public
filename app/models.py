@@ -2130,6 +2130,17 @@ class CTFChallengeTemplate(models.Model):
     tags = models.CharField(max_length=500, blank=True, help_text='Comma-separated search tags')
     flag_hash = models.CharField(max_length=255, blank=True)
     hints = models.JSONField(default=list, blank=True)
+    artifact_text = models.TextField(blank=True, help_text='Optional instructor-reviewed plain-text evidence to attach as a private .txt file on deployment.')
+    binary_artifact = models.FileField(
+        storage=CTFPrivateStorage(), upload_to='ctf_bank_artifacts/',
+        blank=True, null=True,
+        help_text='Instructor-uploaded private PNG/JPEG/PDF/PCAP evidence; one file per template.',
+    )
+    verification_plan = models.JSONField(
+        default=dict, blank=True,
+        help_text='Instructor-only AI suggested validation steps. Never applied to live labs or SOC resources automatically.',
+    )
+    instructor_solution = models.TextField(blank=True, help_text='Instructor-only answer rationale; never copied into student challenges or portable exports.')
     external_link = models.URLField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -2165,6 +2176,24 @@ class CTFChallenge(models.Model):
         related_name='ctf_verified_challenges',
         help_text='Optional: require successful, current QEMU guest-agent checks for this linked lab step before accepting a flag.',
     )
+    soc_ticket = models.ForeignKey(
+        'CyberCitySOCTicket', on_delete=models.PROTECT, null=True, blank=True,
+        related_name='ctf_challenges',
+        help_text='Optional: a specific real SOC ticket that must be resolved by an authorized SOC team.',
+    )
+    SOC_EVIDENCE = [('wazuh', 'Wazuh detection'), ('checkmk', 'Checkmk service alert')]
+    soc_evidence_type = models.CharField(
+        max_length=12, blank=True, choices=SOC_EVIDENCE,
+        help_text='Require real mapped SOC evidence linked to the selected ticket.',
+    )
+    SCORING_METHOD_CHOICES = [
+        ('flag', 'Submit a flag'),
+        ('evidence', 'Verify live evidence (no flag)'),
+    ]
+    scoring_method = models.CharField(
+        max_length=12, choices=SCORING_METHOD_CHOICES, default='flag',
+        help_text='Evidence mode awards points only when the submitting student passes all configured live lab/SOC requirements.',
+    )
     is_visible = models.BooleanField(default=True, help_text="Uncheck to hide this challenge from participants temporarily.")
 
     def __str__(self):
@@ -2180,6 +2209,10 @@ class CTFSubmission(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='ctf_submissions')
     team = models.ForeignKey(CTFTeam, on_delete=models.CASCADE, null=True, blank=True, related_name='submissions')
     points_awarded = models.IntegerField(default=0, help_text="The actual points awarded for this submission, considering hint costs.")
+    scoring_source = models.CharField(
+        max_length=12, choices=[('flag', 'Flag submission'), ('evidence', 'Verified evidence')],
+        default='flag', help_text='Immutable award origin for scoreboard and auditing.',
+    )
     submitted_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

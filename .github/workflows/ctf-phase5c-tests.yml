@@ -1,0 +1,42 @@
+name: CTF Phase 5C — Evidence and Verification Planning
+
+on:
+  pull_request:
+    paths:
+      - 'app/models.py'
+      - 'app/ctf_bank.py'
+      - 'app/ctf_ai_verification.py'
+      - 'app/ctf_evidence_validation.py'
+      - 'app/urls.py'
+      - 'app/templates/labtech/ctf_bank_edit.html'
+      - 'app/templates/labtech/ctf_ai_verification_plan.html'
+      - 'app/migrations/0079_ctf_private_artifact_verification_plan.py'
+      - 'app/test_ctf_phase5c.py'
+      - '.github/workflows/ctf-phase5c-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'app/ctf_ai_verification.py'
+      - 'app/ctf_evidence_validation.py'
+      - 'app/test_ctf_phase5c.py'
+
+permissions:
+  contents: read
+jobs:
+  ctf-evidence-planning:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: Native dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config default-libmysqlclient-dev libldap2-dev libsasl2-dev libssl-dev libxml2-dev libxslt1-dev libjpeg-dev zlib1g-dev libffi-dev
+      - name: Install application
+        run: python -m pip install -r requirements.txt
+      - name: Compile changed modules
+        run: python -m py_compile app/models.py app/ctf_bank.py app/ctf_ai_verification.py app/ctf_evidence_validation.py app/urls.py app/test_ctf_phase5c.py app/migrations/0079_ctf_private_artifact_verification_plan.py
+      - name: Phase 5C and previous AI challenge suites
+        run: python manage.py test app.test_ctf_phase5c app.test_ctf_phase5b app.test_ctf_phase5 --settings=app.test_settings -v 2

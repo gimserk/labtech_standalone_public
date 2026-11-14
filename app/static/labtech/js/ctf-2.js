@@ -127,12 +127,31 @@
         el('ctfModalHints').appendChild(wrap);
       }
       const canSubmit = board.dataset.active === 'true' && card.dataset.solved !== 'true';
-      el('ctfFlagForm').hidden = !canSubmit;
+      const evidence = card.dataset.scoringMethod === 'evidence';
+      el('ctfFlagForm').hidden = !canSubmit || evidence;
+      el('ctfEvidenceActions').hidden = !canSubmit || !evidence;
       el('ctfFlagInput').value = '';
       setFeedback(canSubmit ? '' : card.dataset.solved === 'true'
         ? 'This challenge has already been solved.' : 'This competition is not accepting flags.');
     }
     modal?.addEventListener('show.bs.modal', event => showChallenge(event.relatedTarget));
+    el('ctfEvidenceClaim')?.addEventListener('click', async () => {
+      if (!current || current.dataset.scoringMethod !== 'evidence') return;
+      const button = el('ctfEvidenceClaim');
+      button.disabled = true;
+      setFeedback('Checking live LabTech evidence...');
+      try {
+        const data = await send(board.dataset.claimUrl, {challenge_id: Number(current.dataset.id)});
+        setFeedback(data.message);
+        current.classList.add('solved');
+        current.dataset.solved = 'true';
+        current.setAttribute('aria-label', current.dataset.title + ', solved');
+        el('ctfEvidenceActions').hidden = true;
+        window.setTimeout(() => window.location.reload(), 1200);
+      } catch (error) {
+        setFeedback(error.message, true);
+      } finally { button.disabled = false; }
+    });
     el('ctfFlagForm')?.addEventListener('submit', async event => {
       event.preventDefault();
       if (!current || !el('ctfFlagForm').reportValidity()) return;

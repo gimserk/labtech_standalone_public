@@ -1,0 +1,381 @@
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 110 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: allauth, ckeditor, ckeditor_uploader, crispy_bootstrap5, crispy_forms, messages, sitemaps, staticfiles
+  Apply all migrations: account, admin, app, auth, contenttypes, django_celery_beat, sessions, sites, socialaccount
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying contenttypes.0001_initial... OK
+  Applying auth.0001_initial... OK
+  Applying account.0001_initial... OK
+  Applying account.0002_email_max_length... OK
+  Applying account.0003_alter_emailaddress_create_unique_verified_email... OK
+  Applying account.0004_alter_emailaddress_drop_unique_email... OK
+  Applying account.0005_emailaddress_idx_upper_email... OK
+  Applying account.0006_emailaddress_lower... OK
+  Applying account.0007_emailaddress_idx_email... OK
+  Applying account.0008_emailaddress_unique_primary_email_fixup... OK
+  Applying account.0009_emailaddress_unique_primary_email... OK
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying app.0001_initial... OK
+  Applying app.0002_course_enrollment_code_course_enrollment_type... OK
+  Applying app.0003_openwebuiassistant_model_name... OK
+  Applying app.0004_openwebuiassistant_verify_ssl... OK
+  Applying app.0005_proxmoxserver_vmid_range_end_and_more... OK
+  Applying app.0006_license... OK
+  Applying app.0007_license_contract_end_date_license_cybercity_enabled_and_more... OK
+  Applying app.0008_filesubmissionactivity_filesubmission... OK
+  Applying app.0009_audio_content... OK
+  Applying app.0010_lab_cleanup_models... OK
+  Applying app.0011_lab_check_models... OK
+  Applying app.0012_gradebook_policy... OK
+  Applying app.0013_profile_appearance... OK
+  Applying app.0014_ai_tutor_provider... OK
+  Applying app.0015_plugin_revocation... OK
+  Applying app.0016_plugin_registry... OK
+  Applying app.0017_plugin_active_job_constraint... OK
+  Applying app.0018_plugin_job_recovery... OK
+  Applying app.0019_pbq_activities... OK
+  Applying app.0020_cybercity_control_vm... OK
+  Applying app.0021_cybercity_esp32_provisioning_key... OK
+  Applying app.0022_cybercity_mqtt_tls... OK
+  Applying app.0023_cybercity_esp32_firmware_reporting... OK
+  Applying app.0024_tekcon_nfc_auth... OK
+  Applying app.0025_tekcon_nfc_target_ctf... OK
+  Applying app.0026_tekcon_nfc_target_course... OK
+  Applying app.0027_assignment_rubrics... OK
+  Applying app.0020_alter_coursecategoryweight_category_key_and_more... OK
+  Applying app.0021_lab_clone_type... OK
+  Applying app.0028_merge_20261023_1546... OK
+  Applying app.0029_course_learning_outcomes... OK
+  Applying app.0030_cybercity_command_outbox... OK
+  Applying app.0031_cybercity_versioned_commands... OK
+  Applying app.0032_cybercity_reset_status... OK
+  Applying app.0033_proxmox_vnc_port_range... OK
+  Applying app.0034_lab_build_completion... OK
+  Applying app.0035_lab_node_migration... OK
+  Applying app.0036_cybercity_service_recovery... OK
+  Applying app.0037_cybercity_monitors... OK
+  Applying app.0038_student_activity_event... OK
+  Applying app.0039_cybercity_soc_foundation... OK
+  Applying app.0040_cybercity_soc_alerts... OK
+  Applying app.0041_cybercity_soc_service_history... OK
+  Applying app.0042_cybercity_soc_checkmk_hosts... OK
+  Applying app.0043_cybercity_soc_checkmk_samples... OK
+  Applying app.0044_cybercity_soc_checkmk_alerts... OK
+  Applying app.0045_cybercity_soc_checkmk_triage... OK
+  Applying app.0046_cybercity_soc_wazuh_agents... OK
+  Applying app.0047_cybercity_soc_wazuh_detections... OK
+  Applying app.0048_cybercity_soc_wazuh_evidence... OK
+  Applying app.0049_cybercity_soc_scenarios... OK
+  Applying app.0050_cybercity_soc_scenario_incidents... OK
+  Applying app.0051_cybercity_soc_investigations... OK
+  Applying app.0052_cybercity_soc_investigation_review... OK
+  Applying app.0053_cybercity_soc_rubric_scores... OK
+  Applying app.0054_cybercity_soc_course_activity... OK
+  Applying app.0055_cybercity_soc_simulations... OK
+  Applying app.0056_cybercity_soc_simulation_timeline... OK
+  Applying app.0057_cybercity_soc_simulation_history... OK
+  Applying app.0058_cybercity_soc_event_evidence... OK
+  Applying app.0059_cybercity_soc_analyst_triage... OK
+  Applying app.0060_cybercity_soc_response_plans... OK
+  Applying app.0061_cybercity_soc_response_review... OK
+  Applying app.0062_cybercity_soc_response_runbook... OK
+  Applying app.0063_cybercity_soc_response_rehearsal... OK
+  Applying app.0064_cybercity_soc_rehearsal_outcomes... OK
+  Applying app.0065_cybercity_soc_response_rules... OK
+  Applying app.0066_cybercity_soc_monitor_routing... OK
+  Applying app.0067_cybercity_soc_managed_appliances... OK
+  Applying app.0068_cybercity_ws2811... OK
+  Applying app.0069_file_submission_multiple_attachments... OK
+  Applying app.0070_ai_course_reference_textbook... OK
+  Applying app.0071_quiz_draft_and_navigation_options... OK
+  Applying app.0072_ctf_foundation... OK
+  Applying app.0073_ctf_team_invitations_scoreboard_controls... OK
+  Applying app.0074_ctf_challenge_bank... OK
+  Applying app.0075_ctf_verified_lab_step... OK
+  Applying app.0076_ctf_soc_ticket_evidence... OK
+  Applying app.0077_ctf_evidence_scoring... OK
+  Applying app.0078_ctf_template_artifact_solution... OK
+  Applying app.0079_ctf_private_artifact_verification_plan... OK
+  Applying app.0080_align_soc_activity_primary_keys... OK
+  Applying app.0029_alter_assignmentrubric_id_alter_rubricassessment_id_and_more... OK
+  Applying app.0030_merge_20261023_1621... OK
+  Applying app.0033_merge_20261025_1404... OK
+  Applying app.0034_alter_assignmentrubric_id_alter_rubricassessment_id_and_more... OK
+  Applying app.0036_merge_20261030_1711... OK
+  Applying app.0038_merge_20261031_0042... OK
+  Applying app.0039_merge_20261031_0320... OK
+  Applying app.0059_merge_20261031_1557... OK
+  Applying app.0063_merge_20261031_1614... OK
+  Applying app.0067_merge_20261031_1732... OK
+  Applying app.0068_merge_20261031_1752... OK
+  Applying app.0069_alter_cybercitysocalert_id_and_more... OK
+  Applying app.0027_merge_20261023_1141... OK
+  Applying app.0070_merge_20261111_1750... OK
+  Applying app.0071_merge_20261113_0002... OK
+  Applying app.0072_merge_20261113_1703... OK
+  Applying app.0073_merge_20261113_1804... OK
+  Applying app.0074_merge_0072_ctf_foundation_0073_merge_20261113_1804... OK
+  Applying app.0081_merge_20261114_0003... OK
+  Applying auth.0002_alter_permission_name_max_length... OK
+  Applying auth.0003_alter_user_email_max_length... OK
+  Applying auth.0004_alter_user_username_opts... OK
+  Applying auth.0005_alter_user_last_login_null... OK
+  Applying auth.0006_require_contenttypes_0002... OK
+  Applying auth.0007_alter_validators_add_error_messages... OK
+  Applying auth.0008_alter_user_username_max_length... OK
+  Applying auth.0009_alter_user_last_name_max_length... OK
+  Applying auth.0010_alter_group_name_max_length... OK
+  Applying auth.0011_update_proxy_permissions... OK
+  Applying auth.0012_alter_user_first_name_max_length... OK
+  Applying django_celery_beat.0001_initial... OK
+  Applying django_celery_beat.0002_auto_20161118_0346... OK
+  Applying django_celery_beat.0003_auto_20161209_0049... OK
+  Applying django_celery_beat.0004_auto_20170221_0000... OK
+  Applying django_celery_beat.0005_add_solarschedule_events_choices... OK
+  Applying django_celery_beat.0006_auto_20180322_0932... OK
+  Applying django_celery_beat.0007_auto_20180521_0826... OK
+  Applying django_celery_beat.0008_auto_20180914_1922... OK
+  Applying django_celery_beat.0006_auto_20180210_1226... OK
+  Applying django_celery_beat.0006_periodictask_priority... OK
+  Applying django_celery_beat.0009_periodictask_headers... OK
+  Applying django_celery_beat.0010_auto_20190429_0326... OK
+  Applying django_celery_beat.0011_auto_20190508_0153... OK
+  Applying django_celery_beat.0012_periodictask_expire_seconds... OK
+  Applying django_celery_beat.0013_auto_20200609_0727... OK
+  Applying django_celery_beat.0014_remove_clockedschedule_enabled... OK
+  Applying django_celery_beat.0015_edit_solarschedule_events_choices... OK
+  Applying django_celery_beat.0016_alter_crontabschedule_timezone... OK
+  Applying django_celery_beat.0017_alter_crontabschedule_month_of_year... OK
+  Applying django_celery_beat.0018_improve_crontab_helptext... OK
+  Applying django_celery_beat.0019_alter_periodictasks_options... OK
+  Applying sessions.0001_initial... OK
+  Applying sites.0001_initial... OK
+  Applying sites.0002_alter_domain_unique... OK
+  Applying socialaccount.0001_initial... OK
+  Applying socialaccount.0002_token_max_lengths... OK
+  Applying socialaccount.0003_extra_data_default_dict... OK
+  Applying socialaccount.0004_app_provider_id_settings... OK
+  Applying socialaccount.0005_socialtoken_nullable_app... OK
+  Applying socialaccount.0006_alter_socialaccount_extra_data...System check identified some issues:
+
+WARNINGS:
+?: (ckeditor.W001) django-ckeditor bundles CKEditor 4.22.1 which isn't supported anymore and which does have unfixed security issues, see for example https://ckeditor.com/cke4/release/CKEditor-4.24.0-LTS . You should consider strongly switching to a different editor (maybe CKEditor 5 respectively django-ckeditor-5 after checking whether the CKEditor 5 license terms work for you) or switch to the non-free CKEditor 4 LTS package. See https://ckeditor.com/ckeditor-4-support/ for more on this. (Note! This notice has been added by the django-ckeditor developers and we are not affiliated with CKSource and were not involved in the licensing change, so please refrain from complaining to us. Thanks.)
+?: settings.ACCOUNT_AUTHENTICATION_METHOD is deprecated, use: settings.ACCOUNT_LOGIN_METHODS = {'username', 'email'}
+?: settings.ACCOUNT_EMAIL_REQUIRED is deprecated, use: settings.ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
+
+System check identified 3 issues (0 silenced).
+test_binary_artifact_upload_and_independent_event_copy (app.test_ctf_phase5c.EvidenceWorkflowTests.test_binary_artifact_upload_and_independent_event_copy) ... ok
+test_binary_evidence_rejected_when_header_does_not_match (app.test_ctf_phase5c.EvidenceWorkflowTests.test_binary_evidence_rejected_when_header_does_not_match) ... ok
+test_explicit_plan_approval_saves_advisory_only (app.test_ctf_phase5c.EvidenceWorkflowTests.test_explicit_plan_approval_saves_advisory_only) ... ok
+test_export_never_includes_binary_location_or_verification_plan (app.test_ctf_phase5c.EvidenceWorkflowTests.test_export_never_includes_binary_location_or_verification_plan) ... ok
+test_generate_then_explicitly_approve_plan_without_binding_resource (app.test_ctf_phase5c.EvidenceWorkflowTests.test_generate_then_explicitly_approve_plan_without_binding_resource) ... Forbidden: /labtech/ctf/bank/1/verification-plan/
+Forbidden: /labtech/ctf/bank/1/verification-plan/
+ok
+test_other_instructor_cannot_access_template_plan (app.test_ctf_phase5c.EvidenceWorkflowTests.test_other_instructor_cannot_access_template_plan) ... Not Found: /labtech/ctf/bank/1/verification-plan/
+Forbidden: /labtech/ctf/bank/1/verification-plan/
+ok
+test_session_isolation_rejects_cross_template_approval (app.test_ctf_phase5c.EvidenceWorkflowTests.test_session_isolation_rejects_cross_template_approval) ... Forbidden: /labtech/ctf/bank/2/verification-plan/
+ok
+test_batch_bounds_and_owner_scoped_collection (app.test_ctf_phase5b.AIBatchTests.test_batch_bounds_and_owner_scoped_collection) ... ok
+test_discard_draft_does_not_save_and_preserves_other_topics (app.test_ctf_phase5b.AIBatchTests.test_discard_draft_does_not_save_and_preserves_other_topics) ... ok
+test_each_challenge_requires_own_generation_and_flag_approval (app.test_ctf_phase5b.AIBatchTests.test_each_challenge_requires_own_generation_and_flag_approval) ... Forbidden: /labtech/ctf/bank/ai-batch/
+Forbidden: /labtech/ctf/bank/ai-batch/
+ok
+test_failed_generation_keeps_other_topics_retriable (app.test_ctf_phase5b.AIBatchTests.test_failed_generation_keeps_other_topics_retriable) ... CTF batch draft failed instructor=1
+Traceback (most recent call last):
+  File "/opt/labtech/app/ctf_ai_batch.py", line 125, in ai_batch
+    proposal = _generate(AIClient(request.user), details)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1202, in _execute_mock_call
+    raise result
+app.services.AIResponseError: gateway failure
+ok
+test_other_instructor_session_cannot_reuse_owner_batch (app.test_ctf_phase5b.AIBatchTests.test_other_instructor_session_cannot_reuse_owner_batch) ... ok
+test_student_cannot_plan_or_approve (app.test_ctf_phase5b.AIBatchTests.test_student_cannot_plan_or_approve) ... Forbidden: /labtech/ctf/bank/ai-batch/
+Forbidden: /labtech/ctf/bank/ai-batch/
+ok
+test_ai_gateway_failure_does_not_create_template (app.test_ctf_phase5.AIDraftingTests.test_ai_gateway_failure_does_not_create_template) ... CTF AI generation failed for instructor 1: AIResponseError
+ok
+test_export_contains_evidence_but_excludes_solution_and_flag (app.test_ctf_phase5.AIDraftingTests.test_export_contains_evidence_but_excludes_solution_and_flag) ... ok
+test_instructor_reviews_then_explicitly_approves_private_template (app.test_ctf_phase5.AIDraftingTests.test_instructor_reviews_then_explicitly_approves_private_template) ... ok
+test_invalid_ai_response_is_not_stored (app.test_ctf_phase5.AIDraftingTests.test_invalid_ai_response_is_not_stored) ... CTF AI generation failed for instructor 1: ValidationError
+ok
+test_other_instructor_cannot_approve_or_view_owners_draft (app.test_ctf_phase5.AIDraftingTests.test_other_instructor_cannot_approve_or_view_owners_draft) ... ok
+test_preview_does_not_save_without_explicit_approval (app.test_ctf_phase5.AIDraftingTests.test_preview_does_not_save_without_explicit_approval) ... ok
+test_students_are_denied_ai_generation (app.test_ctf_phase5.AIDraftingTests.test_students_are_denied_ai_generation) ... Forbidden: /labtech/ctf/bank/ai-generate/
+Forbidden: /labtech/ctf/bank/ai-generate/
+ok
+test_award_once_with_correct_score_provenance (app.test_ctf_phase4c.EvidenceClaimTests.test_award_once_with_correct_score_provenance) ... Bad Request: /api/ctf/claim-evidence/
+ok
+test_cannot_claim_without_configured_evidence (app.test_ctf_phase4c.EvidenceClaimTests.test_cannot_claim_without_configured_evidence) ... Conflict: /api/ctf/claim-evidence/
+ok
+test_flag_endpoint_cannot_bypass_evidence_mode (app.test_ctf_phase4c.EvidenceClaimTests.test_flag_endpoint_cannot_bypass_evidence_mode) ... Bad Request: /api/ctf/submit_flag/
+ok
+test_flag_scoring_cannot_use_evidence_claim (app.test_ctf_phase4c.EvidenceClaimTests.test_flag_scoring_cannot_use_evidence_claim) ... Bad Request: /api/ctf/claim-evidence/
+ok
+test_hidden_challenge_cannot_be_claimed (app.test_ctf_phase4c.EvidenceClaimTests.test_hidden_challenge_cannot_be_claimed) ... Forbidden: /api/ctf/claim-evidence/
+ok
+test_no_award_without_qualifying_evidence (app.test_ctf_phase4c.EvidenceClaimTests.test_no_award_without_qualifying_evidence) ... Conflict: /api/ctf/claim-evidence/
+ok
+test_pause_and_enrollment_still_gate_awards (app.test_ctf_phase4c.EvidenceClaimTests.test_pause_and_enrollment_still_gate_awards) ... Forbidden: /api/ctf/claim-evidence/
+Forbidden: /api/ctf/claim-evidence/
+ok
+test_real_student_soc_resolution_event_awards_without_claim_button (app.test_ctf_phase4c.EvidenceClaimTests.test_real_student_soc_resolution_event_awards_without_claim_button) ... ok
+test_successful_student_vm_check_auto_awards_matching_objective (app.test_ctf_phase4c.EvidenceClaimTests.test_successful_student_vm_check_auto_awards_matching_objective) ... ok
+test_team_claim_once_and_hints_deducted (app.test_ctf_phase4c.EvidenceClaimTests.test_team_claim_once_and_hints_deducted) ... Bad Request: /api/ctf/claim-evidence/
+ok
+test_checkmk_gate_uses_same_ticket_and_city (app.test_ctf_phase4b.SOCCTFTests.test_checkmk_gate_uses_same_ticket_and_city) ... ok
+test_flag_only_existing_challenges_are_unchanged (app.test_ctf_phase4b.SOCCTFTests.test_flag_only_existing_challenges_are_unchanged) ... ok
+test_missing_evidence_type_is_readiness_blocker (app.test_ctf_phase4b.SOCCTFTests.test_missing_evidence_type_is_readiness_blocker) ... ok
+test_open_ticket_never_qualifies_even_with_evidence (app.test_ctf_phase4b.SOCCTFTests.test_open_ticket_never_qualifies_even_with_evidence) ... ok
+test_proof_fails_without_real_evidence_or_team_membership (app.test_ctf_phase4b.SOCCTFTests.test_proof_fails_without_real_evidence_or_team_membership) ... Forbidden: /api/ctf/submit_flag/
+Forbidden: /api/ctf/submit_flag/
+ok
+test_resolved_ticket_and_qualifying_evidence_allow_scoring (app.test_ctf_phase4b.SOCCTFTests.test_resolved_ticket_and_qualifying_evidence_allow_scoring) ... ok
+test_expired_session_does_not_qualify (app.test_ctf_phase4a.CTFVerifiedLabTests.test_expired_session_does_not_qualify) ... ok
+test_no_active_verified_lab_cannot_score_even_with_correct_flag (app.test_ctf_phase4a.CTFVerifiedLabTests.test_no_active_verified_lab_cannot_score_even_with_correct_flag) ... Forbidden: /api/ctf/submit_flag/
+ok
+test_ungated_existing_challenges_keep_standard_flag_behavior (app.test_ctf_phase4a.CTFVerifiedLabTests.test_ungated_existing_challenges_keep_standard_flag_behavior) ... ok
+test_verified_check_is_required_not_another_students_check (app.test_ctf_phase4a.CTFVerifiedLabTests.test_verified_check_is_required_not_another_students_check) ... ok
+test_wrong_step_or_missing_checks_fails_closed (app.test_ctf_phase4a.CTFVerifiedLabTests.test_wrong_step_or_missing_checks_fails_closed) ... ok
+test_deploy_requires_owned_event_and_existing_flag (app.test_ctf_phase3b.BankTests.test_deploy_requires_owned_event_and_existing_flag) ... Not Found: /labtech/ctf/bank/1/deploy/
+Bad Request: /labtech/ctf/bank/2/deploy/
+ok
+test_import_creates_drafts_with_no_flags_and_is_atomic (app.test_ctf_phase3b.BankTests.test_import_creates_drafts_with_no_flags_and_is_atomic) ... Bad Request: /labtech/ctf/bank/import/
+ok
+test_manager_can_deploy_independent_unpublished_snapshot (app.test_ctf_phase3b.BankTests.test_manager_can_deploy_independent_unpublished_snapshot) ... ok
+test_other_instructors_and_students_cannot_access_bank_or_templates (app.test_ctf_phase3b.BankTests.test_other_instructors_and_students_cannot_access_bank_or_templates) ... Not Found: /labtech/ctf/bank/1/edit/
+Not Found: /labtech/ctf/bank/1/deploy/
+Forbidden: /labtech/ctf/bank/
+Forbidden: /labtech/ctf/bank/export/
+ok
+test_portable_export_excludes_flag_hash_and_evidence (app.test_ctf_phase3b.BankTests.test_portable_export_excludes_flag_hash_and_evidence) ... ok
+test_save_from_event_snapshots_without_mutating_event (app.test_ctf_phase3b.BankTests.test_save_from_event_snapshots_without_mutating_event) ... ok
+test_copy_hidden_separate_hints_and_hashed_flag (app.test_ctf_phase3.ReuseChallengeTests.test_copy_hidden_separate_hints_and_hashed_flag) ... ok
+test_cross_instructor_source_is_not_listed_or_copied (app.test_ctf_phase3.ReuseChallengeTests.test_cross_instructor_source_is_not_listed_or_copied) ... Not Found: /labtech/ctf/2/challenges/library/2/copy/
+ok
+test_get_cannot_create_challenge (app.test_ctf_phase3.ReuseChallengeTests.test_get_cannot_create_challenge) ... Method Not Allowed (GET): /labtech/ctf/2/challenges/library/1/copy/
+ok
+test_only_destination_manager_may_browse_or_copy (app.test_ctf_phase3.ReuseChallengeTests.test_only_destination_manager_may_browse_or_copy) ... Forbidden: /labtech/ctf/2/challenges/library/
+Forbidden: /labtech/ctf/2/challenges/library/1/copy/
+ok
+test_cancel_pending_invitation_then_recipient_cannot_accept (app.test_ctf_phase2.CTFPhase2Tests.test_cancel_pending_invitation_then_recipient_cannot_accept) ... Not Found: /ctf/1/
+ok
+test_captain_can_transfer_and_new_captain_can_remove_before_scoring (app.test_ctf_phase2.CTFPhase2Tests.test_captain_can_transfer_and_new_captain_can_remove_before_scoring) ... Forbidden: /ctf/1/
+ok
+test_csrf_is_enforced_on_team_and_instructor_controls (app.test_ctf_phase2.CTFPhase2Tests.test_csrf_is_enforced_on_team_and_instructor_controls) ... Forbidden (CSRF cookie not set.): /labtech/ctf/1/control/
+Forbidden (CSRF cookie not set.): /ctf/1/
+ok
+test_decline_then_new_invite_allowed (app.test_ctf_phase2.CTFPhase2Tests.test_decline_then_new_invite_allowed) ... ok
+test_duplicate_pending_invitation_is_not_duplicated (app.test_ctf_phase2.CTFPhase2Tests.test_duplicate_pending_invitation_is_not_duplicated) ... ok
+test_earned_score_locks_team_roster_and_prevents_score_gaming (app.test_ctf_phase2.CTFPhase2Tests.test_earned_score_locks_team_roster_and_prevents_score_gaming) ... Forbidden: /ctf/1/
+Forbidden: /ctf/1/
+Forbidden: /ctf/1/
+Forbidden: /ctf/1/
+ok
+test_expired_invite_cannot_be_accepted (app.test_ctf_phase2.CTFPhase2Tests.test_expired_invite_cannot_be_accepted) ... Not Found: /ctf/1/
+ok
+test_frozen_snapshot_stays_unchanged_until_unfrozen (app.test_ctf_phase2.CTFPhase2Tests.test_frozen_snapshot_stays_unchanged_until_unfrozen) ... ok
+test_hint_purchase_also_locks_roster (app.test_ctf_phase2.CTFPhase2Tests.test_hint_purchase_also_locks_roster) ... Forbidden: /ctf/1/
+ok
+test_instructor_can_release_and_hide_challenge_during_event (app.test_ctf_phase2.CTFPhase2Tests.test_instructor_can_release_and_hide_challenge_during_event) ... Forbidden: /api/ctf/submit_flag/
+ok
+test_instructor_can_start_and_end_event_early (app.test_ctf_phase2.CTFPhase2Tests.test_instructor_can_start_and_end_event_early) ... Forbidden: /api/ctf/submit_flag/
+ok
+test_invalid_score_corrections_and_wrong_competition_target_rejected (app.test_ctf_phase2.CTFPhase2Tests.test_invalid_score_corrections_and_wrong_competition_target_rejected) ... Not Found: /labtech/ctf/1/control/
+Bad Request: /labtech/ctf/1/control/
+ok
+test_manual_score_adjustment_is_audited_without_mutating_solve_rows (app.test_ctf_phase2.CTFPhase2Tests.test_manual_score_adjustment_is_audited_without_mutating_solve_rows) ... ok
+test_pause_blocks_flags_and_hints_but_preserves_existing_team_scores (app.test_ctf_phase2.CTFPhase2Tests.test_pause_blocks_flags_and_hints_but_preserves_existing_team_scores) ... Forbidden: /api/ctf/submit_flag/
+Forbidden: /api/ctf/hint/1/unveil/
+ok
+test_private_wall_and_feed_never_accessible_to_outsiders (app.test_ctf_phase2.CTFPhase2Tests.test_private_wall_and_feed_never_accessible_to_outsiders) ... Not Found: /ctf/1/scoreboard/
+Not Found: /ctf/1/scoreboard/data/
+ok
+test_reject_forged_or_other_student_invitation_acceptance (app.test_ctf_phase2.CTFPhase2Tests.test_reject_forged_or_other_student_invitation_acceptance) ... Not Found: /ctf/1/
+Not Found: /ctf/1/
+ok
+test_solo_score_adjustments_affect_rankings (app.test_ctf_phase2.CTFPhase2Tests.test_solo_score_adjustments_affect_rankings) ... ok
+test_team_invitation_is_pending_until_recipient_accepts (app.test_ctf_phase2.CTFPhase2Tests.test_team_invitation_is_pending_until_recipient_accepts) ... ok
+test_team_setup_allowed_before_competition_without_leaking_challenges (app.test_ctf_phase2.CTFPhase2Tests.test_team_setup_allowed_before_competition_without_leaking_challenges) ... ok
+test_team_size_enforced_at_accept_time (app.test_ctf_phase2.CTFPhase2Tests.test_team_size_enforced_at_accept_time) ... ok
+test_unauthorized_instructor_actions_never_change_event (app.test_ctf_phase2.CTFPhase2Tests.test_unauthorized_instructor_actions_never_change_event) ... Forbidden: /labtech/ctf/1/control/
+Forbidden: /labtech/ctf/1/control/
+ok
+test_api_rejects_malformed_json_and_csrf_protected (app.test_ctf2.CTF2Tests.test_api_rejects_malformed_json_and_csrf_protected) ... Bad Request: /api/ctf/submit_flag/
+Bad Request: /api/ctf/submit_flag/
+Forbidden (CSRF cookie not set.): /api/ctf/submit_flag/
+ok
+test_campaign_form_requires_course_for_private_events_and_valid_schedule (app.test_ctf2.CTF2Tests.test_campaign_form_requires_course_for_private_events_and_valid_schedule) ... ok
+test_challenge_creation_supports_hints_at_same_time (app.test_ctf2.CTF2Tests.test_challenge_creation_supports_hints_at_same_time) ... ok
+test_challenge_form_hashes_flag_and_never_prefills_existing_answer (app.test_ctf2.CTF2Tests.test_challenge_form_hashes_flag_and_never_prefills_existing_answer) ... ok
+test_evidence_is_authenticated_and_never_public_media_url (app.test_ctf2.CTF2Tests.test_evidence_is_authenticated_and_never_public_media_url) ... Not Found: /ctf/1/challenges/1/evidence/
+ok
+test_hidden_challenge_and_closed_event_cannot_be_solved (app.test_ctf2.CTF2Tests.test_hidden_challenge_and_closed_event_cannot_be_solved) ... Forbidden: /api/ctf/submit_flag/
+Forbidden: /api/ctf/submit_flag/
+ok
+test_hint_reveal_requires_enrollment_visibility_and_active_event (app.test_ctf2.CTF2Tests.test_hint_reveal_requires_enrollment_visibility_and_active_event) ... Forbidden: /api/ctf/hint/1/unveil/
+Forbidden: /api/ctf/hint/1/unveil/
+Forbidden: /api/ctf/hint/1/unveil/
+ok
+test_incorrect_attempts_rate_limit_without_storing_flags (app.test_ctf2.CTF2Tests.test_incorrect_attempts_rate_limit_without_storing_flags) ... Too Many Requests: /api/ctf/submit_flag/
+ok
+test_institution_ctf_fails_closed_without_course (app.test_ctf2.CTF2Tests.test_institution_ctf_fails_closed_without_course) ... Not Found: /ctf/1/
+ok
+test_legacy_flag_is_hashed_and_plaintext_erased_during_migration (app.test_ctf2.CTF2Tests.test_legacy_flag_is_hashed_and_plaintext_erased_during_migration) ... ok
+test_legacy_public_attachment_is_copied_then_removed_on_migration (app.test_ctf2.CTF2Tests.test_legacy_public_attachment_is_copied_then_removed_on_migration) ... ok
+test_nonparticipant_cannot_download_evidence_or_reveal_hints (app.test_ctf2.CTF2Tests.test_nonparticipant_cannot_download_evidence_or_reveal_hints) ... Not Found: /ctf/1/challenges/1/evidence/
+Forbidden: /api/ctf/hint/1/unveil/
+ok
+test_one_solve_per_solo_student_and_exact_score (app.test_ctf2.CTF2Tests.test_one_solve_per_solo_student_and_exact_score) ... Bad Request: /api/ctf/submit_flag/
+ok
+test_private_instructor_dashboard_readiness_and_stats (app.test_ctf2.CTF2Tests.test_private_instructor_dashboard_readiness_and_stats) ... Forbidden: /labtech/ctf/1/manage/
+ok
+test_public_ctf_eligibility_and_competition_enrollment (app.test_ctf2.CTF2Tests.test_public_ctf_eligibility_and_competition_enrollment) ... ok
+test_revealed_hints_charge_only_once_on_correct_flag (app.test_ctf2.CTF2Tests.test_revealed_hints_charge_only_once_on_correct_flag) ... ok
+test_student_board_filters_cards_and_never_exposes_flag_hash (app.test_ctf2.CTF2Tests.test_student_board_filters_cards_and_never_exposes_flag_hash) ... ok
+test_team_solve_is_shared_and_prevents_duplicate_scoring (app.test_ctf2.CTF2Tests.test_team_solve_is_shared_and_prevents_duplicate_scoring) ... Bad Request: /api/ctf/submit_flag/
+ok
+test_unique_solo_constraint_protects_database (app.test_ctf2.CTF2Tests.test_unique_solo_constraint_protects_database) ... ok
+test_visibility_and_private_enrollment_restrictions (app.test_ctf2.CTF2Tests.test_visibility_and_private_enrollment_restrictions) ... Not Found: /ctf/1/
+Forbidden: /ctf/1/enroll/
+Forbidden: /api/ctf/submit_flag/
+ok
+test_accepts_valid_headers_only (app.test_ctf_phase5c.EvidenceFormatTests.test_accepts_valid_headers_only) ... ok
+test_rejects_masquerading_file_and_executable (app.test_ctf_phase5c.EvidenceFormatTests.test_rejects_masquerading_file_and_executable) ... ok
+test_verification_plan_requires_complete_safe_structure (app.test_ctf_phase5c.EvidenceFormatTests.test_verification_plan_requires_complete_safe_structure) ... ok
+test_normalizer_strips_active_html (app.test_ctf_phase5.AISchemaTests.test_normalizer_strips_active_html) ... ok
+test_rejects_missing_or_unusable_artifact (app.test_ctf_phase5.AISchemaTests.test_rejects_missing_or_unusable_artifact) ... ok
+test_command_decodes_bounded_qga_output (app.test_cybercity_qga_collector.GuestAgentCollectorTests.test_command_decodes_bounded_qga_output) ... ok
+test_database_query_not_executed (app.test_cybercity_qga_collector.GuestAgentCollectorTests.test_database_query_not_executed) ... ok
+test_file_content_is_bounded_and_rejects_unsafe_paths (app.test_cybercity_qga_collector.GuestAgentCollectorTests.test_file_content_is_bounded_and_rejects_unsafe_paths) ... ok
+test_linux_file_presence_and_absence_use_fixed_stat_argv (app.test_cybercity_qga_collector.GuestAgentCollectorTests.test_linux_file_presence_and_absence_use_fixed_stat_argv) ... ok
+test_migrated_building_vm_uses_current_proxmox_node_not_template_node (app.test_cybercity_qga_collector.GuestAgentCollectorTests.test_migrated_building_vm_uses_current_proxmox_node_not_template_node) ... ok
+test_missing_or_ambiguous_vm_inventory_fails_closed (app.test_cybercity_qga_collector.GuestAgentCollectorTests.test_missing_or_ambiguous_vm_inventory_fails_closed) ... ok
+test_oversized_output_rejected (app.test_cybercity_qga_collector.GuestAgentCollectorTests.test_oversized_output_rejected) ... ok
+test_service_inactive_exit_code_is_observable (app.test_cybercity_qga_collector.GuestAgentCollectorTests.test_service_inactive_exit_code_is_observable) ... ok
+test_unrelated_vm_same_vmid_never_receives_guest_exec (app.test_cybercity_qga_collector.GuestAgentCollectorTests.test_unrelated_vm_same_vmid_never_receives_guest_exec) ... ok
+test_untrusted_monitor_target_rejected (app.test_cybercity_qga_collector.GuestAgentCollectorTests.test_untrusted_monitor_target_rejected) ... ok
+test_guest_agent_malformed_base64_rejected (app.test_cybercity_qga_parser_hardening.QGAParserHardeningTests.test_guest_agent_malformed_base64_rejected) ... ok
+test_linux_file_hash_requires_64_hex_characters (app.test_cybercity_qga_parser_hardening.QGAParserHardeningTests.test_linux_file_hash_requires_64_hex_characters) ... ok
+test_windows_service_state_is_anchored (app.test_cybercity_qga_parser_hardening.QGAParserHardeningTests.test_windows_service_state_is_anchored) ... ok
+
+----------------------------------------------------------------------
+Ran 110 tests in 14.015s
+
+OK
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+ OK

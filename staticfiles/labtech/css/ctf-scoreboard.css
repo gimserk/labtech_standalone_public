@@ -1,0 +1,25 @@
+/* CTF Phase 2: classroom monitor view, optimized for 1080p to 4K. */
+.ctf-wall { --wall-ink: #f4f7fc; --wall-muted:#a8b9cf; --wall-line:#33465e; --wall-bg:#071426; --wall-panel:#11243b; max-width:1900px; min-height:85vh; margin:0 auto 1rem; padding:clamp(1rem,2vw,2.25rem); background:var(--wall-bg); color:var(--wall-ink); border-radius:.8rem; }
+.ctf-wall-header { display:flex; align-items:start; justify-content:space-between; flex-wrap:wrap; gap:1.5rem; border-bottom:1px solid var(--wall-line); padding-bottom:1.3rem; }
+.ctf-wall-header h1 { font-size:clamp(1.8rem,3.2vw,3.4rem); color:var(--wall-ink); margin:.15rem 0; line-height:1.2; }
+.ctf-wall-kicker { text-transform:uppercase; letter-spacing:.1em; font-size:.75rem; font-weight:700; color:#b7d0ee; margin:0; }
+.ctf-wall-subtitle { font-size:clamp(.92rem,1.4vw,1.1rem); color:var(--wall-muted); margin:0; }
+.ctf-wall-notice { font-size:.95rem; padding:.8rem 1rem; border-left:3px solid #81c6ed; margin:1rem 0; color:var(--wall-ink); background:var(--wall-panel); }
+.ctf-wall-content { display:grid; grid-template-columns:minmax(0,2.2fr) minmax(260px,1fr); align-items:start; gap:clamp(1rem,2vw,2rem); }
+.ctf-wall-content > section, .ctf-wall-content > aside { padding:1rem; background:var(--wall-panel); border:1px solid var(--wall-line); border-radius:.6rem; }
+.ctf-wall h2 { color:var(--wall-ink); font-size:clamp(1.12rem,1.8vw,1.6rem); margin:0 0 1rem; }
+.ctf-wall-table { width:100%; border-collapse:collapse; font-size:clamp(1rem,1.65vw,1.65rem); }
+.ctf-wall-table th, .ctf-wall-table td { padding:.8rem .65rem; border-bottom:1px solid var(--wall-line); color:var(--wall-ink); }
+.ctf-wall-table thead th { color:var(--wall-muted); font-size:.8em; font-weight:600; }
+.ctf-wall-table tbody tr:first-child td, .ctf-wall-table tbody tr:first-child th { color:#ffdf85; }
+.ctf-wall-table tbody tr:nth-child(2) td, .ctf-wall-table tbody tr:nth-child(2) th { color:#dfebfa; }
+.ctf-wall-table tbody tr:last-child td, .ctf-wall-table tbody tr:last-child th { border-bottom:0; }
+.ctf-wall-recent { list-style:none; padding:0; margin:0; }
+.ctf-wall-recent li { padding:.8rem 0; border-bottom:1px solid var(--wall-line); font-size:clamp(.88rem,1.1vw,1.05rem); }
+.ctf-wall-recent li:last-child { border:0; }
+.ctf-wall-recent li strong { color:#b9e6ff; }
+.ctf-wall-recent li span { display:block; margin-top:.25rem; color:var(--wall-muted); font-size:.85em; }
+.ctf-wall :focus-visible { outline:3px solid #99d8ff; outline-offset:3px; }
+.ctf-wall:fullscreen { height:100vh; overflow:auto; border-radius:0; padding:2rem; }
+@media (max-width:950px) { .ctf-wall-content { grid-template-columns:1fr; } }
+@media (prefers-reduced-motion:reduce) { .ctf-wall { scroll-behavior:auto; } }

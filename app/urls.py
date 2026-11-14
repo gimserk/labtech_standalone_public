@@ -12,6 +12,9 @@ from app import views as app_views
 from app import ctf_views_v2
 from app import ctf_challenge_library
 from app import ctf_bank
+from app import ctf_ai_generation
+from app import ctf_ai_batch
+from app import ctf_ai_verification
 from app import course_builder_views
 from app import cluster_utilization
 from app import lab_node_migration_views
@@ -276,8 +279,11 @@ urlpatterns = [
     path('ctf/<int:ctf_id>/enroll/', ctf_views_v2.enroll, name='ctf_enroll'),
     path('labtech/ctf/dashboard/', ctf_views_v2.dashboard, name='ctf_dashboard'),
     path('labtech/ctf/bank/', ctf_bank.bank, name='ctf_bank'),
+    path('labtech/ctf/bank/ai-generate/', ctf_ai_generation.ai_challenge_draft, name='ctf_ai_challenge_draft'),
+    path('labtech/ctf/bank/ai-batch/', ctf_ai_batch.ai_batch, name='ctf_ai_batch'),
     path('labtech/ctf/bank/create/', ctf_bank.edit_template, name='ctf_bank_create'),
     path('labtech/ctf/bank/<int:template_id>/edit/', ctf_bank.edit_template, name='ctf_bank_edit'),
+    path('labtech/ctf/bank/<int:template_id>/verification-plan/', ctf_ai_verification.verification_plan, name='ctf_ai_verification_plan'),
     path('labtech/ctf/bank/<int:template_id>/deploy/', ctf_bank.deploy, name='ctf_bank_deploy'),
     path('labtech/ctf/bank/collections/create/', ctf_bank.create_collection, name='ctf_bank_collection_create'),
     path('labtech/ctf/bank/import/', ctf_bank.import_bank, name='ctf_bank_import'),
@@ -413,6 +419,7 @@ urlpatterns = [
     path('api/flashcards/<int:flashcard_id>/update_mastery/', app_views.update_flashcard_mastery_view, name='update_flashcard_mastery'),
     path('api/scenario/<int:activity_id>/chat/', app_views.scenario_chat_api_view, name='scenario_chat_api'),
     path('api/ctf/submit_flag/', ctf_views_v2.submit_flag, name='ctf_submit_flag'),
+    path('api/ctf/claim-evidence/', ctf_views_v2.claim_verified_evidence, name='ctf_claim_evidence'),
     path('api/ctf/hint/<int:hint_id>/unveil/', ctf_views_v2.unveil_hint, name='ctf_unveil_hint'),
     path('api/firmware/check/', app_views.api_check_firmware_update, name='api_check_firmware_update'),
     path('api/firmware/v2/config/', cybercity_provisioning.api_esp32_provisioning_v2, name='api_esp32_provisioning_v2'),

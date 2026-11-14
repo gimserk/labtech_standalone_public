@@ -1,0 +1,38 @@
+name: CTF Phase 5B — Batch Challenge Review
+
+on:
+  pull_request:
+    paths:
+      - 'app/ctf_ai_batch.py'
+      - 'app/urls.py'
+      - 'app/templates/labtech/ctf_ai_batch.html'
+      - 'app/templates/labtech/ctf_bank.html'
+      - 'app/test_ctf_phase5b.py'
+      - '.github/workflows/ctf-phase5b-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'app/ctf_ai_batch.py'
+      - 'app/test_ctf_phase5b.py'
+
+permissions:
+  contents: read
+
+jobs:
+  ai-batch:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: Native dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config default-libmysqlclient-dev libldap2-dev libsasl2-dev libssl-dev libxml2-dev libxslt1-dev libjpeg-dev zlib1g-dev libffi-dev
+      - name: Install application
+        run: python -m pip install -r requirements.txt
+      - name: Syntax verification
+        run: python -m py_compile app/ctf_ai_batch.py app/test_ctf_phase5b.py app/urls.py
+      - name: Phase 5 batch and existing challenge generator
+        run: python manage.py test app.test_ctf_phase5b app.test_ctf_phase5 --settings=app.test_settings -v 2

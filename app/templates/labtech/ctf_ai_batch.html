@@ -1,0 +1,74 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}AI CTF Batch Builder{% endblock %}
+{% block labtech_content %}
+<main class="container py-4">
+  <nav aria-label="Breadcrumb"><a href="{% url 'ctf_dashboard' %}">CTF Mission Control</a> / <a href="{% url 'ctf_bank' %}">Challenge Bank</a> / AI Batch Builder</nav>
+  <h1 class="h3 mt-3">AI Challenge Batch Builder</h1>
+  <p class="text-body-secondary">Build two to five distinct challenges with EagleAI. Generate one topic at a time to reduce gateway timeouts. Each draft requires separate technical review and an instructor-entered final flag. Nothing is published automatically.</p>
+  {% if not batch %}
+  <section class="card"><div class="card-body">
+    <h2 class="h5">Plan your challenge set</h2>
+    <form method="post">{% csrf_token %}<input type="hidden" name="action" value="start">
+      {% for field in form %}
+      <div class="mb-3"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
+        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+        {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+      </div>
+      {% endfor %}
+      <button class="btn btn-primary" type="submit">Prepare Batch</button>
+    </form>
+  </div></section>
+  {% else %}
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <h2 class="h5 mb-0">Batch progress</h2>
+    <form method="post" onsubmit="return confirm('Discard unsaved batch drafts? Saved challenge templates will be retained.');">
+      {% csrf_token %}<input type="hidden" name="action" value="discard_all">
+      <button type="submit" class="btn btn-outline-danger btn-sm">Close Batch</button>
+    </form>
+  </div>
+  {% for entry in entries %}
+  <section class="card mb-3" aria-labelledby="batchTitle{{ forloop.counter }}"><div class="card-body">
+    <div class="d-flex justify-content-between gap-2 flex-wrap">
+      <h3 class="h5" id="batchTitle{{ forloop.counter }}">Challenge {{ forloop.counter }}: {{ entry.topic }}</h3>
+      <span class="badge text-bg-secondary">{{ entry.state|title }}</span>
+    </div>
+    {% if entry.state == "pending" or entry.state == "error" %}
+      <p class="small text-body-secondary">A separate EagleAI request generates this challenge. Other drafts will be preserved if it fails.</p>
+      <form method="post">
+        {% csrf_token %}<input type="hidden" name="action" value="generate">
+        <input type="hidden" name="entry_id" value="{{ entry.id }}">
+        <button class="btn btn-outline-primary" type="submit">{% if entry.state == "error" %}Retry Generation{% else %}Generate This Challenge{% endif %}</button>
+      </form>
+    {% elif entry.state == "review" %}
+      <div class="alert alert-warning" role="note">Instructor review required: verify every artifact-to-answer relationship and confirm the scenario does not disclose its evidence.</div>
+      <h4 class="h6">{{ entry.draft.name }}</h4>
+      <p><strong>Objective:</strong> {{ entry.draft.objective }}</p>
+      <h5 class="h6">Student scenario</h5><div class="border rounded p-3 mb-3">{{ entry.draft.description|safe }}</div>
+      <h5 class="h6">Text evidence artifact</h5><pre class="border rounded p-3 text-wrap" style="white-space:pre-wrap">{{ entry.draft.artifact_text }}</pre>
+      <h5 class="h6">Hints</h5><ol>{% for hint in entry.draft.hints %}<li>{{ hint.text }} ({{ hint.cost }} points)</li>{% endfor %}</ol>
+      <h5 class="h6">Instructor-only solution</h5><pre class="border rounded p-3 text-wrap" style="white-space:pre-wrap">{{ entry.draft.instructor_solution }}</pre>
+      <p><strong>Tags:</strong> {{ entry.draft.tags }}</p>
+      <form method="post" class="mb-2">
+        {% csrf_token %}<input type="hidden" name="action" value="save">
+        <input type="hidden" name="entry_id" value="{{ entry.id }}">
+        <label class="form-label" for="flag{{ forloop.counter }}">Final instructor-chosen flag (never sent to AI)</label>
+        <input class="form-control mb-2" id="flag{{ forloop.counter }}" type="password" name="flag" required maxlength="255" autocomplete="new-password">
+        <button class="btn btn-primary" type="submit">Approve and Save Privately</button>
+      </form>
+      <form method="post">
+        {% csrf_token %}<input type="hidden" name="action" value="discard">
+        <input type="hidden" name="entry_id" value="{{ entry.id }}">
+        <button class="btn btn-outline-danger btn-sm" type="submit">Discard This Draft</button>
+      </form>
+    {% elif entry.state == "saved" %}
+      <p class="text-success">Saved to the private Challenge Bank. It has not been added to any competition.</p>
+      <a class="btn btn-outline-primary btn-sm" href="{% url 'ctf_bank_edit' entry.template_id %}">Review Saved Template</a>
+    {% else %}
+      <p class="text-body-secondary">This draft was discarded without saving.</p>
+    {% endif %}
+  </div></section>
+  {% endfor %}
+  {% endif %}
+  <a class="btn btn-outline-secondary mt-2" href="{% url 'ctf_bank' %}">Back to Challenge Bank</a>
+</main>
+{% endblock %}

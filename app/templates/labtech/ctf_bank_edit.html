@@ -2,20 +2,50 @@
 {% block labtech_title %}{{ title }}{% endblock %}
 {% block labtech_content %}
 <main class="container py-4">
-  <nav aria-label="Breadcrumb"><a href="{% url 'ctf_dashboard' %}">CTF Mission Control</a> / <a href="{% url 'ctf_bank' %}">Challenge Bank</a> / {{ title }}</nav>
+  <nav aria-label="Breadcrumb">
+    <a href="{% url 'ctf_dashboard' %}">CTF Mission Control</a> /
+    <a href="{% url 'ctf_bank' %}">Challenge Bank</a> / {{ title }}
+  </nav>
   <h1 class="h3 mt-3">{{ title }}</h1>
   <p class="text-body-secondary">Changes affect this template only. Previously copied competition challenges do not change.</p>
-  <form method="post" class="card"><div class="card-body">
-    {% csrf_token %}
-    {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
-    {% for field in form %}
-      <div class="mb-3"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
-        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-        {% for error in field.errors %}<p class="text-danger small">{{ error }}</p>{% endfor %}
+  <form method="post" enctype="multipart/form-data" class="card">
+    <div class="card-body">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+      {% endif %}
+      {% for field in form %}
+        <div class="mb-3">
+          <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}
+            <div class="form-text">{{ field.help_text }}</div>
+          {% endif %}
+          {% for error in field.errors %}
+            <p class="text-danger small">{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endfor %}
+      <button class="btn btn-primary" type="submit">Save Template</button>
+      <a class="btn btn-outline-secondary" href="{% url 'ctf_bank' %}">Cancel</a>
+    </div>
+  </form>
+  {% if item %}
+    <section class="card mt-3">
+      <div class="card-body">
+        <h2 class="h5">Evidence and verification planning</h2>
+        <p class="small text-body-secondary">
+          Upload one private PNG/JPG/PDF/PCAP/PCAPNG file. If both a binary file and a
+          text artifact are present, only the binary file is deployed.
+          Instructor solutions and AI verification plans remain private.
+        </p>
+        <a class="btn btn-outline-primary" href="{% url 'ctf_ai_verification_plan' item.id %}">Generate AI Verification Plan</a>
+        {% if item.verification_plan %}
+          <p class="small mt-2">An instructor-reviewed advisory plan is saved.
+            Configure any real lab or SOC scoring requirements separately.</p>
+        {% endif %}
       </div>
-    {% endfor %}
-    <button class="btn btn-primary" type="submit">Save Template</button>
-    <a class="btn btn-outline-secondary" href="{% url 'ctf_bank' %}">Cancel</a>
-  </div></form>
+    </section>
+  {% endif %}
 </main>
 {% endblock %}

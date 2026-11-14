@@ -1,0 +1,56 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}AI CTF Challenge Draft{% endblock %}
+{% block labtech_content %}
+<main class="container py-4">
+  <nav aria-label="Breadcrumb"><a href="{% url 'ctf_dashboard' %}">CTF Mission Control</a> / <a href="{% url 'ctf_bank' %}">Challenge Bank</a> / AI Challenge Draft</nav>
+  <h1 class="h3 mt-3">AI CTF Challenge Generator</h1>
+  <p class="text-body-secondary">EagleAI creates a private proposal for your review. It does not create a public challenge, run commands, or provision a VM. Instructor review and a final flag are required.</p>
+  <section class="card mb-3"><div class="card-body">
+    <h2 class="h5">1. Challenge specifications</h2>
+    <form method="post" action="{% url 'ctf_ai_challenge_draft' %}">
+      {% csrf_token %}<input type="hidden" name="action" value="generate">
+      {% for field in form %}
+      <div class="mb-3"><label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+        {% for error in field.errors %}<p class="text-danger small">{{ error }}</p>{% endfor %}
+      </div>
+      {% endfor %}
+      <button class="btn btn-primary" type="submit">Generate Private Draft</button>
+    </form>
+  </div></section>
+  {% if proposal %}
+  <section class="card mb-3"><div class="card-body">
+    <h2 class="h5">2. Review the generated challenge</h2>
+    <p class="alert alert-warning">Generated answers and evidence may be inaccurate. Verify the technical correctness, clue-to-answer consistency, and safe classroom use before saving and publishing.</p>
+    <h3 class="h5">{{ proposal.name }}</h3>
+    <p><strong>Learning objective:</strong> {{ proposal.objective }}</p>
+    <h4 class="h6">Student scenario (story and task)</h4>
+    <div class="border rounded p-3 mb-3">{{ proposal.description|safe }}</div>
+    <h4 class="h6">Text evidence artifact</h4>
+    <pre class="border rounded p-3 text-wrap" style="white-space:pre-wrap">{{ proposal.artifact_text }}</pre>
+    <h4 class="h6">Progressive hints</h4>
+    <ol>{% for hint in proposal.hints %}<li>{{ hint.text }} ({{ hint.cost }} points)</li>{% endfor %}</ol>
+    <h4 class="h6">Instructor-only solution</h4>
+    <pre class="border rounded p-3 text-wrap" style="white-space:pre-wrap">{{ proposal.instructor_solution }}</pre>
+    <p><strong>Tags:</strong> {{ proposal.tags }}</p>
+    <h2 class="h5 mt-4">3. Approve as a private Challenge Bank template</h2>
+    <p>Choose a flag based on the correct answer. The flag will be hashed and will not be sent to EagleAI.</p>
+    <form method="post" action="{% url 'ctf_ai_challenge_draft' %}">
+      {% csrf_token %}<input type="hidden" name="action" value="save">
+      <input type="hidden" name="nonce" value="{{ nonce }}">
+      <div class="mb-3"><label for="id_flag" class="form-label">Final challenge flag</label>
+        {{ review_form.flag }}<div class="form-text">{{ review_form.flag.help_text }}</div>
+        {% for error in review_form.flag.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+      </div>
+      <button class="btn btn-primary" type="submit">Save to Challenge Bank</button>
+    </form>
+    <form method="post" action="{% url 'ctf_ai_challenge_draft' %}" class="mt-2">
+      {% csrf_token %}<input type="hidden" name="action" value="discard">
+      <button class="btn btn-outline-danger" type="submit">Discard Draft</button>
+    </form>
+  </div></section>
+  {% endif %}
+  <a href="{% url 'ctf_bank' %}" class="btn btn-outline-secondary">Back to Challenge Bank</a>
+</main>
+{% endblock %}

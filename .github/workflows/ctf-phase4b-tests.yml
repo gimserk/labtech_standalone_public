@@ -1,0 +1,38 @@
+name: CTF Phase 4B — Real SOC Evidence
+
+on:
+  pull_request:
+    paths:
+      - 'app/models.py'
+      - 'app/forms.py'
+      - 'app/ctf_soc_verification.py'
+      - 'app/ctf_views_v2.py'
+      - 'app/ctf_foundation.py'
+      - 'app/migrations/0076_ctf_soc_ticket_evidence.py'
+      - 'app/test_ctf_phase4b.py'
+      - '.github/workflows/ctf-phase4b-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'app/ctf_soc_verification.py'
+      - 'app/test_ctf_phase4b.py'
+permissions:
+  contents: read
+jobs:
+  ctf-real-soc:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: Native dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config default-libmysqlclient-dev libldap2-dev libsasl2-dev libssl-dev libxml2-dev libxslt1-dev libjpeg-dev zlib1g-dev libffi-dev
+      - name: Install application
+        run: python -m pip install -r requirements.txt
+      - name: Compile changed Python files
+        run: python -m py_compile app/models.py app/forms.py app/ctf_soc_verification.py app/ctf_views_v2.py app/ctf_foundation.py app/test_ctf_phase4b.py app/migrations/0076_ctf_soc_ticket_evidence.py
+      - name: CTF Phase 4B and earlier regression tests
+        run: python manage.py test app.test_ctf_phase4b app.test_ctf_phase4a app.test_ctf_phase3b app.test_ctf_phase3 app.test_ctf_phase2 app.test_ctf2 --settings=app.test_settings -v 2

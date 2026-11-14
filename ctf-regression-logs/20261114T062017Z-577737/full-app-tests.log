@@ -1,0 +1,554 @@
+Creating test database for alias 'default'...
+System check identified some issues:
+
+WARNINGS:
+?: (ckeditor.W001) django-ckeditor bundles CKEditor 4.22.1 which isn't supported anymore and which does have unfixed security issues, see for example https://ckeditor.com/cke4/release/CKEditor-4.24.0-LTS . You should consider strongly switching to a different editor (maybe CKEditor 5 respectively django-ckeditor-5 after checking whether the CKEditor 5 license terms work for you) or switch to the non-free CKEditor 4 LTS package. See https://ckeditor.com/ckeditor-4-support/ for more on this. (Note! This notice has been added by the django-ckeditor developers and we are not affiliated with CKSource and were not involved in the licensing change, so please refrain from complaining to us. Thanks.)
+?: settings.ACCOUNT_AUTHENTICATION_METHOD is deprecated, use: settings.ACCOUNT_LOGIN_METHODS = {'email', 'username'}
+?: settings.ACCOUNT_EMAIL_REQUIRED is deprecated, use: settings.ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
+
+System check identified 3 issues (0 silenced).
+..............AI improvement provider temporarily failed; retry 1/2 (course=1 type=textpage id=1)
+AI improvement provider temporarily failed; retry 2/2 (course=1 type=textpage id=1)
+......AI improvement provider temporarily failed; retry 1/2 (course=1 type=textpage id=1)
+AI improvement provider temporarily failed; retry 2/2 (course=1 type=textpage id=1)
+.....AI content improvement failed (course=1 type=textpage id=1)
+Traceback (most recent call last):
+  File "/opt/labtech/app/ai_content_revision.py", line 324, in improve_content
+    proposal = _suggest(item, content_type, goals[goal], instructions, assistant)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/labtech/app/ai_content_revision.py", line 202, in _suggest
+    with chat_request(
+         ^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1198, in _execute_mock_call
+    raise effect
+requests.exceptions.HTTPError: Unauthorized
+..Forbidden: /labtech/courses/1/content/textpage/1/improve-ai/
+Forbidden: /labtech/courses/1/content/textpage/1/improve-ai/
+Forbidden: /labtech/courses/1/content/textpage/1/improve-ai/
+Not Found: /labtech/courses/2/content/textpage/1/improve-ai/
+Not Found: /labtech/courses/1/content/user/1/improve-ai/
+.............Forbidden: /api/assistant/proxy/
+Forbidden: /api/assistant/proxy/
+...Service Unavailable: /api/assistant/proxy/
+........Forbidden: /api/assistant/proxy/
+Bad Request: /api/assistant/proxy/
+..Not Found: /courses/2/content/audio/1/complete/
+Method Not Allowed (GET): /courses/1/content/audio/1/complete/
+.............Not Found: /courses/1/audio/1/stream/
+...Not Found: /courses/1/audio/1/stream/
+Not Found: /courses/2/audio/1/stream/
+Requested Range Not Satisfiable: /courses/1/audio/1/stream/
+Not Found: /courses/1/audio/1/stream/
+...Not Found: /courses/1/audio/add/
+...cluster_utilization_unavailable server_id=1
+...Method Not Allowed (GET): /labtech/admin/labs/1/recover/
+.lab_cleanup_admin_recovery session=1 job=1f61b47c-9238-4281-aaf1-5cb66fe73866 actor=None status=queued
+...--- [TASK_START] Building LabInstance ID: 1 ---
+Verifying pre-allocated VMIDs...
+Pre-allocated VMIDs verified successfully.
+Starting build for machine 'VM' (VMID: 7351)...
+--- [TASK_FAILED] ---
+Traceback (most recent call last):
+  File "/opt/labtech/app/tasks.py", line 156, in build_lab_instance_task
+    _build_single_machine(machine.id)
+  File "/usr/lib/python3.12/unittest/mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1198, in _execute_mock_call
+    raise effect
+RuntimeError: clone unavailable
+
+--- [TASK_END] Exiting task for LabInstance ID: 1 ---
+..........Bad Request: /courses/1/builder/bulk/
+.Bad Request: /courses/1/builder/bulk/
+..Forbidden: /courses/1/builder/quiz/1/edit/
+Forbidden: /courses/1/builder/bulk/
+Not Found: /courses/1/builder/bulk/
+Forbidden: /courses/1/builder/bulk/
+Forbidden: /courses/1/builder/move/
+.Forbidden (CSRF cookie not set.): /courses/1/builder/textpage/1/edit/
+..Bad Request: /labtech/courses/1/update-content-order/
+.Bad Request: /courses/1/builder/textpage/1/edit/
+...Bad Request: /courses/1/builder/bulk/
+Bad Request: /courses/1/builder/bulk/
+.Bad Request: /courses/1/builder/bulk/
+....Bad Request: /courses/1/builder/bulk/
+........Forbidden: /courses/1/activities/quiz/1/learning-outcomes/
+..Forbidden: /courses/1/activities/quiz/1/learning-outcomes/
+................................Forbidden: /labtech/resources/1/edit/
+.Bad Request: /api/ctf/submit_flag/
+Bad Request: /api/ctf/submit_flag/
+Forbidden (CSRF cookie not set.): /api/ctf/submit_flag/
+....Not Found: /ctf/1/challenges/1/evidence/
+.Forbidden: /api/ctf/submit_flag/
+Forbidden: /api/ctf/submit_flag/
+.Forbidden: /api/ctf/hint/1/unveil/
+Forbidden: /api/ctf/hint/1/unveil/
+Forbidden: /api/ctf/hint/1/unveil/
+.Too Many Requests: /api/ctf/submit_flag/
+.Not Found: /ctf/1/
+...Not Found: /ctf/1/challenges/1/evidence/
+Forbidden: /api/ctf/hint/1/unveil/
+.Bad Request: /api/ctf/submit_flag/
+.Forbidden: /labtech/ctf/1/manage/
+....Bad Request: /api/ctf/submit_flag/
+..Not Found: /ctf/1/
+Forbidden: /ctf/1/enroll/
+Forbidden: /api/ctf/submit_flag/
+.Not Found: /ctf/1/
+.Forbidden: /ctf/1/
+.Forbidden (CSRF cookie not set.): /labtech/ctf/1/control/
+Forbidden (CSRF cookie not set.): /ctf/1/
+...Forbidden: /ctf/1/
+Forbidden: /ctf/1/
+Forbidden: /ctf/1/
+Forbidden: /ctf/1/
+.Not Found: /ctf/1/
+..Forbidden: /ctf/1/
+.Forbidden: /api/ctf/submit_flag/
+.Forbidden: /api/ctf/submit_flag/
+.Not Found: /labtech/ctf/1/control/
+Bad Request: /labtech/ctf/1/control/
+..Forbidden: /api/ctf/submit_flag/
+Forbidden: /api/ctf/hint/1/unveil/
+.Not Found: /ctf/1/scoreboard/
+Not Found: /ctf/1/scoreboard/data/
+.Not Found: /ctf/1/
+Not Found: /ctf/1/
+.....Forbidden: /labtech/ctf/1/control/
+Forbidden: /labtech/ctf/1/control/
+.Not Found: /labtech/ctf/bank/1/deploy/
+Bad Request: /labtech/ctf/bank/2/deploy/
+.Bad Request: /labtech/ctf/bank/import/
+..Not Found: /labtech/ctf/bank/1/edit/
+Not Found: /labtech/ctf/bank/1/deploy/
+Forbidden: /labtech/ctf/bank/
+Forbidden: /labtech/ctf/bank/export/
+....Not Found: /labtech/ctf/2/challenges/library/2/copy/
+.Method Not Allowed (GET): /labtech/ctf/2/challenges/library/1/copy/
+.Forbidden: /labtech/ctf/2/challenges/library/
+Forbidden: /labtech/ctf/2/challenges/library/1/copy/
+..Forbidden: /api/ctf/submit_flag/
+........Forbidden: /api/ctf/submit_flag/
+Forbidden: /api/ctf/submit_flag/
+..Bad Request: /api/ctf/claim-evidence/
+.Conflict: /api/ctf/claim-evidence/
+.Bad Request: /api/ctf/submit_flag/
+.Bad Request: /api/ctf/claim-evidence/
+.Forbidden: /api/ctf/claim-evidence/
+.Conflict: /api/ctf/claim-evidence/
+.Forbidden: /api/ctf/claim-evidence/
+Forbidden: /api/ctf/claim-evidence/
+...Bad Request: /api/ctf/claim-evidence/
+...Forbidden: /labtech/ctf/bank/ai-batch/
+Forbidden: /labtech/ctf/bank/ai-batch/
+.CTF batch draft failed instructor=1
+Traceback (most recent call last):
+  File "/opt/labtech/app/ctf_ai_batch.py", line 125, in ai_batch
+    proposal = _generate(AIClient(request.user), details)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1202, in _execute_mock_call
+    raise result
+app.services.AIResponseError: gateway failure
+..Forbidden: /labtech/ctf/bank/ai-batch/
+Forbidden: /labtech/ctf/bank/ai-batch/
+.....Forbidden: /labtech/ctf/bank/1/verification-plan/
+Forbidden: /labtech/ctf/bank/1/verification-plan/
+.Not Found: /labtech/ctf/bank/1/verification-plan/
+Forbidden: /labtech/ctf/bank/1/verification-plan/
+.Forbidden: /labtech/ctf/bank/2/verification-plan/
+.CTF AI generation failed for instructor 1: AIResponseError
+...CTF AI generation failed for instructor 1: ValidationError
+...Forbidden: /labtech/ctf/bank/ai-generate/
+Forbidden: /labtech/ctf/bank/ai-generate/
+..Released VNC port 6002 on City Cluster
+..City Service deletion failed city=1 role=pfsense vmid=9001
+Traceback (most recent call last):
+  File "/opt/labtech/app/cybercity_city_service_reset.py", line 111, in delete_cybercity_service_task
+    node, vm = _owned_vm(api, city, role, fields)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/labtech/app/cybercity_city_services.py", line 76, in _owned_vm
+    raise CityServiceError('vm_identity_mismatch')
+app.cybercity_city_services.CityServiceError: vm_identity_mismatch
+............Cyber City MQTT delivery failed for command edf8e02d-0a84-42f0-b358-b5b7674b3206
+Traceback (most recent call last):
+  File "/opt/labtech/app/cybercity_command_delivery.py", line 86, in dispatch_pending
+    publish.single(
+  File "/usr/lib/python3.12/unittest/mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1198, in _execute_mock_call
+    raise effect
+OSError: test broker unavailable
+...Cyber City MQTT delivery failed for command 99bae9ee-0749-4a03-a1bf-3cce0046d075
+Traceback (most recent call last):
+  File "/opt/labtech/app/cybercity_command_delivery.py", line 75, in dispatch_pending
+    raise ValueError('Cross-building MQTT command rejected')
+ValueError: Cross-building MQTT command rejected
+........Not Found: /labtech/cybercity/1/buildings/2/esp32/1/
+..Not Found: /labtech/cybercity/1/buildings/2/monitors/1/trigger/
+....Not Found: /labtech/cybercity/1/buildings/2/machines/1/monitors/
+Not Found: /labtech/cybercity/1/buildings/2/machines/1/monitors/
+...Cyber City QGA check unavailable machine=1 monitor=1
+.Forbidden: /labtech/cybercity/1/buildings/1/machines/1/monitor-control/
+..........Forbidden: /labtech/cybercity/1/soc/
+..........Bad Request: /courses/1/flashcards/1/export/pdf/
+Bad Request: /courses/1/flashcards/1/export/pdf/
+Bad Request: /courses/1/flashcards/1/export/pdf/
+Bad Request: /courses/1/flashcards/1/export/pdf/
+...Method Not Allowed (POST): /courses/1/flashcards/1/export/pdf/
+...Not Found: /courses/1/flashcards/10000/export/pdf/
+.....Forbidden: /labtech/courses/1/instructor-gradebook/export/
+.................Not Found: /labtech/courses/1/instructor-gradebook/
+Not Found: /labtech/courses/1/instructor-gradebook/
+...Forbidden: /labtech/courses/1/instructor-gradebook/
+Forbidden: /labtech/courses/1/instructor-gradebook/setup/
+Forbidden: /labtech/courses/1/instructor-gradebook/setup/
+...........lab_check_run run=1 instance=1 check=1 machine=1 context=student_step outcome=pass code=state_matches duration_ms=3
+lab_check_run run=3 instance=1 check=1 machine=1 context=student_step outcome=pass code=state_matches duration_ms=3
+..lab_check_run run=1 instance=1 check=1 machine=1 context=student_step outcome=fail code=state_mismatch duration_ms=3
+.lab_check_run run=1 instance=1 check=1 machine=1 context=student_step outcome=pass code=state_matches duration_ms=3
+lab_check_run run=2 instance=1 check=1 machine=1 context=finish outcome=fail code=state_mismatch duration_ms=3
+lab_check_run run=3 instance=1 check=1 machine=1 context=student_step outcome=pass code=state_matches duration_ms=3
+lab_check_run run=4 instance=1 check=1 machine=1 context=finish outcome=pass code=state_matches duration_ms=3
+.lab_check_run run=1 instance=1 check=1 machine=1 context=student_step outcome=pass code=state_matches duration_ms=3
+lab_check_run run=2 instance=1 check=1 machine=1 context=finish outcome=fail code=state_mismatch duration_ms=3
+.....lab_check_run run=1 instance=1 check=1 machine=1 context=student_step outcome=fail code=state_mismatch duration_ms=3
+.lab_check_run run=1 instance=1 check=1 machine=1 context=student_step outcome=pass code=state_matches duration_ms=3
+.lab_check_run run=1 instance=1 check=1 machine=1 context=student_step outcome=pass code=state_matches duration_ms=3
+.lab_check_run run=1 instance=1 check=1 machine=1 context=student_step outcome=pass code=state_matches duration_ms=3
+..lab_check_run run=1 instance=1 check=1 machine=1 context=student_step outcome=pass code=state_matches duration_ms=3
+.Not Found: /courses/1/labs/1/steps/1/checks/
+Not Found: /courses/1/labs/1/check-history/
+.Not Found: /courses/1/labs/1/checks/1/preview/
+....Finish lab request received for instance ID: 1 by user vm-student
+Lab cleanup job 4b393069-3838-494f-99f5-4a8c574dd85e for session 1 is queued
+.Finish lab request received for instance ID: 1 by user vm-student
+Lab cleanup job 0970a469-b0b1-4a1f-987f-78d0bf1c2f3a for session 1 is queued
+lab_cleanup_resource job=0970a469-b0b1-4a1f-987f-78d0bf1c2f3a session=1 machine=1 vmid=990101 type=proxmox success=True category=
+.Not Found: /courses/1/lab-instances/1/steps/1/check/
+.Not Found: /courses/124/lab-instances/1/steps/1/check/
+Not Found: /courses/1/lab-instances/1/steps/1/check/
+.Finish lab request received for instance ID: 1 by user vm-student
+Forbidden: /courses/1/lab-session/1/finish/
+.Forbidden (CSRF cookie not set.): /courses/1/lab-instances/1/steps/1/check/
+..lab_check_run run=1 instance=1 check=1 machine=1 context=student_step outcome=pass code=state_matches duration_ms=3
+.lab_cleanup_resource job=a7c51f94-4d64-400f-891a-f288d3d542e3 session=1 machine=1 vmid=900001 type=guacamole success=True category=
+lab_cleanup_resource job=a7c51f94-4d64-400f-891a-f288d3d542e3 session=1 machine=1 vmid=900001 type=proxmox success=True category=
+lab_cleanup_resource job=a7c51f94-4d64-400f-891a-f288d3d542e3 session=1 machine=1 vmid=900001 type=vnc success=True category=
+.lab_cleanup_dispatch_unavailable job=7052610c-7511-4e47-8974-52e0db25fc85
+..lab_cleanup_resource job=0d1c2a73-540b-449c-abd1-a6f81662b3ac session=1 machine=1 vmid=900001 type=guacamole success=False category=guacamole_configuration
+lab_cleanup_resource job=0d1c2a73-540b-449c-abd1-a6f81662b3ac session=1 machine=1 vmid=900001 type=proxmox success=False category=proxmox_unavailable
+..lab_cleanup_resource job=1330c156-c489-4878-be12-1d98c5a0e4ed session=1 machine=1 vmid=900001 type=guacamole success=True category=
+lab_cleanup_resource job=1330c156-c489-4878-be12-1d98c5a0e4ed session=1 machine=1 vmid=900001 type=proxmox success=True category=
+lab_cleanup_resource job=1330c156-c489-4878-be12-1d98c5a0e4ed session=1 machine=1 vmid=900001 type=vnc success=True category=
+.Forbidden: /labtech/courses/1/lab-cleanup/
+Forbidden: /labtech/courses/1/lab-cleanup/71b49824-59b7-4b0c-891d-1aea6b0f8ce6/retry/
+Method Not Allowed (GET): /labtech/courses/1/lab-cleanup/71b49824-59b7-4b0c-891d-1aea6b0f8ce6/retry/
+...Forbidden: /lab-steps/questions/1/check/
+Forbidden: /lab-steps/questions/1/check/
+...lab_cleanup_resource job=59d0019a-371c-485d-a3e2-c4533d423ebf session=1 machine=1 vmid=900001 type=guacamole success=False category=guacamole_configuration
+lab_cleanup_resource job=59d0019a-371c-485d-a3e2-c4533d423ebf session=1 machine=1 vmid=900001 type=proxmox success=False category=proxmox_unavailable
+lab_cleanup_resource job=59d0019a-371c-485d-a3e2-c4533d423ebf session=1 machine=1 vmid=900001 type=guacamole success=False category=guacamole_configuration
+lab_cleanup_resource job=59d0019a-371c-485d-a3e2-c4533d423ebf session=1 machine=1 vmid=900001 type=proxmox success=False category=proxmox_unavailable
+lab_cleanup_resource job=59d0019a-371c-485d-a3e2-c4533d423ebf session=1 machine=1 vmid=900001 type=guacamole success=False category=guacamole_configuration
+lab_cleanup_resource job=59d0019a-371c-485d-a3e2-c4533d423ebf session=1 machine=1 vmid=900001 type=proxmox success=False category=proxmox_unavailable
+lab_cleanup_resource job=59d0019a-371c-485d-a3e2-c4533d423ebf session=1 machine=1 vmid=900001 type=guacamole success=False category=guacamole_configuration
+lab_cleanup_resource job=59d0019a-371c-485d-a3e2-c4533d423ebf session=1 machine=1 vmid=900001 type=proxmox success=False category=proxmox_unavailable
+lab_cleanup_resource job=59d0019a-371c-485d-a3e2-c4533d423ebf session=1 machine=1 vmid=900001 type=guacamole success=False category=guacamole_configuration
+lab_cleanup_resource job=59d0019a-371c-485d-a3e2-c4533d423ebf session=1 machine=1 vmid=900001 type=proxmox success=False category=proxmox_unavailable
+.Guacamole connection ID gone not found on 'Test Guacamole'. Assuming already deleted.
+.lab_cleanup_resource job=00e7114c-9e06-4237-a248-efbe16b83122 session=1 machine=1 vmid=900001 type=guacamole success=True category=
+lab_cleanup_resource job=00e7114c-9e06-4237-a248-efbe16b83122 session=1 machine=1 vmid=900001 type=proxmox success=True category=
+lab_cleanup_resource job=00e7114c-9e06-4237-a248-efbe16b83122 session=1 machine=1 vmid=900001 type=vnc success=True category=
+lab_cleanup_resource job=00e7114c-9e06-4237-a248-efbe16b83122 session=1 machine=2 vmid=900002 type=guacamole success=True category=
+lab_cleanup_resource job=00e7114c-9e06-4237-a248-efbe16b83122 session=1 machine=2 vmid=900002 type=proxmox success=True category=
+..lab_cleanup_resource job=61d2a6d8-794c-4e9a-83f1-88d1802de196 session=1 machine=1 vmid=900001 type=guacamole success=True category=
+lab_cleanup_resource job=61d2a6d8-794c-4e9a-83f1-88d1802de196 session=1 machine=1 vmid=900001 type=proxmox success=False category=proxmox_unavailable
+lab_cleanup_resource job=61d2a6d8-794c-4e9a-83f1-88d1802de196 session=1 machine=1 vmid=900001 type=proxmox success=True category=
+lab_cleanup_resource job=61d2a6d8-794c-4e9a-83f1-88d1802de196 session=1 machine=1 vmid=900001 type=vnc success=True category=
+.Finish lab request received for instance ID: 2 by user cleanup-student
+Forbidden: /courses/1/lab-session/2/finish/
+...Forbidden: /courses/1/lab-machine/1/action/
+Finish lab request received for instance ID: 1 by user cleanup-student
+Lab cleanup job 65950b7c-f38a-4058-8e96-5708581bb67e for session 1 is queued
+....Machine 1: Allocating VNC port...
+Machine 1: Connecting to Proxmox host localhost
+Machine 1: Using Linked Clone.
+Machine 1: Attempting to clone to target node: pve1
+Machine 1: VERIFIED that VM 991001 exists on node pve1.
+Machine 1: Successfully cloned to node pve1
+Machine 1: Configuring VNC...
+Machine 1: Starting VM...
+Machine 1: Creating Guacamole connection for host 'pve1'...
+Machine 1: Finalizing database record...
+Machine 1: Build complete.
+Machine 2: Allocating VNC port...
+Machine 2: Connecting to Proxmox host localhost
+Machine 2: Using Full Clone.
+Machine 2: Attempting to clone to target node: pve1
+Machine 2: VERIFIED that VM 991002 exists on node pve1.
+Machine 2: Successfully cloned to node pve1
+Machine 2: Configuring VNC...
+Machine 2: Starting VM...
+Machine 2: Creating Guacamole connection for host 'pve1'...
+Machine 2: Finalizing database record...
+Machine 2: Build complete.
+Machine 3: Allocating VNC port...
+Machine 3: Connecting to Proxmox host localhost
+Machine 3: Using Linked Clone.
+Machine 3: Attempting to clone to target node: pve1
+Machine 3: VERIFIED that VM 991003 exists on node pve1.
+Machine 3: Successfully cloned to node pve1
+Machine 3: Configuring VNC...
+Machine 3: Starting VM...
+Machine 3: Creating Guacamole connection for host 'pve1'...
+Machine 3: Finalizing database record...
+Machine 3: Build complete.
+Machine 4: Allocating VNC port...
+Machine 4: Connecting to Proxmox host localhost
+Machine 4: Using Full Clone.
+Machine 4: Attempting to clone to target node: pve1
+Machine 4: VERIFIED that VM 991004 exists on node pve1.
+Machine 4: Successfully cloned to node pve1
+Machine 4: Configuring VNC...
+Machine 4: Starting VM...
+Machine 4: Creating Guacamole connection for host 'pve1'...
+Machine 4: Finalizing database record...
+Machine 4: Build complete.
+[PVE] Node preference (least-loaded): pve1
+[PVE] Attempting to clone VM 991005 from pve1 to target node: pve1
+[PVE] Successfully cloned VM 991005 to node pve1
+[PVE] Node preference (least-loaded): pve1
+[PVE] Attempting to clone VM 991006 from pve1 to target node: pve1
+[PVE] Successfully cloned VM 991006 to node pve1
+[PVE] Node preference (least-loaded): pve1
+[PVE] Attempting to clone VM 991007 from pve1 to target node: pve1
+[PVE] Successfully cloned VM 991007 to node pve1
+[PVE] Node preference (least-loaded): pve1
+[PVE] Attempting to clone VM 991008 from pve1 to target node: pve1
+[PVE] Successfully cloned VM 991008 to node pve1
+.........Method Not Allowed: /labtech/admin/migrations/4f6998e0-a345-496d-9063-e861605990e0/dispatch/
+.lab_node_migration_blocked job=d39134e7-73ff-4be8-bb3e-b716d0a68288 reason=custom_qemu_arguments_unsupported
+...lab_migration_guacamole_unexpected job=4b523a79-443c-490d-9278-d4b32a8a51f3 machine=1
+Traceback (most recent call last):
+  File "/opt/labtech/app/lab_services/node_migration.py", line 286, in _migrate_one
+    update_guacamole_vnc_destination(
+  File "/usr/lib/python3.12/unittest/mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1198, in _execute_mock_call
+    raise effect
+RuntimeError: guac-offline
+lab_node_migration_blocked job=4b523a79-443c-490d-9278-d4b32a8a51f3 reason=guacamole_update_failed
+.....lab_node_migration_blocked job=506dd9c7-d6c6-493f-8583-67c1a53434c4 reason=guacamole_preflight_permission_denied
+.lab_migration_guacamole_reconcile job=639ecf9b-6320-45c7-bcdb-9665a7d48fb6 machine=1 code=connection_not_found
+lab_node_migration_blocked job=639ecf9b-6320-45c7-bcdb-9665a7d48fb6 reason=guacamole_connection_not_found
+...lab_node_migration_blocked job=32f0bb31-616b-4f13-9991-e1f1a44d6009 reason=proxmox_vm_locked
+.....lab_node_migration_blocked job=8c0fcb2f-cb4d-4f26-be55-ca38917ed719 reason=vm_identity_mismatch
+....Forbidden: /courses/1/file-submission/1/attachments/1/download/
+.........Not Found: /courses/1/file-submission/1/take/
+...Bad Request: /courses/1/pbq/1/questions/new/
+.Forbidden (Permission denied): /courses/1/pbq/1/artifacts/1/
+Traceback (most recent call last):
+  File "/opt/labtech/venv/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/labtech/venv/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/labtech/venv/lib/python3.12/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/labtech/app/pbq_views.py", line 446, in deliver_pbq_artifact
+    raise PermissionDenied
+django.core.exceptions.PermissionDenied
+Forbidden (Permission denied): /courses/1/pbq/1/artifacts/1/
+Traceback (most recent call last):
+  File "/opt/labtech/venv/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/labtech/venv/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/labtech/venv/lib/python3.12/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/labtech/app/pbq_views.py", line 446, in deliver_pbq_artifact
+    raise PermissionDenied
+django.core.exceptions.PermissionDenied
+........Forbidden (Permission denied): /courses/1/pbq/1/edit/
+Traceback (most recent call last):
+  File "/opt/labtech/venv/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/labtech/venv/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/labtech/venv/lib/python3.12/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/labtech/app/pbq_views.py", line 81, in edit_activity
+    require_manager(request.user, activity)
+  File "/opt/labtech/app/pbq_services.py", line 44, in require_manager
+    raise PermissionDenied("You cannot edit this course.")
+django.core.exceptions.PermissionDenied: You cannot edit this course.
+....Not Found: /courses/1/pbq/1/questions/2/fields/1/
+.Forbidden (Permission denied): /courses/1/pbq/1/edit/
+Traceback (most recent call last):
+  File "/opt/labtech/venv/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/labtech/venv/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/labtech/venv/lib/python3.12/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/labtech/app/pbq_views.py", line 81, in edit_activity
+    require_manager(request.user, activity)
+  File "/opt/labtech/app/pbq_services.py", line 44, in require_manager
+    raise PermissionDenied("You cannot edit this course.")
+django.core.exceptions.PermissionDenied: You cannot edit this course.
+...........Forbidden: /courses/1/bulk-update-dates/
+Forbidden: /labtech/courses/1/update-content-order/
+...............Forbidden (Permission denied): /courses/1/pbq/1/artifacts/1/
+Traceback (most recent call last):
+  File "/opt/labtech/venv/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/labtech/venv/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/labtech/venv/lib/python3.12/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/labtech/app/pbq_views.py", line 446, in deliver_pbq_artifact
+    raise PermissionDenied
+django.core.exceptions.PermissionDenied
+...................Forbidden: /admin-plugins/
+Forbidden: /admin-plugins/demo/releases/release-1/install/
+..Forbidden: /admin-plugins/demo/releases/release-1/install/
+..Forbidden: /admin-plugins/demo/releases/release-1/install/
+.Method Not Allowed (GET): /admin-plugins/demo/releases/release-1/install/
+.Forbidden (CSRF cookie not set.): /admin-plugins/demo/releases/release-1/install/
+.Forbidden: /admin-plugins/
+Forbidden: /admin-plugins/demo/releases/release-1/install/
+.Forbidden: /admin-plugins/
+.............Forbidden (CSRF token missing.): /courses/1/quizzes/1/take/
+Forbidden (CSRF token missing.): /courses/1/quizzes/1/take/
+.Bad Request: /courses/1/quizzes/1/take/
+..Forbidden: /courses/1/quizzes/1/take/
+Forbidden: /courses/1/quizzes/1/take/
+.Conflict: /courses/1/quizzes/1/take/
+..Bad Request: /courses/1/quizzes/1/take/
+..Bad Request: /courses/1/quizzes/1/take/
+..Bad Request: /courses/1/quizzes/1/take/
+..Conflict: /courses/1/quizzes/1/take/
+...Bad Request: /courses/1/quizzes/1/take/
+..........Forbidden: /courses/1/rubrics/quiz/1/criteria/1/levels/
+Forbidden: /courses/1/rubrics/quiz/1/
+.Forbidden: /courses/1/rubrics/quiz/1/criteria/1/levels/
+.....Not Found: /courses/1/rubrics/quiz/1/my-feedback/
+...Not Found: /courses/1/rubrics/quiz/1/my-feedback/
+.Forbidden: /courses/1/rubrics/quiz/1/students/1/release/
+.Forbidden: /courses/1/rubrics/quiz/3/copy/
+.Method Not Allowed (GET): /courses/1/rubrics/quiz/2/copy/
+.Forbidden: /courses/1/rubrics/quiz/2/copy/
+.Forbidden: /courses/1/rubrics/quiz/1/roster/
+.........Forbidden: /courses/1/rubrics/quiz/2/
+.Forbidden: /courses/1/rubrics/quiz/1/
+.Forbidden: /courses/1/rubrics/quiz/1/
+.Bad Request: /api/scenario/1/chat/
+Forbidden: /api/scenario/1/chat/
+.......Forbidden: /labtech/courses/1/instructor-gradebook/scenario/1/student/2/
+Forbidden: /labtech/courses/1/instructor-gradebook/scenario/1/student/2/
+Not Found: /labtech/courses/1/instructor-gradebook/scenario/2/student/2/
+Not Found: /labtech/courses/1/instructor-gradebook/scenario/1/student/3/
+Forbidden: /labtech/courses/2/instructor-gradebook/scenario/1/student/2/
+................................Forbidden: /accounts/tekcon-nfc/
+...Forbidden: /accounts/tekcon-nfc/
+.Successfully allocated VNC port 6000 on Legacy active cluster
+.Successfully allocated VNC port 6000 on Old default pool
+.Successfully allocated VNC port 6000 on New VNC pool
+Successfully allocated VNC port 6001 on New VNC pool
+.......AI course generation request failed (HTTP 504); retry 1/2
+.....OpenWebUI did not accept streamed JSON mode; retrying with prompt-enforced JSON.
+..AI course generation request failed (HTTP 504); retry 1/2
+AI course generation request failed (HTTP 504); retry 2/2
+...AI course generation request failed (AIResponseError); retry 1/2
+..............Ignoring unqueued Cyber City machine reset 42
+................................................................................................................................Listening to 1 MQTT topics for Cyber City 12
+Listening to 2 MQTT topics for Cyber City 12
+.............ssss.../usr/lib/python3.12/zipfile/__init__.py:1625: UserWarning: Duplicate name: 'manifest.json'
+  return self._open_to_write(zinfo, force_zip64=force_zip64)
+........................Cyber City VM already exists: machine=41 vmid=9901
+Cyber City building ready machine=41 vmid=9901 node=ITP-PM1
+.Cyber City building provisioning failed machine=41 vmid=9901 node=ITP-PM1; reservation retained
+Traceback (most recent call last):
+  File "/opt/labtech/app/cybercity_building_tasks.py", line 47, in provision_cybercity_building_task
+    raise RuntimeError(
+RuntimeError: VMID 9901 exists on node ITP-PM7, not the template node; inspect before retrying
+.Cyber City VM already exists: machine=41 vmid=9901
+Cyber City building provisioning failed machine=41 vmid=9901 node=ITP-PM1; reservation retained
+Traceback (most recent call last):
+  File "/opt/labtech/app/cybercity_building_tasks.py", line 66, in provision_cybercity_building_task
+    raise RuntimeError(
+RuntimeError: VMID 9901 name mismatch: expected cc-building-7-machine-41-9901; requires manual reconciliation
+.Cloning Cyber City building machine=41 vmid=9901 node=ITP-PM1
+Cyber City building ready machine=41 vmid=9901 node=ITP-PM1
+.Cloning Cyber City building machine=41 vmid=9901 node=ITP-PM1
+Cyber City building provisioning failed machine=41 vmid=9901 node=ITP-PM1; reservation retained
+Traceback (most recent call last):
+  File "/opt/labtech/app/cybercity_building_tasks.py", line 73, in provision_cybercity_building_task
+    raise RuntimeError(f'VNC configuration failed for building VMID {expected_vmid}')
+RuntimeError: VNC configuration failed for building VMID 9901
+....City service provisioning failed city=1 type=pfsense vmid=9001 node=ITP-PM7
+Traceback (most recent call last):
+  File "/opt/labtech/app/cybercity_utility_tasks.py", line 83, in provision_cybercity_utility_task
+    raise RuntimeError('vm_identity_mismatch')
+RuntimeError: vm_identity_mismatch
+.Reconciling city service VMID 9001 on ITP-PM1
+.Reconciling city service VMID 9001 on ITP-PM1
+City service provisioning failed city=1 type=pfsense vmid=9001 node=ITP-PM1
+Traceback (most recent call last):
+  File "/opt/labtech/app/cybercity_utility_tasks.py", line 99, in provision_cybercity_utility_task
+    raise RuntimeError('vm_identity_mismatch')
+RuntimeError: vm_identity_mismatch
+.Reconciling city service VMID 9001 on ITP-PM7
+..City service provisioning failed city=1 type=pfsense vmid=9001 node=ITP-PM1
+Traceback (most recent call last):
+  File "/opt/labtech/app/cybercity_utility_tasks.py", line 108, in provision_cybercity_utility_task
+    raise RuntimeError('vnc_configuration_failed')
+RuntimeError: vnc_configuration_failed
+.
+----------------------------------------------------------------------
+Ran 828 tests in 134.899s
+
+OK (skipped=4)
+Destroying test database for alias 'default'...
+Found 828 test(s).
+Session 1: job 0d1c2a73-540b-449c-abd1-a6f81662b3ac (queued)
+Session 1: job a5f924f5-7d6f-46aa-b76b-db4de58ccafd (queued)
+polled=1 failed=0

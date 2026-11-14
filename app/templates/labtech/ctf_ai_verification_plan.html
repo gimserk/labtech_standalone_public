@@ -1,0 +1,56 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}AI Verification Plan{% endblock %}
+{% block labtech_content %}
+<main class="container py-4">
+  <nav aria-label="Breadcrumb"><a href="{% url 'ctf_dashboard' %}">CTF Mission Control</a> / <a href="{% url 'ctf_bank' %}">Challenge Bank</a> / <a href="{% url 'ctf_bank_edit' template.id %}">{{ template.name }}</a> / AI Verification Plan</nav>
+  <h1 class="h3 mt-3">Verification Plan — {{ template.name }}</h1>
+  <p class="text-body-secondary">Generate an instructor-only checklist using existing LabTech lab checks or Cyber City SOC incidents. Nothing in this plan changes infrastructure, evidence configuration, scoring, or student visibility.</p>
+  {% if template.verification_plan %}
+  <section class="card mb-3"><div class="card-body">
+    <h2 class="h5">Current saved advisory plan</h2>
+    <p><strong>Source:</strong> {{ template.verification_plan.resource_name }}</p>
+    <p>{{ template.verification_plan.objective }}</p>
+    <h3 class="h6">Success criteria</h3>
+    <ul>{% for line in template.verification_plan.success_criteria %}<li>{{ line }}</li>{% endfor %}</ul>
+    <p class="small text-body-secondary">Instructor notes only. Configure live checks manually on the competition challenge.</p>
+  </div></section>
+  {% endif %}
+  <section class="card mb-3"><div class="card-body">
+    <h2 class="h5">1. Choose a real resource and request a plan</h2>
+    <form method="post">
+      {% csrf_token %}<input type="hidden" name="action" value="generate">
+      {% for field in form %}
+        <div class="mb-3">
+          <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>{{ field }}
+          {% if field.help_text %}<p class="form-text">{{ field.help_text }}</p>{% endif %}
+          {% for error in field.errors %}<p class="text-danger small">{{ error }}</p>{% endfor %}
+        </div>
+      {% endfor %}
+      <button type="submit" class="btn btn-outline-primary">Generate Advisory Plan</button>
+    </form>
+  </div></section>
+  {% if draft %}
+  <section class="card mb-3"><div class="card-body">
+    <h2 class="h5">2. Review before saving</h2>
+    <div class="alert alert-warning" role="note">These are AI suggestions, not confirmed observations. Verify that every step matches your actual lab checks or SOC workflow. No configuration is applied automatically.</div>
+    <p><strong>Source:</strong> {{ draft.resource_name }}</p>
+    <p><strong>Objective:</strong> {{ draft.plan.objective }}</p>
+    <h3 class="h6">Prerequisites</h3><ol>{% for line in draft.plan.prerequisites %}<li>{{ line }}</li>{% endfor %}</ol>
+    <h3 class="h6">Validation steps</h3><ol>{% for line in draft.plan.validation_steps %}<li>{{ line }}</li>{% endfor %}</ol>
+    <h3 class="h6">Success criteria</h3><ol>{% for line in draft.plan.success_criteria %}<li>{{ line }}</li>{% endfor %}</ol>
+    <h3 class="h6">Suggested student instructions</h3><p>{{ draft.plan.student_instructions }}</p>
+    <h3 class="h6">Instructor notes</h3><p>{{ draft.plan.instructor_notes }}</p>
+    <form method="post" class="d-inline">
+      {% csrf_token %}<input type="hidden" name="action" value="save">
+      <input type="hidden" name="nonce" value="{{ draft.nonce }}">
+      <button type="submit" class="btn btn-primary">Save Instructor-Only Plan</button>
+    </form>
+    <form method="post" class="d-inline">
+      {% csrf_token %}<input type="hidden" name="action" value="discard">
+      <button type="submit" class="btn btn-outline-danger">Discard Preview</button>
+    </form>
+  </div></section>
+  {% endif %}
+  <a class="btn btn-outline-secondary" href="{% url 'ctf_bank_edit' template.id %}">Back to Challenge Template</a>
+</main>
+{% endblock %}

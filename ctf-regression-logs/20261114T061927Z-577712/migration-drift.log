@@ -1,0 +1,31 @@
+System check identified some issues:
+
+WARNINGS:
+?: (ckeditor.W001) django-ckeditor bundles CKEditor 4.22.1 which isn't supported anymore and which does have unfixed security issues, see for example https://ckeditor.com/cke4/release/CKEditor-4.24.0-LTS . You should consider strongly switching to a different editor (maybe CKEditor 5 respectively django-ckeditor-5 after checking whether the CKEditor 5 license terms work for you) or switch to the non-free CKEditor 4 LTS package. See https://ckeditor.com/ckeditor-4-support/ for more on this. (Note! This notice has been added by the django-ckeditor developers and we are not affiliated with CKSource and were not involved in the licensing change, so please refrain from complaining to us. Thanks.)
+?: settings.ACCOUNT_AUTHENTICATION_METHOD is deprecated, use: settings.ACCOUNT_LOGIN_METHODS = {'username', 'email'}
+?: settings.ACCOUNT_EMAIL_REQUIRED is deprecated, use: settings.ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
+Migrations for 'app':
+  app/migrations/0082_alter_cybercitysocalert_id_and_more.py
+    ~ Alter field id on cybercitysocalert
+    ~ Alter field id on cybercitysoccheckmkalert
+    ~ Alter field id on cybercitysoccheckmkhost
+    ~ Alter field id on cybercitysoccheckmksample
+    ~ Alter field id on cybercitysoccheckmktriage
+    ~ Alter field id on cybercitysocevent
+    ~ Alter field id on cybercitysocinvestigation
+    ~ Alter field id on cybercitysocinvestigationevidence
+    ~ Alter field id on cybercitysocresponseplan
+    ~ Alter field id on cybercitysocresponserehearsal
+    ~ Alter field id on cybercitysocresponserunbookstep
+    ~ Alter field id on cybercitysocscenario
+    ~ Alter field id on cybercitysocscenarioresponserule
+    ~ Alter field id on cybercitysocservicesample
+    ~ Alter field id on cybercitysocsimulation
+    ~ Alter field id on cybercitysocsimulationtransition
+    ~ Alter field id on cybercitysocteam
+    ~ Alter field id on cybercitysocticket
+    ~ Alter field id on cybercitysoctriagedecision
+    ~ Alter field id on cybercitysocwazuhagent
+    ~ Alter field id on cybercitysocwazuhdetection
+    ~ Alter field id on cybercitysocwazuhevidence
+    ~ Alter field id on studentactivityevent

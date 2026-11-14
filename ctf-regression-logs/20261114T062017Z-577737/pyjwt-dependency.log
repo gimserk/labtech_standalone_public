@@ -1,0 +1,3 @@
+jwt module path: /opt/labtech/venv/lib/python3.12/site-packages/jwt/__init__.py
+jwt distributions: ['PyJWT']
+PyJWT installed: 2.10.1

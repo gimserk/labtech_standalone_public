@@ -5,7 +5,7 @@
   <nav aria-label="Breadcrumb"><a href="{% url 'ctf_dashboard' %}">CTF Mission Control</a> / Challenge Bank</nav>
   <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-3 mb-3">
     <div><h1 class="h3">Challenge Bank</h1><p class="text-body-secondary">Permanent instructor-owned templates. Adding to a competition creates a separate hidden copy.</p></div>
-    <a class="btn btn-primary" href="{% url 'ctf_bank_create' %}">New challenge template</a>
+    <div class="d-flex gap-2 flex-wrap"><a class="btn btn-outline-primary" href="{% url 'ctf_ai_batch' %}">Generate AI Batch</a><a class="btn btn-outline-primary" href="{% url 'ctf_ai_challenge_draft' %}">Generate One Challenge</a><a class="btn btn-primary" href="{% url 'ctf_bank_create' %}">New challenge template</a></div>
   </div>
   <div class="card mb-3"><div class="card-body">
     <form method="get" class="row g-2 align-items-end" aria-label="Filter templates">

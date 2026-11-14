@@ -1,0 +1,47 @@
+name: CTF Phase 4C — Evidence Scoring
+
+on:
+  pull_request:
+    paths:
+      - 'app/models.py'
+      - 'app/forms.py'
+      - 'app/ctf_foundation.py'
+      - 'app/ctf_views_v2.py'
+      - 'app/ctf_auto_scoring.py'
+      - 'app/lab_check_views.py'
+      - 'app/cybercity_soc_views.py'
+      - 'app/urls.py'
+      - 'app/templates/labtech/ctf_detail.html'
+      - 'app/static/labtech/js/ctf-2.js'
+      - 'app/migrations/0077_ctf_evidence_scoring.py'
+      - 'app/test_ctf_phase4c.py'
+      - '.github/workflows/ctf-phase4c-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'app/test_ctf_phase4c.py'
+      - 'app/ctf_views_v2.py'
+
+permissions:
+  contents: read
+
+jobs:
+  evidence-scoring:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: Native dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config default-libmysqlclient-dev libldap2-dev libsasl2-dev libssl-dev libxml2-dev libxslt1-dev libjpeg-dev zlib1g-dev libffi-dev
+      - name: Install application
+        run: python -m pip install -r requirements.txt
+      - name: Compile changed code
+        run: python -m py_compile app/models.py app/forms.py app/ctf_foundation.py app/ctf_views_v2.py app/ctf_auto_scoring.py app/lab_check_views.py app/cybercity_soc_views.py app/urls.py app/test_ctf_phase4c.py app/migrations/0077_ctf_evidence_scoring.py
+      - name: JavaScript syntax
+        run: node --check app/static/labtech/js/ctf-2.js
+      - name: CTF scoring and integration regression suite
+        run: python manage.py test app.test_ctf_phase4c app.test_ctf_phase4b app.test_ctf_phase4a app.test_ctf_phase3b app.test_ctf_phase3 app.test_ctf_phase2 app.test_ctf2 --settings=app.test_settings -v 2

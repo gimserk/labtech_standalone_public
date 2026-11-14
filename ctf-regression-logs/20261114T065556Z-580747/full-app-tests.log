@@ -1,0 +1,91 @@
+Creating test database for alias 'default'...
+System check identified some issues:
+
+WARNINGS:
+?: (ckeditor.W001) django-ckeditor bundles CKEditor 4.22.1 which isn't supported anymore and which does have unfixed security issues, see for example https://ckeditor.com/cke4/release/CKEditor-4.24.0-LTS . You should consider strongly switching to a different editor (maybe CKEditor 5 respectively django-ckeditor-5 after checking whether the CKEditor 5 license terms work for you) or switch to the non-free CKEditor 4 LTS package. See https://ckeditor.com/ckeditor-4-support/ for more on this. (Note! This notice has been added by the django-ckeditor developers and we are not affiliated with CKSource and were not involved in the licensing change, so please refrain from complaining to us. Thanks.)
+?: settings.ACCOUNT_AUTHENTICATION_METHOD is deprecated, use: settings.ACCOUNT_LOGIN_METHODS = {'email', 'username'}
+?: settings.ACCOUNT_EMAIL_REQUIRED is deprecated, use: settings.ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
+
+System check identified 3 issues (0 silenced).
+..............AI improvement provider temporarily failed; retry 1/2 (course=1 type=textpage id=1)
+AI improvement provider temporarily failed; retry 2/2 (course=1 type=textpage id=1)
+......AI improvement provider temporarily failed; retry 1/2 (course=1 type=textpage id=1)
+AI improvement provider temporarily failed; retry 2/2 (course=1 type=textpage id=1)
+.....AI content improvement failed (course=1 type=textpage id=1)
+Traceback (most recent call last):
+  File "/opt/labtech/app/ai_content_revision.py", line 324, in improve_content
+    proposal = _suggest(item, content_type, goals[goal], instructions, assistant)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/labtech/app/ai_content_revision.py", line 202, in _suggest
+    with chat_request(
+         ^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1198, in _execute_mock_call
+    raise effect
+requests.exceptions.HTTPError: Unauthorized
+..Forbidden: /labtech/courses/1/content/textpage/1/improve-ai/
+Forbidden: /labtech/courses/1/content/textpage/1/improve-ai/
+Forbidden: /labtech/courses/1/content/textpage/1/improve-ai/
+Not Found: /labtech/courses/2/content/textpage/1/improve-ai/
+Not Found: /labtech/courses/1/content/user/1/improve-ai/
+.............Forbidden: /api/assistant/proxy/
+Forbidden: /api/assistant/proxy/
+...Service Unavailable: /api/assistant/proxy/
+........Forbidden: /api/assistant/proxy/
+Bad Request: /api/assistant/proxy/
+..Not Found: /courses/2/content/audio/1/complete/
+Method Not Allowed (GET): /courses/1/content/audio/1/complete/
+.............Not Found: /courses/1/audio/1/stream/
+...Not Found: /courses/1/audio/1/stream/
+Not Found: /courses/2/audio/1/stream/
+Requested Range Not Satisfiable: /courses/1/audio/1/stream/
+Not Found: /courses/1/audio/1/stream/
+...Not Found: /courses/1/audio/add/
+...cluster_utilization_unavailable server_id=1
+...Method Not Allowed (GET): /labtech/admin/labs/1/recover/
+.lab_cleanup_admin_recovery session=1 job=784a75e1-35c8-4b34-8ae9-f014023e8103 actor=None status=queued
+...--- [TASK_START] Building LabInstance ID: 1 ---
+Verifying pre-allocated VMIDs...
+Pre-allocated VMIDs verified successfully.
+Starting build for machine 'VM' (VMID: 7351)...
+--- [TASK_FAILED] ---
+Traceback (most recent call last):
+  File "/opt/labtech/app/tasks.py", line 156, in build_lab_instance_task
+    _build_single_machine(machine.id)
+  File "/usr/lib/python3.12/unittest/mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1198, in _execute_mock_call
+    raise effect
+RuntimeError: clone unavailable
+
+--- [TASK_END] Exiting task for LabInstance ID: 1 ---
+..........Bad Request: /courses/1/builder/bulk/
+.Bad Request: /courses/1/builder/bulk/
+..Forbidden: /courses/1/builder/quiz/1/edit/
+Forbidden: /courses/1/builder/bulk/
+Not Found: /courses/1/builder/bulk/
+Forbidden: /courses/1/builder/bulk/
+Forbidden: /courses/1/builder/move/
+.Forbidden (CSRF cookie not set.): /courses/1/builder/textpage/1/edit/
+..Bad Request: /labtech/courses/1/update-content-order/
+.Bad Request: /courses/1/builder/textpage/1/edit/
+...Bad Request: /courses/1/builder/bulk/
+Bad Request: /courses/1/builder/bulk/
+.Bad Request: /courses/1/builder/bulk/
+....Bad Request: /courses/1/builder/bulk/
+...
+----------------------------------------------------------------------
+Ran 110 tests in 12.119s
+
+OK
+Destroying test database for alias 'default'...
+Found 828 test(s).

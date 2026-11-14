@@ -1,0 +1,50 @@
+name: Regression stabilization — CTF SOC and activity
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'app/migrations/0080_align_soc_activity_primary_keys.py'
+      - 'app/test_ctf_phase5c.py'
+      - 'app/forms.py'
+      - 'app/templates/labtech/ctf_bank_edit.html'
+      - '.github/workflows/regression-stabilization.yml'
+      - 'scripts/verify_ctf_regressions.sh'
+      - 'docs/ctf-regression-local-verification.md'
+  push:
+    branches: [main]
+    paths:
+      - 'app/migrations/0080_align_soc_activity_primary_keys.py'
+      - 'scripts/verify_ctf_regressions.sh'
+
+permissions:
+  contents: read
+
+jobs:
+  django-regressions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: System dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config default-libmysqlclient-dev libldap2-dev libsasl2-dev libssl-dev libxml2-dev libxslt1-dev libjpeg-dev zlib1g-dev libffi-dev
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Isolated CTF/SOC regression runner
+        shell: bash
+        run: |
+          set -o pipefail
+          LABTECH_TEST_PYTHON=python LABTECH_TEST_OUTPUT_DIR="$GITHUB_WORKSPACE/ctf-regression-logs/actions" bash scripts/verify_ctf_regressions.sh ctf
+      - name: Preserve failure diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: django-ctf-regression-logs
+          path: |
+            ctf-regression-logs/actions/*.log
+          if-no-files-found: ignore
+          retention-days: 7

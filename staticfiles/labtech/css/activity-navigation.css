@@ -1,0 +1,56 @@
+/* Consistent activity navigation in instructor and student course workflows. */
+.labtech-activity-navigation {
+  background: var(--lt-surface, var(--content-bg, #fff));
+  border: 1px solid var(--lt-border, #d1d5db);
+  border-radius: .65rem;
+  margin: 0 0 1.25rem;
+  padding: .75rem 1rem !important;
+  color: var(--lt-text, #17202b);
+}
+.labtech-activity-navigation .breadcrumb {
+  margin: 0 0 .5rem;
+  padding: 0;
+  background: transparent;
+  font-size: .9rem;
+  overflow-wrap: anywhere;
+}
+.labtech-activity-navigation .breadcrumb-item.active {
+  color: var(--lt-text, #17202b);
+  font-weight: 600;
+}
+.labtech-activity-navigation .breadcrumb-item + .breadcrumb-item::before {
+  color: var(--lt-muted, #64748b);
+}
+.labtech-activity-navigation .breadcrumb-item a {
+  color: var(--lt-primary, #2563eb);
+  text-decoration: underline;
+  text-underline-offset: .16rem;
+}
+.labtech-activity-navigation a[data-activity-back] {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  max-width: 100%;
+  padding: .35rem .7rem;
+  margin: 0;
+  border: 1px solid var(--lt-border, #d1d5db);
+  border-radius: .4rem;
+  font-size: .875rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--lt-text, #17202b);
+  background: var(--lt-surface, #fff);
+  text-decoration: none;
+}
+.labtech-activity-navigation a[data-activity-back]:hover {
+  background: var(--lt-surface-muted, #e2e8f0);
+  border-color: var(--lt-primary, #2563eb);
+}
+.labtech-activity-navigation a:focus-visible {
+  outline: 3px solid var(--lt-primary, #2563eb);
+  outline-offset: 3px;
+}
+@media (max-width: 575px) {
+  .labtech-activity-navigation { padding: .65rem !important; }
+  .labtech-activity-navigation .breadcrumb { font-size: .82rem; }
+}

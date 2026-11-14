@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block labtech_content %}
-<section class="ctf-shell" id="ctfBoard" data-csrf="{{ csrf_token }}" data-submit-url="{% url 'ctf_submit_flag' %}" data-hint-prefix="/api/ctf/hint/" data-active="{{ is_competition_active|yesno:'true,false' }}" aria-labelledby="ctfHeading">
+<section class="ctf-shell" id="ctfBoard" data-csrf="{{ csrf_token }}" data-submit-url="{% url 'ctf_submit_flag' %}" data-claim-url="{% url 'ctf_claim_evidence' %}" data-hint-prefix="/api/ctf/hint/" data-active="{{ is_competition_active|yesno:'true,false' }}" aria-labelledby="ctfHeading">
   <header class="ctf-headline">
     <div>
       <h1 id="ctfHeading">{{ ctf.name }}</h1>
@@ -75,7 +75,7 @@
           {% for challenge in challenges %}
           <button type="button" class="ctf-challenge {% if challenge.is_solved %}solved{% endif %}"
                   data-bs-toggle="modal" data-bs-target="#ctfChallengeModal"
-                  data-id="{{ challenge.id }}" data-title="{{ challenge.name }}"
+                  data-id="{{ challenge.id }}" data-scoring-method="{{ challenge.scoring_method }}" data-title="{{ challenge.name }}"
                   data-points="{{ challenge.points }}" data-difficulty="{{ challenge.difficulty }}"
                   data-category="{{ category_name }}" data-solved="{{ challenge.is_solved|yesno:'true,false' }}"
                   data-file-url="{% if challenge.attached_file %}{% url 'ctf_challenge_evidence' ctf.id challenge.id %}{% endif %}"
@@ -85,7 +85,9 @@
                   aria-label="{{ challenge.name }}, {{ challenge.points }} points, {{ challenge.get_difficulty_display }}{% if challenge.is_solved %}, solved{% endif %}">
             <h3>{{ challenge.name }}</h3>
             <span class="ctf-chip">{{ challenge.get_difficulty_display }}</span>
+            {% if challenge.scoring_method == 'evidence' %}<span class="ctf-chip">Auto-verified</span>{% endif %}
             {% if challenge.verification_step_id %}<span class="ctf-chip">Verified Lab Required</span>{% endif %}
+            {% if challenge.soc_ticket_id %}<span class="ctf-chip">Live SOC Evidence Required</span>{% endif %}
             <div class="ctf-card-meta">
               <span class="ctf-points">{{ challenge.points }} pts</span>
               {% if challenge.is_solved %}<span class="ctf-chip solved"><i class="fas fa-check me-1" aria-hidden="true"></i>Solved</span>{% else %}<span class="ctf-chip">Unsolved</span>{% endif %}
@@ -231,6 +233,10 @@
             <button id="ctfFlagSubmit" type="submit" class="btn btn-primary">Submit Flag</button>
           </div>
         </form>
+        <div id="ctfEvidenceActions" hidden class="mt-3">
+          <p class="text-body-secondary small">Complete the required live lab checks or SOC investigation, then verify your evidence. No flag is required for this challenge.</p>
+          <button id="ctfEvidenceClaim" type="button" class="btn btn-primary">Verify &amp; Claim Points</button>
+        </div>
         <div id="ctfFlagFeedback" role="status" aria-live="polite" class="ctf-feedback small mt-2"></div>
       </div>
     </div>
