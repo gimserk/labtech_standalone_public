@@ -28,10 +28,6 @@
     .card-header { padding: 15px; border-bottom: 1px solid var(--lt-border); display: flex; justify-content: space-between; align-items: center; }
     .card-header h3 { margin: 0; font-size: 1.1rem; }
     .card-body { padding: 15px; }
-    .btn { padding: 6px 12px; border-radius: 5px; text-decoration: none; font-size: 0.85rem; cursor: pointer; border: none; }
-    .btn-primary { background-color: var(--lt-primary); color: var(--lt-on-accent); }
-    .btn-danger { background-color: var(--lt-danger); color: var(--lt-on-accent); }
-    .btn-secondary { background-color: var(--lt-secondary); color: var(--lt-on-accent); }
     .btn-link { background: none; border: none; color: var(--lt-primary); text-decoration: underline; padding: 0; }
     .table { width: 100%; border-collapse: collapse; margin-top: 15px; }
     .table th, .table td { padding: 8px 12px; border-bottom: 1px solid var(--lt-border); text-align: left; vertical-align: middle; }
@@ -40,31 +36,60 @@
     .form-section { border: 1px solid var(--lt-border); padding: 15px; margin-bottom: 15px; border-radius: 5px; }
     .errorlist { list-style-type: none; padding: 0; color: var(--lt-danger); font-weight: bold; }
 </style>
+<link rel="stylesheet" href="{% static 'labtech/css/cybercity-operator.css' %}">
+<script defer src="{% static 'labtech/js/cybercity-operator.js' %}"></script>
+<style>
+.cybercity-ui .grid-container { align-items:start; }
+.cybercity-ui .cc-esp-column .card-body { min-width:0; }
+.cybercity-ui .cc-esp-column textarea { max-width:100%; }
+.cybercity-ui .cc-esp-column .card-header { flex-wrap:wrap; gap:.5rem; }
+.cybercity-ui .cc-esp-column :is(input,select,textarea) { max-width:100%; }
+.cybercity-ui .cc-esp-column .cc-responsive-table { margin-top:.5rem; }
+</style>
 {% endblock %}
 
 {% block labtech_content %}
-<div class="breadcrumb-nav">
-    <a href="{% url 'cybercity_dashboard' %}">CyberCity Dashboard</a> &raquo;
-    <a href="{% url 'cybercity_detail' city.id %}">{{ city.name }}</a> &raquo;
-    <a href="{% url 'cybercity_building_detail' city.id building.id %}">{{ building.name }}</a> &raquo;
-    <span>{{ esp32.name }}</span>
-</div>
+<div class="cybercity-ui">
+<nav class="cc-breadcrumbs" aria-label="Breadcrumb">
+    <a href="{% url 'cybercity_dashboard' %}">CyberCity</a><span aria-hidden="true">/</span>
+    <a href="{% url 'cybercity_detail' city.id %}">{{ city.name }}</a><span aria-hidden="true">/</span>
+    <a href="{% url 'cybercity_building_detail' city.id building.id %}">{{ building.name }}</a><span aria-hidden="true">/</span>
+    <span aria-current="page">{{ esp32.name }}</span>
+</nav>
 
-<div class="page-header">
-    <h1>Manage ESP32: {{ esp32.name }}</h1>
-    <p>MAC Address: {{ esp32.mac_address }}</p>
-    <p><strong>OTA target:</strong> {% if current_firmware %}v{{ current_firmware.version }}{% else %}Not published{% endif %}
-       · <strong>Reported installed:</strong> {{ esp32.firmware_reported_version|default_if_none:"Unknown" }}
-       · <strong>Last device check-in:</strong> {{ esp32.firmware_last_seen|default:"Never" }}</p>
-    <p class="text-muted">The updated Basic ESP32 controller checks LabTech for pin layout, WS2811 strip, and MQTT configuration changes about every 30 seconds while running. No hardware reset or manual restart is needed after you save. Applying a new layout briefly reconnects MQTT and resets managed outputs to OFF; resend commands to restore active states. Older controllers still require a manual restart or firmware update. Publishing firmware sets an OTA target, not a confirmed installation.</p>
-    <a href="{% url 'cybercity_esp32_basic_firmware' city.id %}" class="btn btn-secondary">Download Basic ESP32 Firmware</a>
-    <a href="{% url 'cybercity_building_detail' city.id building.id %}" class="btn btn-secondary">Back to Building</a>
+<header class="cc-header">
+    <div>
+        <h1>ESP32: {{ esp32.name }}</h1>
+        <p>MAC address: <code>{{ esp32.mac_address }}</code></p>
+    </div>
+    <div class="cc-header-actions">
+        <a href="{% url 'cybercity_esp32_basic_firmware' city.id %}" class="btn btn-outline-primary">Download basic firmware</a>
+        <a href="{% url 'cybercity_building_detail' city.id building.id %}" class="btn btn-outline-secondary">Back to building</a>
+    </div>
+</header>
+<div class="cc-metrics" role="group" aria-label="Firmware reporting overview">
+    <div class="cc-metric"><strong>{% if current_firmware %}v{{ current_firmware.version }}{% else %}—{% endif %}</strong><span>Published OTA target</span></div>
+    <div class="cc-metric"><strong>{{ esp32.firmware_reported_version|default_if_none:"Unknown" }}</strong><span>Device-reported version</span></div>
+    <div class="cc-metric"><strong class="fs-6">{{ esp32.firmware_last_seen|date:"M d, Y H:i"|default:"Never" }}</strong><span>Last reported check-in</span></div>
 </div>
+<details class="cc-report-section">
+    <summary>How configuration and OTA updates work</summary>
+    <div class="cc-report-body">
+        <p class="cc-subtle-note mb-0">The updated Basic ESP32 controller checks LabTech for pin layout, WS2811 strip, and MQTT configuration changes about every 30 seconds while running. No hardware reset or manual restart is needed after you save. Applying a new layout briefly reconnects MQTT and resets managed outputs to OFF; resend commands to restore active states. Older controllers still require a manual restart or firmware update. Publishing firmware sets an OTA target, not a confirmed installation.</p>
+    </div>
+</details>
+<nav class="cc-section-nav" aria-label="ESP32 sections">
+    <span>Jump to</span>
+    <a href="#cc-device-settings">Device &amp; pins</a>
+    <a href="#cc-firmware-editor">Edit firmware</a>
+    <a href="#cc-firmware-upload">Upload bundle</a>
+    <a href="#cc-firmware-history">Version history</a>
+</nav>
 
 <div class="grid-container">
 
-    <div>
-        <div class="card">
+    <div class="cc-esp-column">
+        <section class="card" id="cc-device-settings">
             <div class="card-header">
                 <h3>Device Settings & Pins</h3>
             </div>
@@ -74,7 +99,7 @@
                     {{ form.non_field_errors }}
                     {{ form.as_p }}
                     <hr>
-                    <h4>Pins</h4>
+                    <h4 id="cc-pin-settings">Pins</h4>
                     <p class="text-muted small">With updated Basic ESP32 firmware, pin changes are picked up automatically within about 30 seconds through the authenticated configuration API; changed settings reinitialize managed GPIO outputs in their safe OFF state. The bundled controller supports LED, duty-cycle, and WS2811 addressable RGB strips. When you select WS2811, set the addressable LED count and a safe brightness (default 64/255). Modes: OFF, NORMAL, WARNING, ERROR, INFO, MAINTENANCE, BUSY, RECOVERY, WHITE. I2C screen/LED modes require compatible custom firmware. For WS2811 use a safe data GPIO, shared ground, a level shifter as required, and an external power supply sized for the strip. Avoid GPIO2/3 on typical ESP32 DevKits.</p>
                     {{ formset.management_form }}
                     {{ formset.non_form_errors }}
@@ -84,14 +109,14 @@
                         </div>
                     {% endfor %}
                     <button type="submit" name="update_settings" class="btn btn-primary">Save Settings & Pins</button>
-                    <a href="{% url 'cybercity_esp32_delete' city.id building.id esp32.id %}" class="btn btn-danger">Delete ESP32 Device</a>
+                    <a href="{% url 'cybercity_esp32_delete' city.id building.id esp32.id %}" class="btn btn-outline-danger">Delete ESP32 Device</a>
                 </form>
             </div>
-        </div>
+        </section>
     </div>
 
-    <div>
-        <div class="card">
+    <div class="cc-esp-column">
+        <section class="card" id="cc-firmware-editor">
             <div class="card-header"><h3>Edit Firmware (main.py)</h3></div>
             <div class="card-body">
                 <p>Edit the controller's Python source, save an inactive version, or publish it for the existing authenticated OTA update check. Syntax validation cannot guarantee MicroPython hardware compatibility. Publishing does not mean installation is complete.</p>
@@ -108,9 +133,9 @@
                 </form>
                 <p><small>Advanced multi-file firmware and libraries can still be uploaded below. Automated OTA activation and rollback are not yet verified for all ESP32 configurations.</small></p>
             </div>
-        </div>
+        </section>
 
-        <div class="card">
+        <section class="card" id="cc-firmware-upload">
             <div class="card-header">
                 <h3>Upload New Firmware Bundle</h3>
             </div>
@@ -144,9 +169,9 @@
                     <button type="submit" name="upload_firmware" class="btn btn-primary">Upload and Activate Bundle</button>
                 </form>
             </div>
-        </div>
+        </section>
 
-        <div class="card">
+        <section class="card" id="cc-firmware-history">
             <div class="card-header">
                 <h3>Firmware Version History</h3>
             </div>
@@ -160,7 +185,7 @@
                     {% endif %}
                 </p>
                 <p><small>A report is self-reported by the ESP32. Firmware publication does not independently verify installation. Older versions cannot be installed by the current automatic OTA installer.</small></p>
-                <table class="table">
+                <div class="cc-responsive-table"><table class="table">
                     <thead>
                         <tr>
                             <th>Version</th>
@@ -202,10 +227,11 @@
                         </tr>
                         {% endfor %}
                     </tbody>
-                </table>
+                </table></div>
             </div>
-        </div>
+        </section>
     </div>
+</div>
 </div>
 {% endblock %}
 

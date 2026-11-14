@@ -1,0 +1,53 @@
+name: AI full course generation tests
+
+on:
+  pull_request:
+    paths:
+      - 'app/ai_course_book.py'
+      - 'app/ai_course_generation.py'
+      - 'app/models.py'
+      - 'app/migrations/**'
+      - 'app/tasks.py'
+      - 'app/views.py'
+      - 'app/templates/labtech/start_ai_generation.html'
+      - 'app/templates/labtech/review_ai_blueprint.html'
+      - 'app/templates/labtech/ai_jobs_dashboard.html'
+      - 'app/test_ai_course_generation_full.py'
+      - '.github/workflows/ai-course-generation-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'app/ai_course_book.py'
+      - 'app/ai_course_generation.py'
+      - 'app/models.py'
+      - 'app/migrations/**'
+      - 'app/tasks.py'
+      - 'app/views.py'
+      - 'app/test_ai_course_generation_full.py'
+      - '.github/workflows/ai-course-generation-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  ai-course-django:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: System dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config default-libmysqlclient-dev libldap2-dev libsasl2-dev libssl-dev libxml2-dev libxslt1-dev libjpeg-dev zlib1g-dev libffi-dev
+      - name: Install application
+        run: python -m pip install -r requirements.txt
+      - name: Validate Python syntax
+        run: python -m py_compile app/ai_course_book.py app/ai_course_generation.py app/tasks.py app/views.py app/test_ai_course_generation_full.py
+      - name: Run AI course and instructor workflow tests
+        run: python manage.py test app.test_ai_course_generation_full app.test_ai_tutor app.test_scenario_management --settings=app.test_settings -v 2
+      - name: Verify private textbook migration SQL
+        # The repository already has unrelated legacy Cyber City SOC id-field drift.
+        # Test migrations are also applied in the Django test step above.
+        run: python manage.py sqlmigrate app 0070 --settings=app.test_settings | grep -q source_book

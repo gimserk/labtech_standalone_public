@@ -1,0 +1,16 @@
+{% extends "labtech/generic_base.html" %}
+{% block labtech_title %}Quiz changed — {{ quiz.title }}{% endblock %}
+{% block labtech_content %}
+<section class="container py-4" style="max-width: 840px">
+    <h1 class="h3">Quiz changed while you were working</h1>
+    <div class="alert alert-warning" role="alert">{{ message }}</div>
+    <p>Your in-progress quiz answers are still stored. You have not submitted this quiz, and it does not count as a completed attempt.</p>
+    <p>You can contact your instructor to discuss the change, or explicitly restart this updated quiz. Restarting discards only this unfinished draft. It does not create a graded attempt.</p>
+    <form method="post" class="mb-3" onsubmit="return confirm('Discard your saved draft answers and restart the revised quiz?')">
+      {% csrf_token %}
+      <input type="hidden" name="draft_id" value="{{ draft.pk }}">
+      <button class="btn btn-warning" type="submit" name="action" value="restart_after_change">Discard Draft and Restart Revised Quiz</button>
+    </form>
+    <a class="btn btn-outline-primary" href="{% url 'course_detail' quiz.course_id %}">Back to Course</a>
+</section>
+{% endblock %}

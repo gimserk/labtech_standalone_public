@@ -1,0 +1,43 @@
+/* Student course resources library — uses LabTech theme tokens in all modes. */
+.course-resources-modal .modal-dialog { max-width: min(1080px, calc(100vw - 1.5rem)); }
+.course-resources-modal .modal-content { overflow: hidden; border: 1px solid var(--lt-border); border-radius: .8rem; background: var(--lt-surface); color: var(--lt-text); }
+.course-resources-modal .modal-header { padding: 1.2rem 1.5rem; gap: 1rem; background: var(--lt-surface); border-bottom: 1px solid var(--lt-border); }
+.course-resources-modal .course-resources-title { display: flex; gap: .8rem; align-items: center; }
+.course-resources-modal .course-resources-title-icon { flex: 0 0 2.6rem; height: 2.6rem; border: 1px solid var(--lt-border); border-radius: .6rem; display: grid; place-items: center; color: var(--lt-primary); background: var(--lt-surface-muted); }
+.course-resources-modal .course-resources-title h2 { font-size: 1.25rem; font-weight: 750; color: var(--lt-text); margin: 0; }
+.course-resources-modal .course-resources-subtitle { color: var(--lt-muted); font-size: .86rem; margin: .3rem 0 0; }
+.course-resources-modal .modal-body { padding: 1.4rem 1.5rem; }
+.course-resources-modal .course-resources-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(170px, 260px); gap: .9rem; align-items: end; margin-bottom: .75rem; }
+.course-resources-modal .course-resources-toolbar label { font-weight: 650; display: block; margin: 0 0 .35rem; font-size: .86rem; }
+.course-resources-modal .course-resources-toolbar .form-control,
+.course-resources-modal .course-resources-toolbar .form-select { background-color: var(--lt-surface); color: var(--lt-text); border-color: var(--lt-border); }
+.course-resources-modal .course-resources-result-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .6rem; margin: .4rem 0 1.25rem; }
+.course-resources-modal .course-resources-result-bar .course-resources-count { color: var(--lt-muted); font-size: .87rem; margin: 0; }
+.course-resources-modal .course-resources-reset { color: var(--lt-primary); }
+.course-resources-modal .course-resource-section { margin: 0 0 1.5rem; }
+.course-resources-modal .course-resource-section:last-of-type { margin-bottom: 0; }
+.course-resources-modal .course-resource-section-title { display: flex; justify-content: space-between; gap: .75rem; align-items: center; border-bottom: 1px solid var(--lt-border); padding: 0 0 .6rem; margin: 0 0 .8rem; }
+.course-resources-modal .course-resource-section-title h3 { margin: 0; font-size: 1.05rem; font-weight: 750; color: var(--lt-text); }
+.course-resources-modal .course-resource-section-count { color: var(--lt-muted); font-size: .8rem; white-space: nowrap; }
+.course-resources-modal .course-resource-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+.course-resources-modal .course-resource-link { display: flex; gap: .8rem; align-items: center; min-width: 0; padding: .95rem; text-decoration: none; border: 1px solid var(--lt-border); border-radius: .65rem; background: var(--lt-surface); color: var(--lt-text); transition: border-color .15s, background-color .15s; }
+.course-resources-modal .course-resource-link:hover { background: var(--lt-surface-muted); border-color: var(--lt-primary); color: var(--lt-text); }
+.course-resources-modal .course-resource-link:focus-visible,
+.course-resources-modal .course-resources-reset:focus-visible { outline: 3px solid var(--lt-primary); outline-offset: 2px; }
+.course-resources-modal .course-resource-icon { flex: 0 0 2.7rem; width: 2.7rem; height: 2.7rem; border-radius: .55rem; display: grid; place-items: center; border: 1px solid var(--lt-border); background: var(--lt-surface-muted); color: var(--lt-primary); font-size: 1.15rem; }
+.course-resources-modal .course-resource-details { flex: 1 1 auto; min-width: 0; }
+.course-resources-modal .course-resource-name { display: block; font-size: .94rem; font-weight: 700; overflow-wrap: anywhere; line-height: 1.35; }
+.course-resources-modal .course-resource-meta { display: flex; flex-wrap: wrap; align-items: center; gap: .15rem .5rem; color: var(--lt-muted); font-size: .78rem; margin-top: .35rem; }
+.course-resources-modal .course-resource-download { flex: 0 0 auto; display: inline-flex; align-items: center; gap: .25rem; color: var(--lt-primary); font-size: .82rem; font-weight: 650; }
+.course-resources-modal .course-resources-empty { padding: 2.5rem 1rem; color: var(--lt-muted); text-align: center; border: 1px dashed var(--lt-border); border-radius: .6rem; background: var(--lt-surface-muted); }
+.course-resources-modal [hidden] { display: none !important; }
+.course-resources-modal .modal-footer { background: var(--lt-surface-muted); border-top: 1px solid var(--lt-border); justify-content: space-between; padding: .75rem 1.5rem; gap: .75rem; }
+.course-resources-modal .modal-footer p { margin: 0; font-size: .82rem; color: var(--lt-muted); }
+@media (max-width: 700px) {
+  .course-resources-modal .modal-dialog { max-width: calc(100vw - 1rem); margin: .5rem auto; }
+  .course-resources-modal .modal-header, .course-resources-modal .modal-body { padding: 1rem; }
+  .course-resources-modal .course-resources-toolbar { grid-template-columns: minmax(0, 1fr); }
+  .course-resources-modal .course-resource-grid { grid-template-columns: minmax(0, 1fr); }
+  .course-resources-modal .modal-footer { padding: .75rem 1rem; }
+}
+@media (prefers-reduced-motion: reduce) { .course-resources-modal .course-resource-link { transition: none; } }

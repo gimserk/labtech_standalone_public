@@ -5,7 +5,6 @@
   <p>Every active check is required before students can finish the lab.</p>
   <a class="btn btn-primary" href="{% url 'create_step_check' course.id lab.id step.id %}">Add check</a>
   <a class="btn btn-outline-secondary" href="{% url 'lab_check_history' course.id lab.id %}">Attempt history</a>
-  <a class="btn btn-outline-secondary" href="{% url 'labtech_manage_lab_steps' course.id lab.id %}">Back to steps</a>
   <form method="post" action="{% url 'reorder_step_checks' course.id lab.id step.id %}">
     {% csrf_token %}
     <ol class="list-group my-3">

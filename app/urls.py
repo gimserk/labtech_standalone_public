@@ -9,12 +9,15 @@ from django.urls import path, include, re_path
 from django.conf import settings
 from django.conf.urls.static import static
 from app import views as app_views
+from app import course_builder_views
 from app import cluster_utilization
 from app import lab_node_migration_views
 from app import course_lab_machine_mapping
 from app import audio_views
+from app import flashcard_pdf
 from app import cybercity_provisioning
 from app import lab_check_views
+from app import ai_content_revision
 from app import gradebook_views
 from app import rubric_views
 from app import learning_outcome_views
@@ -22,6 +25,11 @@ from django.views.static import serve
 from django.shortcuts import redirect
 
 urlpatterns = [
+    path(
+        'labtech/courses/<int:course_id>/content/<slug:content_type>/<int:item_id>/improve-ai/',
+        ai_content_revision.improve_content,
+        name='ai_improve_course_content',
+    ),
     path('courses/<int:course_id>/learning-outcomes/', learning_outcome_views.course_outcomes, name='course_learning_outcomes'),
     path('courses/<int:course_id>/learning-outcomes/<int:outcome_id>/delete/', learning_outcome_views.delete_course_outcome, name='delete_course_learning_outcome'),
     path('courses/<int:course_id>/activities/<str:model_name>/<int:activity_id>/learning-outcomes/', learning_outcome_views.activity_learning_outcomes, name='activity_learning_outcomes'),
@@ -70,12 +78,15 @@ urlpatterns = [
     path('labtech/courses/<int:course_id>/delete/', app_views.delete_course_view, name='labtech_delete_course'),
     path('courses/<int:course_id>/manage/', app_views.manage_course_content_view, name='labtech_manage_course_content'),
     path('courses/<int:course_id>/manage/', app_views.manage_course_content_view, name='manage_course_content'),
+    path('courses/<int:course_id>/builder/<str:model_name>/<int:item_id>/edit/', course_builder_views.quick_edit, name='course_builder_quick_edit'),
+    path('courses/<int:course_id>/builder/bulk/', course_builder_views.bulk_action, name='course_builder_bulk_action'),
+    path('courses/<int:course_id>/builder/move/', course_builder_views.keyboard_move, name='course_builder_keyboard_move'),
     path('courses/<int:course_id>/chapters/add/', app_views.add_chapter_view, name='add_chapter'),
     path('courses/<int:course_id>/chapters/<int:chapter_id>/edit/', app_views.edit_chapter_view, name='edit_chapter'),
     path('courses/<int:course_id>/chapters/<int:chapter_id>/delete/', app_views.delete_chapter_view, name='delete_chapter'),
     path('labtech/courses/<int:course_id>/clone/', app_views.clone_course_view, name='clone_course'),
-    path('labtech/courses/<int:course_id>/update-chapter-order/', app_views.update_chapter_order_view, name='update_chapter_order'),
-    path('labtech/courses/<int:course_id>/update-content-order/', app_views.update_content_order_view, name='update_content_order'),
+    path('labtech/courses/<int:course_id>/update-chapter-order/', course_builder_views.drag_chapter_order, name='update_chapter_order'),
+    path('labtech/courses/<int:course_id>/update-content-order/', course_builder_views.drag_content_order, name='update_content_order'),
     path('labtech/courses/<int:course_id>/archive/', app_views.archive_course_view, name='archive_course'),
     path('labtech/courses/<int:course_id>/import/', app_views.import_content_view, name='import_content'),
     path('labtech/courses/<int:course_id>/export/', app_views.export_course_view, name='export_course'),
@@ -157,7 +168,7 @@ urlpatterns = [
     path('labtech/courses/<int:course_id>/notifications/compose/', app_views.compose_notification_view, name='compose_notification'),
     path('labtech/courses/<int:course_id>/notifications/log/', app_views.notification_log_view, name='notification_log'),
     path('courses/<int:course_id>/bulk-update-dates/', app_views.bulk_update_content_dates_view, name='bulk_update_content_dates'),
-    path('labtech/courses/<int:course_id>/update-content-order/', app_views.update_content_order_view, name='update_content_order'),
+    path('labtech/courses/<int:course_id>/update-content-order/', course_builder_views.drag_content_order, name='update_content_order'),
 
     # --- STUDENT-FACING URLS ---
     path('coursecatalog/', app_views.course_catalog_view, name='course_catalog'),
@@ -174,6 +185,7 @@ urlpatterns = [
     path('courses/<int:course_id>/coding/<int:activity_id>/take/', app_views.take_coding_activity_view, name='take_coding_activity'),
     path('courses/<int:course_id>/scenario/<int:activity_id>/take/', app_views.take_scenario_activity_view, name='take_scenario_activity'),
     path('courses/<int:course_id>/flashcards/<int:deck_id>/', app_views.flashcard_deck_hub_view, name='flashcard_deck_hub'),
+    path('courses/<int:course_id>/flashcards/<int:deck_id>/export/pdf/', flashcard_pdf.export_flashcard_deck_pdf_view, name='export_flashcard_deck_pdf'),
     path('courses/<int:course_id>/flashcards/<int:deck_id>/learn/', app_views.learn_flashcard_deck_view, name='learn_flashcard_deck'),
     path('courses/<int:course_id>/flashcards/<int:deck_id>/review/', app_views.review_flashcard_deck_view, name='review_flashcard_deck'),
     path('courses/<int:course_id>/team-scenario/<int:scenario_id>/hub/', app_views.team_scenario_hub_view, name='team_scenario_hub'),

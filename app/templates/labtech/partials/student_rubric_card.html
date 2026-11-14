@@ -7,53 +7,80 @@
   </div>
 </section>
 {% elif rubric %}
-<section class="card shadow-sm mb-4" aria-labelledby="student-rubric-title-{{ rubric.pk }}">
-  <div class="card-header">
-    <h3 class="h5 mb-0" id="student-rubric-title-{{ rubric.pk }}">Grading rubric — {{ rubric.title }}</h3>
-  </div>
-  <div class="card-body">
-    {% if rubric_is_instructor %}
-      {% if not rubric.published %}
-      <p class="text-body-secondary"><strong>Draft rubric:</strong> This rubric is not visible to students until you publish it.</p>
-      {% else %}
-      <p class="text-body-secondary"><strong>Published rubric:</strong> Students can review these criteria before submitting their work.</p>
-      {% endif %}
-      <p><a href="{% url 'instructor_rubric_builder' rubric_course.id rubric_model_name rubric_activity.id %}" class="btn btn-outline-primary btn-sm">Manage Rubric</a></p>
-    {% endif %}
-    {% if rubric.description %}<p>{{ rubric.description }}</p>{% endif %}
-    <p class="text-body-secondary">Review the criteria and performance expectations before completing this activity.</p>
-    <div class="table-responsive">
-      <table class="table table-sm align-middle">
-        <caption>Grading criteria and performance levels for {{ rubric_activity.title }}</caption>
-        <thead><tr><th scope="col">Criterion</th><th scope="col">Expectations</th><th scope="col">Points possible</th></tr></thead>
-        <tbody>
-        {% for criterion in rubric.criteria.all %}
-          <tr>
-            <th scope="row">{{ criterion.title }}{% if criterion.description %}<div class="fw-normal text-body-secondary">{{ criterion.description }}</div>{% endif %}</th>
-            <td>
-              {% for level in criterion.levels.all %}
-                <div class="mb-2"><strong>{{ level.label }} ({{ level.points }} pts)</strong>{% if level.description %}: {{ level.description }}{% endif %}</div>
-              {% empty %}
-                <span class="text-body-secondary">Scoring is based on the criterion description.</span>
-              {% endfor %}
-            </td>
-            <td>{{ criterion.max_points }}</td>
-          </tr>
-        {% empty %}
-          <tr><td colspan="3">No scoring criteria are configured yet.</td></tr>
-        {% endfor %}
-        </tbody>
-        <tfoot><tr><th scope="row" colspan="2">Total possible</th><td><strong>{{ rubric.possible_points }}</strong></td></tr></tfoot>
-      </table>
+<section class="mb-3" aria-labelledby="student-rubric-title-{{ rubric.pk }}">
+  <div class="card shadow-sm border-0">
+    <div class="card-body d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 py-3">
+      <div>
+        <h3 class="h6 fw-bold mb-1" id="student-rubric-title-{{ rubric.pk }}">Grading rubric — {{ rubric.title }}</h3>
+        <p class="small text-body-secondary mb-0">{{ rubric.possible_points }} points possible · Review how this assignment is scored.</p>
+        {% if rubric_is_instructor %}
+          {% if not rubric.published %}
+          <p class="small text-body-secondary mt-2 mb-0"><strong>Draft rubric:</strong> This rubric is not visible to students until you publish it.</p>
+          {% else %}
+          <p class="small text-body-secondary mt-2 mb-0"><strong>Published rubric:</strong> Students can review these criteria before submitting their work.</p>
+          {% endif %}
+        {% elif rubric_assessment %}
+        <p class="small mt-2 mb-0"><strong>Rubric grade:</strong> {{ rubric_assessment.awarded_points }} / {{ rubric.possible_points }}</p>
+        <a class="small" href="{% url 'student_rubric_feedback' rubric_course.id rubric_model_name rubric_activity.id %}">View detailed rubric feedback</a>
+        {% endif %}
+      </div>
+      <div class="d-flex flex-wrap gap-2 flex-shrink-0">
+        <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#student-rubric-modal-{{ rubric.pk }}" aria-haspopup="dialog" aria-controls="student-rubric-modal-{{ rubric.pk }}">
+          <i class="fas fa-clipboard-list me-1" aria-hidden="true"></i>View Rubric
+        </button>
+        {% if rubric_is_instructor %}
+        <a href="{% url 'instructor_rubric_builder' rubric_course.id rubric_model_name rubric_activity.id %}" class="btn btn-outline-secondary btn-sm">Manage Rubric</a>
+        {% endif %}
+      </div>
     </div>
-    {% if not rubric_is_instructor %}
-      {% if rubric_assessment %}
-      <p class="mb-2"><strong>Rubric grade:</strong> {{ rubric_assessment.awarded_points }} / {{ rubric.possible_points }}</p>
-      <a href="{% url 'student_rubric_feedback' rubric_course.id rubric_model_name rubric_activity.id %}">View detailed rubric feedback</a>
-      {% else %}
-      <p class="small text-body-secondary mb-0">Your criterion scores and feedback will appear when the instructor saves your grade.</p>
-      {% endif %}
-    {% endif %}
+  </div>
+
+  <div class="modal fade" id="student-rubric-modal-{{ rubric.pk }}" tabindex="-1" aria-labelledby="student-rubric-modal-title-{{ rubric.pk }}" aria-describedby="student-rubric-modal-intro-{{ rubric.pk }}">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div>
+            <h2 class="modal-title h5 mb-1" id="student-rubric-modal-title-{{ rubric.pk }}">{{ rubric.title }}</h2>
+            <p class="small text-body-secondary mb-0">{{ rubric.possible_points }} points possible</p>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close rubric"></button>
+        </div>
+        <div class="modal-body">
+          {% if rubric.description %}<p>{{ rubric.description }}</p>{% endif %}
+          <p class="small text-body-secondary mb-3" id="student-rubric-modal-intro-{{ rubric.pk }}">Review the grading criteria and performance expectations for {{ rubric_activity.title }}.</p>
+          {% for criterion in rubric.criteria.all %}
+          <section class="border rounded mb-3 p-3" aria-labelledby="student-rubric-criterion-{{ rubric.pk }}-{{ criterion.pk }}">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+              <h3 class="h6 fw-bold mb-0" id="student-rubric-criterion-{{ rubric.pk }}-{{ criterion.pk }}">{{ criterion.title }}</h3>
+              <span class="small text-body-secondary fw-semibold">{{ criterion.max_points }} points max</span>
+            </div>
+            {% if criterion.description %}<p class="small mb-2">{{ criterion.description }}</p>{% endif %}
+            {% if criterion.levels.all %}
+            <ul class="list-group list-group-flush">
+              {% for level in criterion.levels.all %}
+              <li class="list-group-item px-0 py-2">
+                <div class="d-flex flex-wrap justify-content-between gap-2">
+                  <strong>{{ level.label }}</strong>
+                  <span class="small fw-semibold">{{ level.points }} pts</span>
+                </div>
+                {% if level.description %}<p class="small text-body-secondary mb-0 mt-1">{{ level.description }}</p>{% endif %}
+              </li>
+              {% endfor %}
+            </ul>
+            {% else %}
+            <p class="small text-body-secondary mb-0">Scoring is based on the criterion description.</p>
+            {% endif %}
+          </section>
+          {% empty %}
+          <p class="text-body-secondary mb-0">No scoring criteria are configured yet.</p>
+          {% endfor %}
+        </div>
+        <div class="modal-footer d-flex justify-content-between align-items-center">
+          <span class="small text-body-secondary">Total possible: <strong>{{ rubric.possible_points }} points</strong></span>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 {% endif %}

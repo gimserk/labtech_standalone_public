@@ -1,58 +1,131 @@
 {% extends "labtech/generic_base.html" %}
-{% load static course_extras %}
+{% load static %}
 
-{% block labtech_title %}Taking Quiz: {{ quiz.title }}{% endblock %}
+{% block labtech_title %}{{ quiz.title }} — Quiz{% endblock %}
 
 {% block labtech_extra_head %}
 <style>
-    .quiz-container { max-width: 900px; margin: 0 auto; padding: 20px; }
-    .question-block { margin-bottom: 30px; padding: 20px; border: 1px solid var(--lt-border); border-radius: 8px; }
-    .question-text { font-size: 1.2em; font-weight: 500; }
-    .choices { list-style: none; padding-left: 10px; margin-top: 15px; }
-    .choices li { margin-bottom: 10px; }
-    .short-answer-input { width: 100%; padding: 8px; border: 1px solid var(--lt-border); border-radius: 4px; font-size: 1em; }
-    .course-header { margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid var(--lt-border); }
-    .btn { padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 1.2em; cursor: pointer; border: none; }
-    .btn-primary { background-color: var(--lt-primary); color: var(--lt-on-accent); }
+    .quiz-container { max-width: 960px; margin: 0 auto; padding: 1rem; }
+    .quiz-intro { border-bottom: 1px solid var(--lt-border); margin-bottom: 1rem; padding-bottom: .75rem; }
+    .quiz-progress { margin: 1rem 0 1.25rem; }
+    .quiz-question { margin: 1rem 0; padding: 1.25rem; border: 1px solid var(--lt-border); background: var(--lt-surface); border-radius: .5rem; }
+    .quiz-question legend { font-size: 1.12rem; font-weight: 600; float: none; width: auto; margin-bottom: 1rem; }
+    .quiz-answer { display: flex; align-items: flex-start; gap: .6rem; padding: .55rem; border-radius: .3rem; cursor: pointer; }
+    .quiz-answer:hover, .quiz-answer:focus-within { background: var(--lt-surface-muted); }
+    .quiz-answer input { margin-top: .35rem; flex-shrink: 0; }
+    .quiz-answer-text { min-width: 0; overflow-wrap: anywhere; }
+    .quiz-short-answer { max-width: 720px; }
+    .quiz-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin-top: 1.5rem; }
+    .quiz-jump-list { display: flex; flex-wrap: wrap; gap: .4rem; padding: 0; margin: .75rem 0; list-style: none; }
+    .quiz-jump-list button { min-width: 2.75rem; min-height: 2.75rem; }
+    .quiz-jump-list button:focus-visible, .quiz-actions button:focus-visible { outline: 3px solid var(--lt-primary); outline-offset: 3px; }
+    .quiz-muted { color: var(--lt-muted); }
+    @media (prefers-reduced-motion: reduce) { .quiz-question, .quiz-actions button { transition: none; } }
 </style>
 {% endblock %}
 
 {% block labtech_content %}
-<div class="quiz-container">
-    <div class="course-header">
-        <p><a href="{% url 'course_detail' course_id=quiz.course.id %}">← Back to {{ quiz.course.title }}</a></p>
-        <h1>{{ quiz.title }}</h1>
-        <p>{{ quiz.description|safe }}</p>
+<section class="quiz-container" aria-labelledby="quizTitle">
+    <header class="quiz-intro">
+        <h1 id="quizTitle" class="h3">{{ quiz.title }}</h1>
+        {% if quiz.description %}<div>{{ quiz.description|safe }}</div>{% endif %}
+        <p class="quiz-muted mb-1">
+            {% if is_single_question %}
+                One question at a time
+                {% if allow_backtracking %}· Previous questions allowed{% else %}· Forward only; previous questions cannot be revisited{% endif %}
+            {% else %}
+                All questions on one page
+            {% endif %}
+        </p>
+        <p class="quiz-muted small mb-0">Your answers are saved when you choose Save Progress, Save and Exit, Next, Previous, or Submit. Unsubmitted work is not graded.</p>
+    </header>
+
+    {% if error %}
+    <div role="alert" class="alert alert-danger" id="quizError">{{ error }}</div>
+    {% endif %}
+
+    <div class="quiz-progress" role="group" aria-label="Quiz completion">
+        <div class="d-flex justify-content-between gap-2 flex-wrap">
+            <strong>{{ answered_count }} of {{ total_questions }} questions answered</strong>
+            {% if is_single_question %}<span>Question {{ position }} of {{ total_questions }}</span>{% endif %}
+        </div>
+        <div class="progress mt-2" role="progressbar" aria-label="Questions answered" aria-valuenow="{{ answered_percentage }}" aria-valuemin="0" aria-valuemax="100">
+            <div class="progress-bar" style="width: {{ answered_percentage }}%"></div>
+        </div>
     </div>
 
-    <form method="post">
+    <form method="post" id="quizProgressForm" autocomplete="off">
         {% csrf_token %}
-        {% for question in questions %}
-            <div class="question-block">
-                <p class="question-text">{{ forloop.counter }}. {{ question.text|safe }}</p>
-                
-                {% if question.question_type == 'MCQ' or question.question_type == 'TF' %}
-                    <ul class="choices">
-                        {# --- THIS BLOCK IS CORRECTED --- #}
-                        {% if quiz.shuffle_answers %}
-                            {% for choice in question.choices.all|shuffle %}
-                                <li><label><input type="radio" name="question_{{ question.id }}" value="{{ choice.id }}" required> {{ choice.text }}</label></li>
-                            {% endfor %}
-                        {% else %}
-                            {% for choice in question.choices.all %}
-                                <li><label><input type="radio" name="question_{{ question.id }}" value="{{ choice.id }}" required> {{ choice.text }}</label></li>
-                            {% endfor %}
-                        {% endif %}
-                    </ul>
+        <input type="hidden" name="draft_id" value="{{ draft.pk }}">
 
-                {% elif question.question_type == 'SA' %}
-                    <input type="text" name="question_{{ question.id }}" class="short-answer-input" required>
+        {% if allow_backtracking %}
+        <nav aria-label="Previously visited questions">
+            <p class="small fw-semibold mb-1">Jump to a question you've visited:</p>
+            <ol class="quiz-jump-list">
+                {% for row in all_question_rows %}
+                {% if forloop.counter0 <= draft.max_reached %}
+                <li>
+                    <button type="submit" name="action" value="goto:{{ forloop.counter0 }}"
+                            class="btn btn-sm {% if forloop.counter == position %}btn-primary{% else %}btn-outline-secondary{% endif %}"
+                            {% if forloop.counter == position %}aria-current="step"{% endif %}
+                            aria-label="Go to question {{ forloop.counter }}">
+                        {{ forloop.counter }}
+                    </button>
+                </li>
                 {% endif %}
+                {% endfor %}
+            </ol>
+        </nav>
+        {% endif %}
 
+        {% for row in question_rows %}
+        <fieldset class="quiz-question" aria-labelledby="quiz-question-{{ row.question.pk }}">
+            <legend id="quiz-question-{{ row.question.pk }}">
+                Question {{ row.number }} of {{ total_questions }} ({{ row.question.points }} point{{ row.question.points|pluralize }})
+            </legend>
+            <div class="mb-3">{{ row.question.text|safe }}</div>
+            {% if row.question.question_type == "MCQ" or row.question.question_type == "TF" %}
+            <div class="quiz-choices" role="group" aria-label="Answer options for question {{ row.number }}">
+                {% for choice in row.choices %}
+                <label class="quiz-answer">
+                    <input type="radio" name="question_{{ row.question.pk }}" value="{{ choice.pk }}"
+                           {% if row.selected == choice.pk|stringformat:"s" %}checked{% endif %}>
+                    <span class="quiz-answer-text">{{ choice.text }}</span>
+                </label>
+                {% empty %}
+                <p class="text-danger">This question has no answer choices. Please contact your instructor.</p>
+                {% endfor %}
             </div>
+            {% elif row.question.question_type == "SA" %}
+            <label for="answer-{{ row.question.pk }}" class="form-label">Your answer</label>
+            <input type="text" id="answer-{{ row.question.pk }}" name="question_{{ row.question.pk }}"
+                   value="{{ row.selected }}" maxlength="5000" class="form-control quiz-short-answer">
+            {% endif %}
+        </fieldset>
         {% endfor %}
 
-        <button type="submit" class="btn btn-primary">Submit Quiz</button>
+        <div class="quiz-actions" role="group" aria-label="Quiz progress actions">
+            <button type="submit" class="btn btn-outline-primary" name="action" value="save">Save Progress</button>
+            <button type="submit" class="btn btn-outline-secondary" name="action" value="save_exit">Save and Exit</button>
+            {% if is_single_question %}
+                {% if allow_backtracking and has_previous %}
+                    <button type="submit" class="btn btn-outline-secondary" name="action" value="previous">Previous Question</button>
+                {% endif %}
+                {% if not is_last_question %}
+                    <button type="submit" class="btn btn-primary" name="action" value="next">Save and Next</button>
+                {% else %}
+                    <button type="submit" class="btn btn-success" name="action" value="submit"
+                            onclick="return confirm('Submit your quiz for grading? You will not be able to change this attempt.')">
+                        Submit Quiz
+                    </button>
+                {% endif %}
+            {% else %}
+                <button type="submit" class="btn btn-success" name="action" value="submit"
+                        onclick="return confirm('Submit your quiz for grading? You will not be able to change this attempt.')">
+                    Submit Quiz
+                </button>
+            {% endif %}
+        </div>
     </form>
-</div>
+</section>
 {% endblock %}

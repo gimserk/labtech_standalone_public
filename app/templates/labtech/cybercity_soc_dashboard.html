@@ -1,18 +1,73 @@
 {% extends "labtech/generic_base.html" %}
+{% load static %}
+{% block labtech_extra_head %}
+<link rel="stylesheet" href="{% static 'labtech/css/cybercity-operator.css' %}">
+<style>
+.cybercity-ui .cc-report-section h2 { margin:0; font-size:1rem; }
+.cybercity-ui .cc-report-section .table-responsive { overflow-x:auto; }
+.cybercity-ui .cc-report-section table { min-width:680px; }
+.cybercity-ui .cc-report-section .form-select { min-width:140px; }
+.cybercity-ui .cc-report-section .cc-report-body > p { max-width:95ch; }
+.cybercity-ui .cc-report-section .table td { overflow-wrap:anywhere; }
+.cybercity-ui .cc-soc-header-actions { display:flex; align-items:center; flex-wrap:wrap; gap:.5rem; }
+.cybercity-ui .cc-soc-header-actions .cc-secondary-actions { max-width:100%; }
+</style>
+{% endblock %}
 {% block labtech_title %}SOC — {{ city.name }}{% endblock %}
 {% block labtech_content %}
-<div class="container-fluid py-4" style="max-width:1500px">
-  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <div><a href="{% url 'cybercity_detail' city.id %}">&larr; {{ city.name }}</a><h1 class="mt-2">Security Operations Center</h1><p class="text-muted">Cyber City operations and defense workspace</p></div>
-    <div class="d-flex gap-2">{% if can_manage_soc %}<a class="btn btn-outline-secondary" href="{% url 'cybercity_soc_teams' city.id %}">Manage SOC Teams</a><a class="btn btn-outline-secondary" href="{% url 'cybercity_soc_checkmk' city.id %}">Checkmk</a><a class="btn btn-outline-secondary" href="{% url 'cybercity_soc_wazuh' city.id %}">Wazuh</a>{% endif %}{% if city.wazuh_status == 'running' and city.wazuh_web_url %}<a class="btn btn-outline-primary" target="_blank" rel="noopener noreferrer" href="{% url 'cybercity_soc_appliance_browser' city.id 'wazuh' %}">Wazuh Web Login</a>{% endif %}{% if city.checkmk_status == 'running' and city.checkmk_web_url %}<a class="btn btn-outline-primary" target="_blank" rel="noopener noreferrer" href="{% url 'cybercity_soc_appliance_browser' city.id 'checkmk' %}">Checkmk Web Login</a>{% endif %}<a class="btn btn-outline-primary" href="{% url 'cybercity_soc_wallboard' city.id %}">Classroom Wallboard</a><a class="btn btn-outline-primary" href="{% url 'cybercity_soc_analyst_workspace' city.id %}">Analyst Workspace</a><a class="btn btn-outline-secondary" href="{% url 'cybercity_soc_scenarios' city.id %}">Scenarios</a><a class="btn btn-primary" href="{% url 'cybercity_soc_ticket_create' city.id %}">+ New Ticket</a></div>
-  </div>
+<div class="container-fluid py-4 cybercity-ui" style="max-width:1500px">
+  <nav class="cc-breadcrumbs" aria-label="Breadcrumb">
+    <a href="{% url 'cybercity_dashboard' %}">CyberCity</a><span aria-hidden="true">/</span>
+    <a href="{% url 'cybercity_detail' city.id %}">{{ city.name }}</a><span aria-hidden="true">/</span>
+    <span aria-current="page">Security Operations Center</span>
+  </nav>
+  <header class="cc-header">
+    <div><h1>Security Operations Center</h1>
+      <p>Operational queues, observed machine health, alerts and evidence for {{ city.name }}. Data is scoped to your SOC role.</p>
+    </div>
+    <div class="cc-soc-header-actions">
+      <a class="btn btn-primary" href="{% url 'cybercity_soc_ticket_create' city.id %}">+ New ticket</a>
+      <a class="btn btn-outline-primary" href="{% url 'cybercity_soc_analyst_workspace' city.id %}">Analyst workspace</a>
+      <a class="btn btn-outline-secondary" href="{% url 'cybercity_soc_wallboard' city.id %}">Classroom wallboard</a>
+      <details class="cc-secondary-actions"><summary>More SOC tools</summary>
+        <div class="cc-action-group">
+          {% if can_manage_soc %}
+          <a class="btn btn-outline-secondary btn-sm" href="{% url 'cybercity_soc_teams' city.id %}">Manage SOC teams</a>
+          <a class="btn btn-outline-secondary btn-sm" href="{% url 'cybercity_soc_checkmk' city.id %}">Checkmk</a>
+          <a class="btn btn-outline-secondary btn-sm" href="{% url 'cybercity_soc_wazuh' city.id %}">Wazuh</a>
+          {% endif %}
+          {% if city.wazuh_status == 'running' and city.wazuh_web_url %}
+          <a class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener noreferrer" href="{% url 'cybercity_soc_appliance_browser' city.id 'wazuh' %}">Wazuh web login</a>
+          {% endif %}
+          {% if city.checkmk_status == 'running' and city.checkmk_web_url %}
+          <a class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener noreferrer" href="{% url 'cybercity_soc_appliance_browser' city.id 'checkmk' %}">Checkmk web login</a>
+          {% endif %}
+          <a class="btn btn-outline-secondary btn-sm" href="{% url 'cybercity_soc_scenarios' city.id %}">Scenarios</a>
+        </div>
+      </details>
+    </div>
+  </header>
+  <nav class="cc-section-nav" aria-label="SOC dashboard sections">
+    <span>Jump to</span>
+    <a href="#cc-soc-queue">Ticket queue</a>
+    <a href="#cc-soc-checkmk-alerts">Checkmk alerts</a>
+    <a href="#cc-soc-monitor-alerts">Monitoring alerts</a>
+    <a href="#cc-soc-qemu">QEMU checks</a>
+    <a href="#cc-soc-evidence">Wazuh evidence</a>
+    <a href="#cc-soc-services">Service health</a>
+    <a href="#cc-soc-commands">ESP32 commands</a>
+    <a href="#cc-soc-assets">Assets</a>
+    <a href="#cc-soc-timeline">Timeline</a>
+  </nav>
   <div class="row g-3 mb-4">
     <div class="col-md-3"><div class="card p-3"><h3>{{ machine_count }}</h3><span>City assets</span></div></div>
     <div class="col-md-3"><div class="card p-3"><h3>{{ incident_count }}</h3><span>Open incidents</span></div></div>
     <div class="col-md-3"><div class="card p-3"><h3>{{ helpdesk_count }}</h3><span>Open help desk</span></div></div>
     <div class="col-md-3"><div class="card p-3"><h3>{{ change_count }}</h3><span>Open changes</span></div></div>
   </div>
-  <h2 class="h4">Live ESP32 Commands and Confirmed Device States</h2>
+  <details class="cc-report-section" id="cc-soc-commands" >
+    <summary><h2 class="h5 mb-0">Live ESP32 Commands and Confirmed Device States</h2></summary>
+    <div class="cc-report-body">
   <p class="small text-muted">These are real Cyber City MQTT commands. Published means broker delivery only; executed means a correlated ESP32 device report was received. A missing report is not a successful hardware action.</p>
   <div class="table-responsive mb-4"><table class="table table-hover"><thead><tr><th>Building / VM</th><th>ESP32 / Pin</th><th>Command ID</th><th>Delivery / execution state</th><th>Last confirmed pin state</th><th>Updated</th></tr></thead><tbody>
   {% for command in live_commands %}<tr><td>{{ command.machine.building.name }} / {{ command.machine.name }}</td>
@@ -21,19 +76,37 @@
   <td>{{ command.pin.last_status|default:"Not reported" }}</td><td>{{ command.published_at|default:command.created_at }}</td></tr>
   {% empty %}<tr><td colspan="6">No live MQTT commands associated with your visible Cyber City machines.</td></tr>{% endfor %}
   </tbody></table></div>
-  <h2 class="h4">Service Availability — Last 24 Hours</h2>
+
+    </div>
+  </details>
+
+  <details class="cc-report-section" id="cc-soc-services" >
+    <summary><h2 class="h5 mb-0">Service Availability — Last 24 Hours</h2></summary>
+    <div class="cc-report-body">
   <p class="small text-muted">Percentage of successful QEMU service observations reporting active/running. This is sampled service health, not continuous uptime; missing readings are not counted as healthy.</p>
   <div class="table-responsive mb-4"><table class="table table-hover"><thead><tr><th>Machine</th><th>Service check</th><th>Healthy samples</th><th>Observed healthy</th><th>Current state</th></tr></thead><tbody>
   {% for item in service_health %}<tr><td>{{ item.monitor__machine__name }}</td><td>{{ item.monitor__name }}</td><td>{{ item.up }} / {{ item.total }}</td><td>{{ item.observed_percent }}%</td><td>{{ item.current_state|capfirst }}</td></tr>
   {% empty %}<tr><td colspan="5">No successful QEMU service observations in the last 24 hours.</td></tr>{% endfor %}
   </tbody></table></div>
-  <h2 class="h4">Assigned Wazuh Investigation Evidence</h2>
+
+    </div>
+  </details>
+
+  <details class="cc-report-section" id="cc-soc-evidence" >
+    <summary><h2 class="h5 mb-0">Assigned Wazuh Investigation Evidence</h2></summary>
+    <div class="cc-report-body">
   <p class="small text-muted">Only evidence linked to your SOC team's incidents is shown. Detections are observations, not confirmed attacks.</p>
   <div class="table-responsive mb-4"><table class="table table-hover"><thead><tr><th>Incident</th><th>Machine</th><th>Rule</th><th>Level</th><th>Detection</th></tr></thead><tbody>
   {% for item in wazuh_team_evidence %}<tr><td>{{ item.ticket.title }}</td><td>{{ item.detection.mapping.machine.name }}</td><td>{{ item.detection.rule_id }}</td><td>{{ item.detection.rule_level }}</td><td>{{ item.detection.description }}</td></tr>
   {% empty %}<tr><td colspan="5">No Wazuh evidence assigned to your SOC incidents.</td></tr>{% endfor %}
   </tbody></table></div>
-  <h2 class="h4">Checkmk Incident Alerts</h2>
+
+    </div>
+  </details>
+
+  <details class="cc-report-section" id="cc-soc-checkmk-alerts" open>
+    <summary><h2 class="h5 mb-0">Checkmk Incident Alerts</h2></summary>
+    <div class="cc-report-body">
   <p class="small text-muted">Team analysts only see Checkmk alerts assigned to incidents belonging to their SOC teams. Acknowledgement does not resolve the monitoring condition.</p>
   <div class="table-responsive mb-4"><table class="table table-hover"><thead><tr><th>Machine</th><th>Service</th><th>Checkmk state</th><th>SOC status</th><th>Incident</th><th>Action</th></tr></thead><tbody>
   {% for alert in checkmk_team_alerts %}<tr>
@@ -48,7 +121,13 @@
     </td>
   </tr>{% empty %}<tr><td colspan="6">No Checkmk alerts assigned to your SOC view.</td></tr>{% endfor %}
   </tbody></table></div>
-  <h2 class="h4">Persistent Monitoring Alerts</h2>
+
+    </div>
+  </details>
+
+  <details class="cc-report-section" id="cc-soc-monitor-alerts" open>
+    <summary><h2 class="h5 mb-0">Persistent Monitoring Alerts</h2></summary>
+    <div class="cc-report-body">
   <p class="small text-muted">Alerts represent QEMU check collection errors, not matched instructor conditions. An alert can be acknowledged or linked to an incident; clearing occurs after a successful check.</p>
   <div class="table-responsive mb-4"><table class="table table-hover"><thead><tr><th>Check</th><th>Status</th><th>Occurrences</th><th>Incident</th><th>Actions</th></tr></thead><tbody>
   {% for alert in soc_alerts %}<tr>
@@ -60,7 +139,13 @@
     </td>
   </tr>{% empty %}<tr><td colspan="5">No monitoring errors recorded.</td></tr>{% endfor %}
   </tbody></table></div>
-  <h2 class="h4">Cyber City QEMU Agent Monitoring</h2>
+
+    </div>
+  </details>
+
+  <details class="cc-report-section" id="cc-soc-qemu" >
+    <summary><h2 class="h5 mb-0">Cyber City QEMU Agent Monitoring</h2></summary>
+    <div class="cc-report-body">
   <p class="small text-muted">Read-only observations from configured machine checks. A matched condition is not automatically a security incident. Status reflects the last reported check, not a real-time uptime measurement.</p>
   <div class="d-flex flex-wrap gap-2 mb-2"><span class="badge bg-danger">{{ check_error_count }} check errors</span><span class="badge bg-secondary">{{ check_waiting_count }} awaiting data</span></div>
   <div class="table-responsive mb-4"><table class="table table-hover"><thead><tr><th>Building</th><th>Machine</th><th>Check</th><th>Observation</th><th>Last checked</th></tr></thead><tbody>
@@ -71,7 +156,13 @@
   </tr>
   {% empty %}<tr><td colspan="5">No active machine checks configured. Add QEMU Agent checks from Cyber City building details.</td></tr>{% endfor %}
   </tbody></table></div>
-  <h2 class="h4">SOC Queue <small class="text-muted">({{ open_count }} open)</small></h2>
+
+    </div>
+  </details>
+
+  <details class="cc-report-section" id="cc-soc-queue" open>
+    <summary><h2 class="h5 mb-0">SOC Queue <small class="text-muted">({{ open_count }} open)</small></h2></summary>
+    <div class="cc-report-body">
   <div class="table-responsive mb-4"><table class="table table-hover"><thead><tr><th>Ticket</th><th>Type</th><th>Priority</th><th>Status</th><th>Team</th><th>Asset</th><th>Workflow</th></tr></thead><tbody>
     {% for ticket in tickets %}<tr>
       <td><strong>#{{ ticket.pk }} — {{ ticket.title }}</strong><div class="small text-muted">{{ ticket.description|truncatechars:110 }}</div></td>
@@ -88,16 +179,31 @@
       </form><form method="post" action="{% url 'cybercity_soc_ticket_note' city.id ticket.id %}" class="mt-2">{% csrf_token %}<label class="form-label small">Investigation note</label><textarea name="note" maxlength="500" required rows="2" class="form-control form-control-sm"></textarea><button type="submit" class="btn btn-outline-secondary btn-sm mt-1">Add note</button></form></td></tr>
     {% empty %}<tr><td colspan="7">No SOC tickets yet. Create an incident, help desk request, or change request.</td></tr>{% endfor %}
   </tbody></table></div>
-  <h2 class="h4">City Asset Inventory</h2>
+
+    </div>
+  </details>
+
+  <details class="cc-report-section" id="cc-soc-assets" >
+    <summary><h2 class="h5 mb-0">City Asset Inventory</h2></summary>
+    <div class="cc-report-body">
   <div class="table-responsive mb-4"><table class="table"><thead><tr><th>Building</th><th>Machine</th><th>VMID</th><th>LabTech status</th></tr></thead><tbody>
   {% for machine in machine_rows %}<tr><td>{{ machine.building.name }}</td><td>{{ machine.name }}</td><td>{{ machine.proxmox_vmid|default:"Unprovisioned" }}</td><td>{{ machine.status }}</td></tr>
   {% empty %}<tr><td colspan="4">No building machines configured.</td></tr>{% endfor %}
   </tbody></table></div>
-  <h2 class="h4">Operations Timeline</h2>
+
+    </div>
+  </details>
+
+  <details class="cc-report-section" id="cc-soc-timeline" >
+    <summary><h2 class="h5 mb-0">Operations Timeline</h2></summary>
+    <div class="cc-report-body">
   <div class="table-responsive"><table class="table"><thead><tr><th>When</th><th>Action</th><th>Ticket</th><th>Actor</th><th>Details</th></tr></thead><tbody>
   {% for event in events %}<tr><td>{{ event.recorded_at|date:"Y-m-d H:i:s" }}</td><td>{{ event.action }}</td><td>{{ event.ticket_id|default:"—" }}</td><td>{{ event.actor|default:"System" }}</td><td>{{ event.detail }}</td></tr>
   {% empty %}<tr><td colspan="5">No activity yet.</td></tr>{% endfor %}
   </tbody></table></div>
-  <p class="small text-muted">Baseline: ticket records and existing VM state. External SIEM, service probes and attack injection will be integrated in later milestones; uptime is not inferred from VM power status.</p>
+
+    </div>
+  </details>
+  <p class="cc-subtle-note">Recorded SOC tickets, QEMU observations and linked Wazuh/Checkmk evidence depend on configured integrations. Power status alone does not prove service uptime.</p>
 </div>
 {% endblock %}

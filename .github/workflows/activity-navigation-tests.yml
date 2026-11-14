@@ -1,0 +1,44 @@
+name: Consistent activity navigation
+
+on:
+  pull_request:
+    paths:
+      - 'app/templatetags/activity_navigation.py'
+      - 'app/templates/labtech/generic_base.html'
+      - 'app/templates/labtech/partials/activity_navigation.html'
+      - 'app/templates/labtech/*form.html'
+      - 'app/templates/labtech/view_lab.html'
+      - 'app/templates/labtech/take_*.html'
+      - 'app/templates/labtech/pbq/*.html'
+      - 'app/static/labtech/css/activity-navigation.css'
+      - 'app/test_activity_navigation.py'
+      - '.github/workflows/activity-navigation-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'app/templatetags/activity_navigation.py'
+      - 'app/templates/labtech/generic_base.html'
+      - 'app/templates/labtech/partials/activity_navigation.html'
+      - 'app/test_activity_navigation.py'
+
+permissions:
+  contents: read
+
+jobs:
+  activity-navigation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: System dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config default-libmysqlclient-dev libldap2-dev libsasl2-dev libssl-dev libxml2-dev libxslt1-dev libjpeg-dev zlib1g-dev libffi-dev
+      - name: Install application
+        run: python -m pip install -r requirements.txt
+      - name: Python syntax check
+        run: python -m py_compile app/templatetags/activity_navigation.py app/test_activity_navigation.py
+      - name: Test every instructor and student activity navigation family
+        run: python manage.py test app.test_activity_navigation app.test_content_repairs app.test_course_builder --settings=app.test_settings -v 2

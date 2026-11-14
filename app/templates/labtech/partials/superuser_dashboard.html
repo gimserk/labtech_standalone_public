@@ -1,100 +1,112 @@
-<style>
-    .superuser-dashboard-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 1.5rem;
-    }
-    .dashboard-card h3 {
-        font-size: 1.2rem;
-        border-bottom: 1px solid var(--lt-border);
-        padding-bottom: 0.75rem;
-        margin-bottom: 1rem;
-    }
-    .dashboard-card ul {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-    .dashboard-card ul a {
-        display: flex;
-        align-items: center;
-        padding: .6rem 0;
-        text-decoration: none;
-        color: var(--lt-primary);
-        border-bottom: 1px solid var(--lt-border);
-    }
-    .dashboard-card ul a:last-child {
-        border-bottom: none;
-    }
-    .dashboard-card ul a:hover {
-        color: var(--lt-primary);
-    }
-    .quick-stats p {
-        display: flex;
-        justify-content: space-between;
-        padding: .5rem 0;
-        border-bottom: 1px solid var(--lt-border);
-        margin-bottom: 0;
-    }
-    .quick-stats p:last-child {
-        border-bottom: none;
-    }
-    .quick-stats span {
-        font-weight: 600;
-        padding: .1rem .5rem;
-        background-color: var(--lt-surface-muted);
-        border-radius: .25rem;
-    }
-</style>
+<div class="staff-workspace" id="site-admin-workspace">
+    <section aria-labelledby="admin-overview-heading">
+        <div class="workspace-intro">
+            <div>
+                <h2 id="admin-overview-heading">Platform overview</h2>
+                <p>Start here for LabTech administration. Detailed management pages remain available under their original links.</p>
+            </div>
+            <div class="workspace-primary-actions">
+                <a class="btn btn-primary" href="{% url 'instructor_my_courses' %}"><i class="fas fa-book me-2" aria-hidden="true"></i>Manage courses</a>
+                <a class="btn btn-outline-primary" href="{% url 'cluster_utilization' %}"><i class="fas fa-server me-2" aria-hidden="true"></i>Cluster utilization</a>
+            </div>
+        </div>
+        <div class="workspace-stat-grid" role="group" aria-label="Platform statistics">
+            <a class="workspace-stat" href="{% url 'admin:auth_user_changelist' %}">
+                <span class="workspace-stat-label">Total users</span>
+                <strong class="workspace-stat-value">{{ quick_stats.total_users }}</strong>
+                <span class="workspace-stat-detail">Manage people and accounts</span>
+            </a>
+            <a class="workspace-stat" href="{% url 'instructor_my_courses' %}">
+                <span class="workspace-stat-label">Total courses</span>
+                <strong class="workspace-stat-value">{{ quick_stats.total_courses }}</strong>
+                <span class="workspace-stat-detail">{{ quick_stats.active_courses }} active, {{ quick_stats.archived_courses }} archived</span>
+            </a>
+            <a class="workspace-stat" href="{% url 'admin_manage_all_labs' %}">
+                <span class="workspace-stat-label">Active labs</span>
+                <strong class="workspace-stat-value">{{ quick_stats.active_labs }}</strong>
+                <span class="workspace-stat-detail">View all lab sessions</span>
+            </a>
+            <a class="workspace-stat" href="{% url 'instructor_my_courses' %}#archivedCoursesAccordion">
+                <span class="workspace-stat-label">Archived courses</span>
+                <strong class="workspace-stat-value">{{ quick_stats.archived_courses }}</strong>
+                <span class="workspace-stat-detail">Open the archived course list</span>
+            </a>
+        </div>
+    </section>
 
-<div class="superuser-dashboard-grid">
+    <section aria-labelledby="admin-tools-heading">
+        <div class="workspace-intro">
+            <div>
+                <h2 id="admin-tools-heading">Administration tools</h2>
+                <p>Grouped by the work you want to do. Search below to locate a particular tool.</p>
+            </div>
+            <div class="workspace-tool-search">
+                <label class="workspace-search-label" for="admin-tool-search">Find a tool</label>
+                <input id="admin-tool-search" class="form-control" type="search"
+                       placeholder="Search courses, labs, support..." autocomplete="off"
+                       data-workspace-tool-search aria-describedby="admin-tool-result">
+                <div id="admin-tool-result" class="workspace-search-status" role="status" aria-live="polite" data-workspace-tool-result></div>
+            </div>
+        </div>
 
-    <div class="dashboard-card">
-        <h3>Platform Management</h3>
-        <ul>
-            <li><a href="{% url 'admin:index' %}">Django Administration</a></li>
-            <li><a href="{% url 'labtech_manage_proxmox_servers_list' %}">Manage Proxmox Servers</a></li>
-            <li><a href="{% url 'cluster_utilization' %}">Cluster Utilization &amp; Lab Placement</a></li>
-<li class="action-list-item"><a href="{% url 'manage_vmid_pools' %}"><i class="fas fa-network-wired fa-fw text-primary"></i>Manage VMID Pools</a></li>
-            <li><a href="{% url 'labtech_manage_guacamole_servers_list' %}">Manage Guacamole Servers</a></li>
-            <li><a href="{% url 'template_library' %}">Proxmox Template Library</a></li>
-            <li><a href="{% url 'manage_assistants' %}">Manage AI Assistants</a></li>
-        </ul>
-    </div>
+        <div class="workspace-tool-grid">
+            <section class="workspace-panel" data-workspace-tool-group aria-labelledby="admin-teaching-heading">
+                <div class="workspace-panel-header">
+                    <div><h2 id="admin-teaching-heading"><i class="fas fa-chalkboard-teacher me-2" aria-hidden="true"></i>Courses &amp; learning</h2><p class="workspace-panel-description">Teaching, authoring, and learning assets.</p></div>
+                </div>
+                <ul class="workspace-tool-list">
+                    <li><a data-workspace-tool href="{% url 'instructor_my_courses' %}"><span class="tool-icon"><i class="fas fa-book" aria-hidden="true"></i></span><span><span class="tool-title">All courses</span><span class="tool-detail">Search, archive, edit and manage courses</span></span></a></li>
+                    <li><a data-workspace-tool href="{% url 'instructor_add_course' %}"><span class="tool-icon"><i class="fas fa-plus-circle" aria-hidden="true"></i></span><span><span class="tool-title">Create course</span><span class="tool-detail">Open a new teaching workspace</span></span></a></li>
+                    <li><a data-workspace-tool href="{% url 'import_course' %}"><span class="tool-icon"><i class="fas fa-file-import" aria-hidden="true"></i></span><span><span class="tool-title">Import course</span><span class="tool-detail">Restore or load a course package</span></span></a></li>
+                    <li><a data-workspace-tool href="{% url 'ai_jobs_dashboard' %}"><span class="tool-icon"><i class="fas fa-tasks" aria-hidden="true"></i></span><span><span class="tool-title">AI jobs queue</span><span class="tool-detail">Monitor automatic course creation</span></span></a></li>
+                    <li><a data-workspace-tool href="{% url 'course_catalog' %}"><span class="tool-icon"><i class="fas fa-book-open" aria-hidden="true"></i></span><span><span class="tool-title">Course catalog</span><span class="tool-detail">Browse published learning offerings</span></span></a></li>
+                    <li><a data-workspace-tool href="{% url 'ctf_dashboard' %}"><span class="tool-icon"><i class="fas fa-flag" aria-hidden="true"></i></span><span><span class="tool-title">CTF campaigns</span><span class="tool-detail">Challenges and competitions</span></span></a></li>
+                    <li><a data-workspace-tool href="{% url 'marketplace_list' %}"><span class="tool-icon"><i class="fas fa-store" aria-hidden="true"></i></span><span><span class="tool-title">Marketplace</span><span class="tool-detail">Shared course resources</span></span></a></li>
+                    <li><a data-workspace-tool href="{% url 'manage_badges' %}"><span class="tool-icon"><i class="fas fa-award" aria-hidden="true"></i></span><span><span class="tool-title">Badges</span><span class="tool-detail">Achievement recognition</span></span></a></li>
+                    <li><a data-workspace-tool href="{% url 'manage_certificate_templates' %}"><span class="tool-icon"><i class="fas fa-certificate" aria-hidden="true"></i></span><span><span class="tool-title">Certificate templates</span><span class="tool-detail">Certificate design and issuing assets</span></span></a></li>
+                </ul>
+            </section>
 
-    <div class="dashboard-card">
-        <h3>User & Content Management</h3>
-        <ul>
-            <li><a href="{% url 'admin:auth_user_changelist' %}">Manage All Users</a></li>
-            <li><a href="{% url 'instructor_my_courses' %}">Manage All Courses</a></li>
-            <li><a href="{% url 'marketplace_list' %}">Browse Marketplace</a></li>
-            <li><a href="{% url 'ctf_dashboard' %}">Manage CTF Campaigns</a></li>
-            <li><a href="{% url 'manage_badges' %}">Manage Badges</a></li>
-            <li><a href="{% url 'manage_certificate_templates' %}">Manage Certificate Templates</a></li>
-            <li><a class="dropdown-item" href="{% url 'admin_manage_all_labs' %}">Manage All Labs</a></li>
-        </ul>
-    </div>
-    
-    <div class="dashboard-card">
-        <h3>CyberCity & Support</h3>
-        <ul>
-            <li><a href="{% url 'cybercity_dashboard' %}">CyberCity Dashboard</a></li>
-            <li><a href="{% url 'admin_ticket_list' %}">Manage Help Desk Tickets</a></li>
-            <li><a href="{% url 'manage_faq_categories' %}">Manage FAQ Categories</a></li>
-            <li><a href="{% url 'global_add_faq' %}">Add New FAQ</a></li>
-            <li><a href="{% url 'manage_license' %}">Manage License</a></li>
-        </ul>
-    </div>
+            <section class="workspace-panel" data-workspace-tool-group aria-labelledby="admin-infra-heading">
+                <div class="workspace-panel-header">
+                    <div><h2 id="admin-infra-heading"><i class="fas fa-server me-2" aria-hidden="true"></i>Labs &amp; infrastructure</h2><p class="workspace-panel-description">Live lab operations and hosts.</p></div>
+                </div>
+                <ul class="workspace-tool-list">
+                    <li><a data-workspace-tool href="{% url 'admin_manage_all_labs' %}"><span class="tool-icon"><i class="fas fa-flask" aria-hidden="true"></i></span><span><span class="tool-title">All labs</span><span class="tool-detail">Session inventory and cleanup controls</span></span></a></li>
+                    <li><a data-workspace-tool href="{% url 'cluster_utilization' %}"><span class="tool-icon"><i class="fas fa-chart-bar" aria-hidden="true"></i></span><span><span class="tool-title">Cluster utilization</span><span class="tool-detail">Capacity, nodes and lab placement</span></span></a></li>
+                    <li><a data-workspace-tool href="{% url 'labtech_manage_proxmox_servers_list' %}"><span class="tool-icon"><i class="fas fa-hdd" aria-hidden="true"></i></span><span><span class="tool-title">Proxmox servers</span><span class="tool-detail">Hypervisors and templates</span></span></a></li>
+                    <li><a data-workspace-tool href="{% url 'manage_vmid_pools' %}"><span class="tool-icon"><i class="fas fa-network-wired" aria-hidden="true"></i></span><span><span class="tool-title">VMID pools</span><span class="tool-detail">Virtual-machine ID allocation</span></span></a></li>
+                    <li><a data-workspace-tool href="{% url 'labtech_manage_guacamole_servers_list' %}"><span class="tool-icon"><i class="fas fa-desktop" aria-hidden="true"></i></span><span><span class="tool-title">Guacamole servers</span><span class="tool-detail">Lab console access</span></span></a></li>
+                    <li><a data-workspace-tool href="{% url 'template_library' %}"><span class="tool-icon"><i class="fas fa-layer-group" aria-hidden="true"></i></span><span><span class="tool-title">Proxmox template library</span><span class="tool-detail">Reusable machine templates</span></span></a></li>
+                </ul>
+            </section>
 
-    <div class="dashboard-card quick-stats">
-        <h3>Quick Stats</h3>
-        {% if quick_stats %}
-            <p><strong>Total Users:</strong> <span>{{ quick_stats.total_users }}</span></p>
-            <p><strong>Active Labs:</strong> <span>{{ quick_stats.active_labs }}</span></p>
-            <p><strong>Total Courses:</strong> <span>{{ quick_stats.total_courses }}</span></p>
-        {% else %}
-            <p>Statistics are currently unavailable.</p>
-        {% endif %}
-    </div>
+            <section class="workspace-panel" data-workspace-tool-group aria-labelledby="admin-people-heading">
+                <div class="workspace-panel-header">
+                    <div><h2 id="admin-people-heading"><i class="fas fa-users me-2" aria-hidden="true"></i>People &amp; support</h2><p class="workspace-panel-description">Accounts, tickets and help content.</p></div>
+                </div>
+                <ul class="workspace-tool-list">
+                    <li><a data-workspace-tool href="{% url 'admin:auth_user_changelist' %}"><span class="tool-icon"><i class="fas fa-users" aria-hidden="true"></i></span><span><span class="tool-title">All users</span><span class="tool-detail">Accounts and access management</span></span></a></li>
+                    <li><a data-workspace-tool href="{% url 'admin_ticket_list' %}"><span class="tool-icon"><i class="fas fa-ticket-alt" aria-hidden="true"></i></span><span><span class="tool-title">Help desk tickets</span><span class="tool-detail">Review and respond to requests</span></span></a></li>
+                    <li><a data-workspace-tool href="{% url 'inbox' %}"><span class="tool-icon"><i class="fas fa-inbox" aria-hidden="true"></i></span><span><span class="tool-title">Message inbox</span><span class="tool-detail">Instructor and student messages</span></span></a></li>
+                    <li><a data-workspace-tool href="{% url 'manage_faq_categories' %}"><span class="tool-icon"><i class="fas fa-question-circle" aria-hidden="true"></i></span><span><span class="tool-title">FAQ categories</span><span class="tool-detail">Organize help articles</span></span></a></li>
+                    <li><a data-workspace-tool href="{% url 'global_add_faq' %}"><span class="tool-icon"><i class="fas fa-plus" aria-hidden="true"></i></span><span><span class="tool-title">Add FAQ</span><span class="tool-detail">Publish a new help answer</span></span></a></li>
+                    <li><a data-workspace-tool href="{% url 'help_desk_portal' %}"><span class="tool-icon"><i class="fas fa-life-ring" aria-hidden="true"></i></span><span><span class="tool-title">Help &amp; support portal</span><span class="tool-detail">View support from a user's perspective</span></span></a></li>
+                </ul>
+            </section>
 
+            <section class="workspace-panel" data-workspace-tool-group aria-labelledby="admin-platform-heading">
+                <div class="workspace-panel-header">
+                    <div><h2 id="admin-platform-heading"><i class="fas fa-shield-alt me-2" aria-hidden="true"></i>Platform &amp; CyberCity</h2><p class="workspace-panel-description">System settings and cyber environments.</p></div>
+                </div>
+                <ul class="workspace-tool-list">
+                    <li><a data-workspace-tool href="{% url 'cybercity_dashboard' %}"><span class="tool-icon"><i class="fas fa-city" aria-hidden="true"></i></span><span><span class="tool-title">CyberCity</span><span class="tool-detail">Digital city environments and SOC access</span></span></a></li>
+                    <li><a data-workspace-tool href="{% url 'manage_assistants' %}"><span class="tool-icon"><i class="fas fa-robot" aria-hidden="true"></i></span><span><span class="tool-title">AI assistants</span><span class="tool-detail">Tutor providers and configuration</span></span></a></li>
+                    <li><a data-workspace-tool href="{% url 'admin:index' %}"><span class="tool-icon"><i class="fas fa-cogs" aria-hidden="true"></i></span><span><span class="tool-title">Django administration</span><span class="tool-detail">Advanced settings and model management</span></span></a></li>
+                    <li><a data-workspace-tool href="{% url 'manage_license' %}"><span class="tool-icon"><i class="fas fa-key" aria-hidden="true"></i></span><span><span class="tool-title">Licensing</span><span class="tool-detail">Manage platform license</span></span></a></li>
+                </ul>
+            </section>
+        </div>
+        <p class="workspace-empty-state mt-3" data-workspace-tool-empty hidden>No tools match that search. Clear the search to view every administration tool.</p>
+    </section>
 </div>

@@ -4,7 +4,6 @@
 <p>{% if activity.is_published %}Published{% else %}Draft{% endif %} · {{ activity.max_score }} points</p>
 <a href="{% url 'pbq_edit' course.id activity.id %}" class="btn btn-secondary">Edit details</a>
 <a href="{% url 'pbq_preview' course.id activity.id %}" class="btn btn-secondary">Student preview</a>
-<a href="{% url 'labtech_manage_course_content' course.id %}">Back to chapter content</a>
 <form method="post" class="my-3">{% csrf_token %}<button name="action" value="publish" class="btn btn-primary">Publish PBQ</button> <button name="action" value="duplicate" class="btn btn-secondary">Duplicate PBQ</button>
 {% if not activity.content_locked_at %}<button name="action" value="delete" class="btn btn-outline-danger" onclick="return confirm('Delete this unused PBQ?')">Delete PBQ</button>{% endif %}</form>
 {% if activity.content_locked_at %}<p>Content is locked because a student has started. Duplicate this PBQ to revise its story, artifacts, or questions.</p>{% else %}

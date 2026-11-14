@@ -1,6 +1,6 @@
 {% extends "labtech/generic_base.html" %}
 
-{% block title %}Generate Course with AI{% endblock %}
+{% block labtech_title %}Generate Course with AI{% endblock %}
 
 {% block labtech_content %}
 <div class="container mt-4">
@@ -12,14 +12,21 @@
                 </div>
                 <div class="card-body">
                     <p class="card-text">
-                        Describe the course you want to create. Be as descriptive as possible. Include the target audience, key topics, desired number of chapters, and any specific activities you'd like to see. The AI will use this to generate a course blueprint for your review.
+                        Design a complete draft course with chapters, lessons, quizzes, PBQs and evidence, drag-and-drops, hotspots, flashcards, assignments, rubrics, coding, AI scenarios, labs, and learning outcomes. Review the results before activating the course.
                     </p>
                     <hr>
-                    <form method="post">
+                    <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
                         <div class="mb-3">
                             <label for="prompt" class="form-label"><strong>Course Goals and Description:</strong></label>
                             <textarea class="form-control" id="prompt" name="prompt" rows="12" placeholder="e.g., Create a course for beginners on Python programming. It should have 4 chapters: Introduction, Variables & Data Types, Control Flow, and Functions. Include a quiz in each chapter and a final hands-on lab. The tone should be encouraging and friendly.">{{ prompt }}</textarea>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-bold" for="source-book">Reference book (optional)</label>
+                            <input class="form-control" id="source-book" name="source_book" type="file" accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain" aria-describedby="book-help">
+                            <div id="book-help" class="form-text">
+                                Upload a text-based PDF, DOCX or UTF-8 TXT textbook (up to 50 MB). It remains private to the AI generation job, not a student resource. Relevant excerpts are sent to the configured AI provider. Scanned PDFs need searchable text. Upload only material you have permission to use.
+                            </div>
                         </div>
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                             <a href="{% url 'instructor_my_courses' %}" class="btn btn-secondary">Cancel</a>
@@ -35,7 +42,8 @@
                 <p>
                     1. You provide the initial goals for your course.<br>
                     2. Our AI architect will generate a structured blueprint (outline) for you to review.<br>
-                    3. You'll have a chance to edit the blueprint and provide feedback before any content is created.
+                    3. Review and edit chapters, outcomes and activity types before content generation.<br>
+                    4. LabTech generates an inactive draft. Video/audio production briefs require recording; labs require instructor verification of VM templates, and all assessment keys should be reviewed.
                 </p>
             </div>
         </div>

@@ -5,14 +5,12 @@
 
 {% block labtech_extra_head %}
 <style>
-    body {
-        overflow: hidden; /* Prevent scrolling */
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
+    /* Do not disable scrolling for the entire application on small screens. */
     .visualizer-wrapper {
         display: flex;
         flex-direction: column;
-        height: calc(100vh - 120px); /* Full height minus header/footer */
+        min-height: 560px;
+        height: max(560px, calc(100vh - 170px)); /* Full height minus header/footer */
         background-color: var(--lt-surface-muted);
     }
     .visualizer-header {
@@ -163,23 +161,57 @@
         color: var(--lt-text);
     }
 </style>
+<link rel="stylesheet" href="{% static 'labtech/css/cybercity-operator.css' %}">
+<style>
+.cybercity-ui .visualizer-wrapper { border:1px solid var(--lt-border); border-radius:.7rem; overflow:hidden; }
+.cybercity-ui .visualizer-header { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.65rem; }
+.cybercity-ui .visualizer-header h1 { font-size:1.25rem; }
+.cybercity-ui .visualizer-header .cc-subtle-note { margin:.3rem 0 0; }
+.cybercity-ui #status-indicator { background:var(--lt-surface); color:var(--lt-text);
+    border:1px solid var(--lt-border); box-shadow:0 2px 6px rgba(0,0,0,.12); }
+.cybercity-ui .palette-item { display:block; width:100%; font:inherit; font-weight:600; }
+.cybercity-ui .palette-item:focus-visible, .cybercity-ui .btn-live:focus-visible {
+    outline:3px solid var(--lt-primary); outline-offset:2px;
+}
+.cybercity-ui .canvas-wrapper { min-width:260px; min-height:350px; }
+.cybercity-ui .info-panel { overflow-wrap:anywhere; }
+@media(max-width:900px) {
+    .cybercity-ui .visualizer-wrapper { height:auto; min-height:0; overflow:visible; }
+    .cybercity-ui .visualizer-container { display:flex; flex-direction:column; overflow:visible; }
+    .cybercity-ui .building-palette { width:100%; max-height:185px; overflow:auto; border-right:0; border-bottom:1px solid var(--lt-border); }
+    .cybercity-ui .canvas-wrapper { width:100%; height:55vh; min-height:350px; flex:none; }
+    .cybercity-ui .info-panel { width:100%; max-height:260px; overflow:auto; border-left:0; border-top:1px solid var(--lt-border); }
+    .cybercity-ui #status-indicator { max-width:calc(100% - 1rem); flex-wrap:wrap; }
+}
+@media(prefers-reduced-motion:reduce) { .cybercity-ui .status-dot.loading { animation:none; } }
+</style>
 {% endblock %}
 
 {% block labtech_content %}
+<div class="cybercity-ui">
+<nav class="cc-breadcrumbs" aria-label="Breadcrumb">
+    <a href="{% url 'cybercity_dashboard' %}">CyberCity</a><span aria-hidden="true">/</span>
+    <a href="{% url 'cybercity_detail' city.id %}">{{ city.name }}</a><span aria-hidden="true">/</span>
+    <span aria-current="page">Visualizer</span>
+</nav>
 <div class="visualizer-wrapper">
     <div class="visualizer-header">
-        <h1>CyberCity Visualizer: <span class="city-name">{{ city.name }}</span></h1>
+        <div>
+            <h1>CyberCity Visualizer: <span class="city-name">{{ city.name }}</span></h1>
+            <p class="cc-subtle-note">Drag buildings onto the canvas. Select or hover over buildings for their details. Positions are saved to the city.</p>
+        </div>
+        <a href="{% url 'cybercity_detail' city.id %}" class="btn btn-outline-primary btn-sm">Back to city</a>
     </div>
     <div class="visualizer-container">
         <div class="building-palette" id="buildingPalette">
             <h3>Buildings</h3>
             </div>
         <div class="canvas-wrapper">
-            <canvas id="cityCanvas"></canvas>
+            <canvas id="cityCanvas" role="img" aria-label="Interactive CyberCity building layout">Drag buildings from the palette onto this canvas.</canvas>
             <div id="status-indicator">
                 <div id="statusDot" class="status-dot loading"></div>
-                <span id="statusText">Connecting...</span>
-                <button id="live-toggle-btn" class="btn-live">Pause Updates</button>
+                <span id="statusText" role="status" aria-live="polite">Connecting...</span>
+                <button id="live-toggle-btn" type="button" class="btn-live">Pause Updates</button>
             </div>
         </div>
         <div class="info-panel" id="infoPanel">
@@ -189,6 +221,7 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 
 <script>
@@ -239,7 +272,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function getBuildingStatus(building) {
-        if (!building.pins || building.pins.length === 0) return { color: themeColor('secondary'), label: 'OK' };
+        if (!building.pins || building.pins.length === 0) return { color: themeColor('secondary'), label: 'No pin telemetry' };
         const onPins = building.pins.filter(p => p.status && p.status.toLowerCase() === 'on').length;
         if (onPins === building.pins.length) return { color: themeColor('success'), label: 'Operational' };
         if (onPins > 0) return { color: themeColor('warning-text'), label: 'Degraded' };
@@ -339,26 +372,44 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updatePalette() {
+        // Polling refreshes the list. Restore keyboard focus to the selected
+        // building so a live update does not unexpectedly interrupt navigation.
+        const active = document.activeElement;
+        const focusedId = active && palette.contains(active) ? active.dataset.buildingId : null;
         palette.innerHTML = '<h3>Buildings</h3>';
+        let focusTarget = null;
         buildings.forEach(b => {
-            const item = document.createElement('div');
+            const item = document.createElement('button');
+            item.type = 'button';
             item.className = 'palette-item';
             item.textContent = b.name;
+            item.title = 'Select to inspect; drag to position on the map';
             item.dataset.buildingId = b.id;
             item.addEventListener('mousedown', onPaletteMouseDown);
+            item.addEventListener('click', () => updateInfoPanel(b));
             palette.appendChild(item);
+            if (String(b.id) === focusedId) focusTarget = item;
         });
+        if (focusTarget) focusTarget.focus({preventScroll:true});
     }
 
     function updateInfoPanel(building) {
-        if (building) {
-            let content = `<h4>${building.name}</h4>`;
-            content += `<p>${building.description || 'No description provided.'}</p>`;
-            content += `<p><span class="stats">Machines:</span> ${building.machine_count} | <span class="stats">ESP32s:</span> ${building.esp32_count}</p>`;
-            infoPanelContent.innerHTML = content;
-        } else {
-            infoPanelContent.innerHTML = '<p class="placeholder">Hover over a building on the map to see its details.</p>';
+        // Render API-provided names/descriptions as text, not executable HTML.
+        infoPanelContent.replaceChildren();
+        if (!building) {
+            const placeholder = document.createElement('p');
+            placeholder.className = 'placeholder';
+            placeholder.textContent = 'Hover over a building on the map to see its details.';
+            infoPanelContent.appendChild(placeholder);
+            return;
         }
+        const name = document.createElement('h4');
+        name.textContent = building.name;
+        const description = document.createElement('p');
+        description.textContent = building.description || 'No description provided.';
+        const counts = document.createElement('p');
+        counts.textContent = 'Machines: ' + building.machine_count + ' · ESP32s: ' + building.esp32_count;
+        infoPanelContent.append(name, description, counts);
     }
     
     function toggleLiveUpdates() {
@@ -446,7 +497,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (draggedBuilding) {
             // --- CHANGE: Check if dropped over the palette ---
             const paletteRect = palette.getBoundingClientRect();
-            if (e.clientX < paletteRect.right) {
+            if (e.clientX >= paletteRect.left && e.clientX <= paletteRect.right &&
+                e.clientY >= paletteRect.top && e.clientY <= paletteRect.bottom) {
                 // Dropped over the palette, so "un-place" it
                 draggedBuilding.pos_x = null;
                 draggedBuilding.pos_y = null;

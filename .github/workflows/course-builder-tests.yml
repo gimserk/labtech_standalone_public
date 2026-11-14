@@ -1,0 +1,53 @@
+name: Instructor course builder regression
+
+on:
+  pull_request:
+    paths:
+      - 'app/course_builder.py'
+      - 'app/course_builder_views.py'
+      - 'app/templates/labtech/manage_course_content.html'
+      - 'app/templates/labtech/partials/course_builder_*.html'
+      - 'app/static/labtech/js/course-builder.js'
+      - 'app/views.py'
+      - 'app/urls.py'
+      - 'app/test_course_builder.py'
+      - '.github/workflows/course-builder-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'app/course_builder.py'
+      - 'app/course_builder_views.py'
+      - 'app/templates/labtech/manage_course_content.html'
+      - 'app/templates/labtech/partials/course_builder_*.html'
+      - 'app/static/labtech/js/course-builder.js'
+      - 'app/views.py'
+      - 'app/urls.py'
+      - 'app/test_course_builder.py'
+      - '.github/workflows/course-builder-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  course-builder:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Native dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config default-libmysqlclient-dev libldap2-dev libsasl2-dev libssl-dev libxml2-dev libxslt1-dev libjpeg-dev zlib1g-dev libffi-dev
+      - name: Install application
+        run: python -m pip install -r requirements.txt
+      - name: Validate Python and browser script syntax
+        run: |
+          python -m py_compile app/course_builder.py app/course_builder_views.py app/views.py app/urls.py app/test_course_builder.py
+          node --check app/static/labtech/js/course-builder.js
+      - name: Run instructor course builder tests
+        run: python manage.py test app.test_course_builder app.test_content_repairs app.test_course_learning_outcomes --settings=app.test_settings -v 2

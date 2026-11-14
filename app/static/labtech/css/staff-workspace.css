@@ -1,0 +1,121 @@
+/* Shared instructor and site-admin dashboard layout.
+   All surfaces use LabTech appearance tokens for light, dark, and high-contrast modes. */
+.staff-workspace { display: grid; gap: 1.5rem; }
+.staff-workspace .workspace-intro {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;
+}
+.staff-workspace .workspace-intro h2 { font-size: 1.35rem; font-weight: 750; margin: 0 0 .35rem; }
+.staff-workspace .workspace-intro p { margin: 0; max-width: 62ch; color: var(--lt-muted); }
+.staff-workspace .workspace-primary-actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.staff-workspace .workspace-stat-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 185px), 1fr)); gap: .85rem;
+}
+.staff-workspace .workspace-stat {
+    display: flex; flex-direction: column; gap: .25rem;
+    background: var(--lt-surface); color: var(--lt-text);
+    border: 1px solid var(--lt-border); border-top: 4px solid var(--lt-primary);
+    border-radius: .75rem; padding: 1.05rem 1.1rem;
+    text-decoration: none; min-width: 0;
+}
+.staff-workspace a.workspace-stat:is(:hover, :focus-visible) {
+    background: var(--lt-surface-muted); color: var(--lt-text);
+    border-top-color: var(--lt-primary-hover);
+}
+.staff-workspace .workspace-stat-label { color: var(--lt-muted); font-size: .87rem; font-weight: 650; }
+.staff-workspace .workspace-stat-value { color: var(--lt-text); font-size: clamp(1.7rem, 3vw, 2.15rem); font-weight: 800; line-height: 1.15; }
+.staff-workspace .workspace-stat-detail { color: var(--lt-muted); font-size: .77rem; line-height: 1.35; }
+.staff-workspace .workspace-column-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(250px, 1fr); gap: 1.1rem; align-items: start; }
+.staff-workspace .workspace-tool-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 265px), 1fr)); gap: 1rem; }
+.staff-workspace .workspace-panel {
+    min-width: 0; background: var(--lt-surface); border: 1px solid var(--lt-border);
+    border-radius: .75rem; padding: 1.1rem;
+}
+.staff-workspace .workspace-panel-header {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: .8rem;
+    flex-wrap: wrap; margin-bottom: .75rem;
+}
+.staff-workspace .workspace-panel h2 { color: var(--lt-text); font-size: 1.08rem; font-weight: 750; margin: 0 0 .3rem; }
+.staff-workspace .workspace-panel-description { color: var(--lt-muted); font-size: .85rem; margin: 0; }
+.staff-workspace .workspace-panel-action { font-size: .84rem; font-weight: 700; }
+.staff-workspace .workspace-tool-list { list-style: none; padding: 0; margin: 0; }
+.staff-workspace .workspace-tool-list li + li { border-top: 1px solid var(--lt-border); }
+.staff-workspace .workspace-tool-list a {
+    display: flex; align-items: flex-start; gap: .65rem; padding: .65rem .35rem;
+    color: var(--lt-text); text-decoration: none; border-radius: .4rem;
+}
+.staff-workspace .workspace-tool-list a:is(:hover, :focus-visible) {
+    background: var(--lt-surface-muted); color: var(--lt-primary);
+}
+.staff-workspace .workspace-tool-list .tool-icon {
+    flex: 0 0 1.25rem; width: 1.25rem; color: var(--lt-primary);
+    margin-top: .15rem; text-align: center;
+}
+.staff-workspace .workspace-tool-list .tool-title { font-weight: 650; display: block; line-height: 1.3; }
+.staff-workspace .workspace-tool-list .tool-detail {
+    color: var(--lt-muted); font-size: .76rem; display: block; line-height: 1.4; padding-top: .15rem;
+}
+.staff-workspace .workspace-course-list { list-style: none; margin: 0; padding: 0; }
+.staff-workspace .workspace-course-list li {
+    padding: .9rem 0; border-top: 1px solid var(--lt-border); min-width: 0;
+}
+.staff-workspace .workspace-course-list li:first-child { border-top: none; }
+.staff-workspace .workspace-course-title {
+    display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; font-weight: 750;
+}
+.staff-workspace .workspace-course-title a { overflow-wrap: anywhere; }
+.staff-workspace .workspace-course-meta { color: var(--lt-muted); margin-top: .25rem; font-size: .84rem; }
+.staff-workspace .workspace-course-actions { display: flex; gap: .45rem .8rem; flex-wrap: wrap; margin-top: .45rem; font-size: .83rem; }
+.staff-workspace .workspace-course-actions a { font-weight: 650; }
+.staff-workspace .workspace-course-footer { border-top: 1px solid var(--lt-border); margin-top: .55rem; padding-top: .85rem; }
+.staff-workspace .workspace-tool-search { max-width: 450px; }
+.staff-workspace .workspace-search-label { display: block; font-weight: 650; margin: 0 0 .35rem; }
+.staff-workspace .workspace-search-status { color: var(--lt-muted); font-size: .85rem; min-height: 1.25rem; margin-top: .35rem; }
+.staff-workspace .workspace-empty-state {
+    padding: 1rem; color: var(--lt-muted); border: 1px dashed var(--lt-border);
+    background: var(--lt-surface-muted); border-radius: .5rem;
+}
+.staff-workspace [hidden], .course-index-controls [hidden], .course-index-table [hidden] { display: none !important; }
+
+/* Make the global role switcher read as navigation instead of an inline list of pipe characters. */
+.staff-role-switcher {
+    display: flex; flex-wrap: wrap; align-items: center; gap: .5rem;
+    padding: .65rem .85rem; margin-bottom: 1.25rem; border-radius: .65rem;
+    background: var(--lt-surface); border: 1px solid var(--lt-border);
+}
+.staff-role-switcher .switcher-label { font-size: .85rem; color: var(--lt-muted); font-weight: 700; margin-right: .35rem; }
+.staff-role-switcher a {
+    border: 1px solid var(--lt-border); color: var(--lt-text);
+    border-radius: .45rem; padding: .35rem .65rem; text-decoration: none; font-weight: 600;
+    font-size: .87rem;
+}
+.staff-role-switcher a:is(:hover, :focus-visible) { background: var(--lt-surface-muted); }
+.staff-role-switcher a[aria-current="page"] {
+    background: var(--lt-primary); color: var(--lt-on-accent);
+    border-color: var(--lt-primary);
+}
+
+/* Search in the canonical, full instructor/admin course list (no data removed). */
+.course-index-controls {
+    display: flex; flex-wrap: wrap; align-items: end; gap: .8rem; padding: 1rem;
+    margin-bottom: 1rem; background: var(--lt-surface); border: 1px solid var(--lt-border);
+    border-radius: .6rem;
+}
+.course-index-controls .course-index-search-wrap { flex: 1 1 250px; }
+.course-index-controls .course-index-status-wrap { flex: 0 1 190px; }
+.course-index-controls label { display: block; font-weight: 650; margin-bottom: .3rem; }
+.course-index-controls .course-filter-summary { flex: 1 1 100%; font-size: .84rem; color: var(--lt-muted); }
+.course-index-table tr:target { outline: 3px solid var(--lt-focus); outline-offset: -3px; }
+@media (max-width: 991.98px) {
+    .staff-workspace .workspace-column-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 575.98px) {
+    .staff-workspace .workspace-panel { padding: .85rem; }
+    .staff-workspace .workspace-primary-actions { width: 100%; }
+    .staff-workspace .workspace-primary-actions a { flex: 1 1 auto; }
+}
+html[data-contrast="high"] .staff-workspace :is(.workspace-panel, .workspace-stat, .workspace-empty-state),
+html[data-contrast="high"] .staff-role-switcher,
+html[data-contrast="high"] .course-index-controls { border-width: 2px; }
+html[data-contrast="high"] .staff-workspace .workspace-stat { border-top-width: 5px; }
+html[data-contrast="high"] .staff-role-switcher a { border-width: 2px; }

@@ -85,6 +85,17 @@
             <div class="helptext">{{ form.show_answers_after.help_text|safe }}</div>
         </div>
 
+        <div class="form-field">
+            <label for="{{ form.display_mode.id_for_label }}">{{ form.display_mode.label }}</label>
+            {{ form.display_mode }}
+            <div class="helptext">{{ form.display_mode.help_text }}</div>
+        </div>
+        <div class="form-field-checkbox">
+            {{ form.allow_backtracking }}
+            <label for="{{ form.allow_backtracking.id_for_label }}">{{ form.allow_backtracking.label }}</label>
+        </div>
+        <p class="helptext mb-3">{{ form.allow_backtracking.help_text }} This setting only affects one-question-at-a-time quizzes.</p>
+        <p class="helptext mb-3">Quiz progress is always saved when a student chooses Save Progress, Save and Exit, or navigates between questions. Unsubmitted drafts do not count against the attempt limit.</p>
         <div class="form-field-checkbox">
             {{ form.shuffle_questions }}
             <label for="{{ form.shuffle_questions.id_for_label }}">{{ form.shuffle_questions.label }}</label>

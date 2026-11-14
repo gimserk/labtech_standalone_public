@@ -31,7 +31,7 @@
 
     <h3 class="text-center mb-4">Choose Your Study Mode</h3>
     <div class="row justify-content-center g-4">
-        <div class="col-md-5">
+        <div class="col-lg-4 col-md-6">
             <div class="mode-card h-100">
                 <a href="{% url 'learn_flashcard_deck' course_id=deck.course.id deck_id=deck.id %}">
                     <div class="card-body text-center p-4">
@@ -42,7 +42,7 @@
                 </a>
             </div>
         </div>
-        <div class="col-md-5">
+        <div class="col-lg-4 col-md-6">
             <div class="mode-card h-100">
                  <a href="{% url 'review_flashcard_deck' course_id=deck.course.id deck_id=deck.id %}">
                     <div class="card-body text-center p-4">
@@ -51,6 +51,29 @@
                         <p class="card-text text-muted">A simple review of all cards in the deck. Flip through them at your own pace. Progress is not tracked.</p>
                     </div>
                 </a>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6">
+            <div class="mode-card h-100">
+                <div class="card-body text-center p-4">
+                    <div class="display-4 mb-3" aria-hidden="true">🖨️</div>
+                    <h4 class="card-title">Print Flashcards</h4>
+                    <p class="card-text text-muted">
+                        Download a PDF to print on one side of Letter paper.
+                        Cut out each row and fold at the center with the printing facing out: term on the left, definition on the right.
+                    </p>
+                    <div class="d-flex justify-content-center flex-wrap gap-2">
+                        <a class="btn btn-primary"
+                           href="{% url 'export_flashcard_deck_pdf' course_id=deck.course.id deck_id=deck.id %}?per_page=4">
+                            Download PDF (4 per page)
+                        </a>
+                        <a class="btn btn-outline-primary"
+                           href="{% url 'export_flashcard_deck_pdf' course_id=deck.course.id deck_id=deck.id %}?per_page=5">
+                            Download PDF (5 per page)
+                        </a>
+                    </div>
+                    <p class="small text-muted mt-3 mb-0">Print at Actual Size (100%), single-sided. No duplex printing required.</p>
+                </div>
             </div>
         </div>
     </div>

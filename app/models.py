@@ -17,6 +17,7 @@ from django.dispatch import receiver
 from payments.models import BasePayment
 from ckeditor_uploader.fields import RichTextUploadingField
 from .validators import validate_safe_file
+from .ai_course_book import AITextbookStorage, textbook_upload_path
 
 from django.db import models
 from django.core.exceptions import ValidationError
@@ -464,6 +465,21 @@ class Quiz(ContentTiming):
         default=False,
         help_text="If checked, the order of choices for multiple-choice questions will be randomized."
     )
+    DISPLAY_ALL = 'all'
+    DISPLAY_ONE = 'one'
+    DISPLAY_CHOICES = [
+        (DISPLAY_ALL, 'All questions on one page'),
+        (DISPLAY_ONE, 'One question at a time'),
+    ]
+    display_mode = models.CharField(
+        max_length=8, choices=DISPLAY_CHOICES, default=DISPLAY_ALL,
+        help_text="Choose whether students see every question or progress one question at a time.",
+    )
+    allow_backtracking = models.BooleanField(
+        default=True,
+        help_text="In one-question mode, allow students to revisit previously seen questions. "
+                  "Disable this for forward-only exams.",
+    )
     SHOW_ANSWERS_NEVER = 'never'
     SHOW_ANSWERS_AFTER_ATTEMPT = 'attempt'
     SHOW_ANSWERS_AFTER_DUE_DATE = 'due_date'
@@ -750,6 +766,32 @@ class ContentCompletion(models.Model):
     def __str__(self):
         return f"{self.user.username} completed {self.content_object}"
     
+class QuizDraft(models.Model):
+    """A student's resumable, ungraded quiz state. Does not consume an attempt.
+
+    A snapshot of question/choice ordering keeps shuffle settings consistent
+    across page loads, Save and Exit, and browser sessions.
+    """
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='drafts')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='quiz_drafts')
+    answers = models.JSONField(default=dict, blank=True)
+    question_order = models.JSONField(default=list, blank=True)
+    choice_order = models.JSONField(default=dict, blank=True)
+    question_fingerprints = models.JSONField(default=dict, blank=True)
+    current_index = models.PositiveIntegerField(default=0)
+    max_reached = models.PositiveIntegerField(default=0)
+    started_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['quiz', 'user'], name='quiz_one_open_draft_per_student'),
+        ]
+
+    def __str__(self):
+        return f"Unfinished quiz {self.quiz_id} for {self.user_id}"
+
+
 class QuizAttempt(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='quiz_attempts')
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='attempts')
@@ -2452,6 +2494,13 @@ class AIGeneratedCourse(models.Model):
 
     # The initial prompt from the instructor
     initial_prompt = models.TextField()
+
+    # Optional instructor-only reference book (never served from public media).
+    source_book = models.FileField(
+        storage=AITextbookStorage(), upload_to=textbook_upload_path, blank=True,
+        help_text="Private reference book used to create this course.",
+    )
+    source_book_name = models.CharField(max_length=255, blank=True)
 
     # The raw JSON blueprint returned by the AI
     ai_blueprint = models.JSONField(null=True, blank=True)

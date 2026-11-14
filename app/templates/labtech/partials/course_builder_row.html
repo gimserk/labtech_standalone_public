@@ -1,0 +1,76 @@
+{% load course_extras %}
+<tr id="builder-{{ item.builder_type }}-{{ item.pk }}" data-id="{{ item.id }}"
+    data-type="{{ item.builder_type }}"
+    data-readiness="{% if item.builder_blocked %}blocked{% elif item.builder_ready %}ready{% else %}review{% endif %}"
+    data-title="{{ item.title }}"
+    data-chapter-id="{{ item.chapter_id|default:'' }}"
+    data-chapter-name="{% if item.chapter_id %}{{ item.chapter.title }}{% else %}Unassigned{% endif %}"
+    data-edit-url="{% url 'course_builder_quick_edit' course.id item.builder_type item.pk %}"
+    data-start="{{ item.available_from|date:'Y-m-d\TH:i' }}"
+    data-due="{{ item.due_date|date:'Y-m-d\TH:i' }}"
+    data-end="{{ item.available_until|date:'Y-m-d\TH:i' }}"
+    data-published="{% if item.builder_published is None %}unsupported{% elif item.builder_published %}true{% else %}false{% endif %}"
+    data-graded="{% if item.builder_included %}true{% else %}false{% endif %}"
+    data-points="{{ item.builder_points|default_if_none:'' }}"
+    data-gradeable="{% if item.builder_type == 'teamscenario' %}false{% else %}true{% endif %}">
+    <td style="width: 46px">
+        {% if can_edit_content %}
+        <label class="visually-hidden" for="builderSelect-{{ item.builder_type }}-{{ item.id }}">Select {{ item.title }}</label>
+        <input id="builderSelect-{{ item.builder_type }}-{{ item.id }}" type="checkbox" class="form-check-input builder-select">
+        {% if in_chapter %}<span class="drag-handle ms-1" title="Drag to reorder" aria-hidden="true">✥</span>{% endif %}
+        {% endif %}
+    </td>
+    <td>
+        <div class="item-title">
+            {% with kind=item.builder_type %}
+            {% if kind == 'textpage' %}📖
+            {% elif kind == 'video' %}▶️
+            {% elif kind == 'audio' %}🎧
+            {% elif kind == 'filesubmissionactivity' %}📁
+            {% elif kind == 'quiz' %}❓
+            {% elif kind == 'pbqactivity' %}<span role="img" aria-label="Performance-based question">🧩</span>
+            {% elif kind == 'lab' %}🔬
+            {% elif kind == 'flashcarddeck' %}🗂️
+            {% elif kind == 'teamscenario' %}🛡️
+            {% elif kind == 'hotspotactivity' %}📍
+            {% elif kind == 'draganddropactivity' %}🤏
+            {% elif kind == 'codingactivity' %}💻
+            {% elif kind == 'scenarioactivity' %}💬
+            {% endif %}
+            {% endwith %}
+            <span class="builder-item-name">{{ item.title }}</span>
+        </div>
+        <div class="d-flex flex-wrap align-items-center gap-2 mt-1">
+            <span class="small text-body-secondary">{{ item.builder_label }}</span>
+            {% if item.builder_blocked %}<span class="badge bg-danger">Incomplete</span>
+            {% elif item.builder_ready %}<span class="badge bg-success">Ready</span>
+            {% else %}<span class="badge bg-warning text-dark">Review</span>{% endif %}
+            {% if item.builder_issues %}
+            <details class="small builder-item-issues">
+                <summary>{{ item.builder_issues|length }} check{{ item.builder_issues|pluralize }}</summary>
+                <ul>{% for issue in item.builder_issues %}<li>{{ issue.message }}</li>{% endfor %}</ul>
+            </details>
+            {% endif %}
+        </div>
+    </td>
+    <td class="text-end">
+        {% if can_edit_content %}
+        <div class="d-inline-flex align-items-center gap-1 builder-controls justify-content-end">
+            <button type="button" class="btn btn-sm btn-outline-primary builder-quick-edit" title="Edit metadata without leaving this page">Quick edit</button>
+            <a href="{% url 'ai_improve_course_content' course.id item.builder_type item.pk %}"
+               class="btn btn-sm btn-outline-info" aria-label="Improve {{ item.title }} with AI">
+                <i class="fas fa-magic me-1" aria-hidden="true"></i>Improve with AI
+            </a>
+            {% if in_chapter %}
+            <button type="button" class="btn btn-sm btn-outline-secondary builder-move" data-direction="up"
+                    data-move-type="{{ item.builder_type }}" data-move-id="{{ item.pk }}"
+                    aria-label="Move {{ item.title }} up"><i class="fas fa-arrow-up" aria-hidden="true"></i></button>
+            <button type="button" class="btn btn-sm btn-outline-secondary builder-move" data-direction="down"
+                    data-move-type="{{ item.builder_type }}" data-move-id="{{ item.pk }}"
+                    aria-label="Move {{ item.title }} down"><i class="fas fa-arrow-down" aria-hidden="true"></i></button>
+            {% endif %}
+            {% include "labtech/partials/content_item_actions.html" with item=item %}
+        </div>
+        {% endif %}
+    </td>
+</tr>

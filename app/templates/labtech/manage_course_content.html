@@ -4,19 +4,28 @@
 {% block labtech_title %}{{ title }}{% endblock %}
 
 {% block labtech_extra_head %}
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js" defer></script>
+    <script src="{% static 'labtech/js/course-builder.js' %}" defer></script>
 <style>
     .management-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
     .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid var(--lt-border); }
     .page-header h2 { margin: 0; color: var(--lt-text); font-size: 1.8em; }
     
-    .card-header { cursor: pointer; }
-    .card-header h5 { margin-bottom: 0; font-size: 1.2rem; }
-    .card-body { display: none; } /* Chapters start collapsed by default */
-    .card-header.active + .card-body { display: block; }
-    
-    .toggle-icon { font-size: 1em; transition: transform 0.3s ease; }
-    .card-header.active .toggle-icon { transform: rotate(180deg); }
+    .builder-chapter-header { background: var(--lt-surface-muted); }
+    .builder-chapter-header h5 { margin-bottom: 0; font-size: 1.1rem; }
+    .builder-chapter-body { display: none; }
+    .builder-chapter-header.is-open + .builder-chapter-body { display: block; }
+    .builder-chapter-header .toggle-icon { transition: transform .2s ease; }
+    .builder-chapter-header.is-open .toggle-icon { transform: rotate(180deg); }
+    .builder-chapter-header .chapter-toggle { color: var(--lt-text); text-align: left; }
+    .builder-chapter-header .chapter-toggle:focus-visible,
+    .builder-move:focus-visible, .builder-quick-edit:focus-visible { outline: 3px solid var(--lt-primary); outline-offset: 2px; }
+    .builder-item-issues { max-width: 44rem; }
+    .builder-sidebar { width: min(100vw, 490px) !important; }
+    #courseBuilder [hidden], .builder-sidebar [hidden] { display: none !important; }
+    .builder-controls { min-width: 185px; }
+    @media (max-width: 767px) { .page-header { flex-wrap: wrap; gap: 1rem; } .builder-controls { min-width: 0; } }
+    @media (prefers-reduced-motion: reduce) { .sortable-ghost { transition: none; } }
 
     .add-content-links { margin-bottom: 15px; padding-top: 5px; }
     .add-content-links a { margin-right: 15px; font-weight: 500; text-decoration: none; color: var(--lt-primary); font-size: 0.9em; }
@@ -41,7 +50,12 @@
 {% endblock %}
 
 {% block labtech_content %}
-<div class="management-container">
+<div class="management-container" id="courseBuilder"
+   data-csrf="{{ csrf_token }}"
+   data-bulk-url="{% url 'course_builder_bulk_action' course.id %}"
+   data-move-url="{% url 'course_builder_keyboard_move' course.id %}"
+   data-chapter-order-url="{% url 'update_chapter_order' course.id %}"
+   data-content-order-url="{% url 'update_content_order' course.id %}">
     <div class="page-header">
         <h2>{{ title }}</h2>
         <div>
@@ -63,13 +77,19 @@
     </div>
     {% endif %}
 
+    {% include "labtech/partials/course_builder_dashboard.html" %}
+
     <div id="chapter-list">
     {% for chapter in chapters %}
-    <div class="card mb-3" data-id="{{ chapter.id }}">
-        <div class="card-header d-flex justify-content-between align-items-center">
+    <div class="card mb-3 builder-chapter" data-id="{{ chapter.id }}" data-chapter-name="{{ chapter.title }}">
+        <div class="card-header builder-chapter-header d-flex justify-content-between align-items-center">
             <div class="d-flex align-items-center">
-                {% if can_edit_content %}<span class="chapter-drag-handle">✥</span>{% endif %}
-                <h5 class="mb-0">{{ chapter.title }}</h5>
+                {% if can_edit_content %}<span class="chapter-drag-handle" title="Drag chapter to reorder" aria-hidden="true">✥</span>{% endif %}
+                <button type="button" class="btn btn-link text-decoration-none chapter-toggle" aria-expanded="false" aria-controls="builder-chapter-body-{{ chapter.id }}">
+                    <span class="fw-semibold">{{ chapter.title }}</span>
+                    <span class="small ms-2 text-body-secondary">{{ chapter.builder_ready }}/{{ chapter.builder_total }} ready</span>
+                    <span class="toggle-icon fas fa-chevron-down ms-2" aria-hidden="true"></span>
+                </button>
             </div>
             <div class="d-flex align-items-center">
                 {% if can_edit_content %}
@@ -82,62 +102,33 @@
                         <li><a class="dropdown-item text-danger" href="{% url 'delete_chapter' course_id=course.id chapter_id=chapter.id %}">Delete Chapter</a></li>
                     </ul>
                 </div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary builder-move" data-move-type="chapter" data-move-id="{{ chapter.id }}" data-direction="up" aria-label="Move chapter {{ chapter.title }} up" title="Move chapter up"><i class="fas fa-arrow-up" aria-hidden="true"></i></button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary builder-move" data-move-type="chapter" data-move-id="{{ chapter.id }}" data-direction="down" aria-label="Move chapter {{ chapter.title }} down" title="Move chapter down"><i class="fas fa-arrow-down" aria-hidden="true"></i></button>
                 {% endif %}
-                <span class="toggle-icon fas fa-chevron-down"></span>
             </div>
         </div>
-        <div class="card-body">
+        <div id="builder-chapter-body-{{ chapter.id }}" class="card-body builder-chapter-body">
             {% if can_edit_content %}
             <div class="add-content-links">
-                <a href="{% url 'pbq_create' course.id %}?chapter={{ chapter.id }}">+ PBQ</a>
-                <a href="{% url 'labtech_add_text_page' course_id=course.id %}?chapter={{ chapter.id }}">+ Text Page</a>
-                <a href="{% url 'labtech_add_video' course_id=course.id %}?chapter={{ chapter.id }}">+ Video</a>
                 <a href="{% url 'labtech_add_audio' course_id=course.id %}?chapter={{ chapter.id }}">+ Audio</a>
+                <a href="{% url 'labtech_add_coding_activity' course_id=course.id %}?chapter={{ chapter.id }}">+ Coding Activity</a>
+                <a href="{% url 'labtech_add_drag_and_drop' course_id=course.id %}?chapter={{ chapter.id }}">+ Drag & Drop</a>
                 <a href="{% url 'add_file_submission' course_id=course.id %}?chapter={{ chapter.id }}">+ File Submission</a>
-                <a href="{% url 'labtech_add_quiz' course_id=course.id %}?chapter={{ chapter.id }}">+ Quiz</a>
-                <a href="{% url 'labtech_add_lab' course_id=course.id %}?chapter={{ chapter.id }}">+ Lab</a>
                 <a href="{% url 'add_flashcard_deck' course_id=course.id %}?chapter={{ chapter.id }}">+ Flashcard Deck</a>
                 <a href="{% url 'labtech_add_hotspot' course_id=course.id %}?chapter={{ chapter.id }}">+ Hotspot</a>
-                <a href="{% url 'labtech_add_drag_and_drop' course_id=course.id %}?chapter={{ chapter.id }}">+ Drag & Drop</a>
-                <a href="{% url 'labtech_add_coding_activity' course_id=course.id %}?chapter={{ chapter.id }}">+ Coding Activity</a>
+                <a href="{% url 'labtech_add_lab' course_id=course.id %}?chapter={{ chapter.id }}">+ Lab</a>
+                <a href="{% url 'pbq_create' course.id %}?chapter={{ chapter.id }}">+ PBQ</a>
+                <a href="{% url 'labtech_add_quiz' course_id=course.id %}?chapter={{ chapter.id }}">+ Quiz</a>
                 <a href="{% url 'add_scenario_activity' course_id=course.id %}?chapter={{ chapter.id }}">+ Scenario</a>
+                <a href="{% url 'labtech_add_text_page' course_id=course.id %}?chapter={{ chapter.id }}">+ Text Page</a>
+                <a href="{% url 'labtech_add_video' course_id=course.id %}?chapter={{ chapter.id }}">+ Video</a>
             </div>
             {% endif %}
             <div class="table-responsive">
                 <table class="table table-hover content-table">
                     <tbody class="sortable-content-tbody">
                         {% for item in chapter.sorted_content %}
-                        <tr data-id="{{ item.id }}" data-type="{{ item|class_name|lower }}">
-                            <td style="width: 40px;">
-                                {% if can_edit_content %}<span class="drag-handle">✥</span>{% endif %}
-                            </td>
-                            <td>
-                                <span class="item-title">
-                                    {% with item_model_name=item|class_name|lower %}
-                                        {% if item_model_name == 'textpage' %}📖
-                                        {% elif item_model_name == 'video' %}▶️
-                                        {% elif item_model_name == 'audio' %}🎧
-                                        {% elif item_model_name == 'filesubmissionactivity' %}📁
-                                        {% elif item_model_name == 'quiz' %}❓
-                                        {% elif item_model_name == 'pbqactivity' %}<span role="img" aria-label="Performance-based question">🧩</span>
-                                        {% elif item_model_name == 'lab' %}🔬
-                                        {% elif item_model_name == 'flashcarddeck' %}🗂️
-                                        {% elif item_model_name == 'teamscenario' %}🛡️
-                                        {% elif item_model_name == 'hotspotactivity' %}📍
-                                        {% elif item_model_name == 'draganddropactivity' %}🤏
-                                        {% elif item_model_name == 'codingactivity' %}💻
-                                        {% elif item_model_name == 'scenarioactivity' %}💬
-                                        {% endif %}
-                                        {{ item.title }}
-                                    {% endwith %}
-                                </span>
-                            </td>
-                            <td class="text-end">
-                                {% if can_edit_content %}
-                                    {% include "labtech/partials/content_item_actions.html" with item=item %}
-                                {% endif %}
-                            </td>
-                        </tr>
+                        {% include "labtech/partials/course_builder_row.html" with item=item in_chapter=True %}
                         {% empty %}
                         <tr>
                             <td colspan="3" class="text-center py-4 text-muted">No content in this chapter yet.</td>
@@ -152,8 +143,8 @@
     </div>
 
     {% if all_unassigned_content %}
-    <div class="card mb-3">
-        <div class="card-header d-flex justify-content-between align-items-center active">
+    <div class="card mb-3" id="builderUnassigned">
+        <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Uncategorized Content</h5>
             <span class="toggle-icon fas fa-chevron-down"></span>
         </div>
@@ -163,34 +154,7 @@
                 <table class="table table-hover content-table">
                     <tbody>
                     {% for item in all_unassigned_content %}
-                        <tr>
-                            <td style="width: 40px;"></td> {# No drag handle for uncategorized #}
-                            <td>
-                                <span class="item-title">
-                                    {% with item_model_name=item|class_name|lower %}
-                                        {% if item_model_name == 'textpage' %}📖
-                                        {% elif item_model_name == 'video' %}▶️
-                                        {% elif item_model_name == 'audio' %}🎧
-                                        {% elif item_model_name == 'quiz' %}❓
-                                        {% elif item_model_name == 'pbqactivity' %}<span role="img" aria-label="Performance-based question">🧩</span>
-                                        {% elif item_model_name == 'lab' %}🔬
-                                        {% elif item_model_name == 'flashcarddeck' %}🗂️
-                                        {% elif item_model_name == 'teamscenario' %}🛡️
-                                        {% elif item_model_name == 'hotspotactivity' %}📍
-                                        {% elif item_model_name == 'draganddropactivity' %}🤏
-                                        {% elif item_model_name == 'codingactivity' %}💻
-                                        {% elif item_model_name == 'scenarioactivity' %}💬
-                                        {% endif %}
-                                        {{ item.title }}
-                                    {% endwith %}
-                                </span>
-                            </td>
-                            <td class="text-end">
-                                {% if can_edit_content %}
-                                    {% include "labtech/partials/content_item_actions.html" with item=item %}
-                                {% endif %}
-                            </td>
-                        </tr>
+                        {% include "labtech/partials/course_builder_row.html" with item=item in_chapter=False %}
                     {% endfor %}
                     </tbody>
                 </table>
@@ -203,66 +167,5 @@
 {% endblock %}
 
 {% block labtech_extra_body %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Logic for Collapsible Chapters
-    document.querySelectorAll('.card-header').forEach(header => {
-        header.addEventListener('click', function(event) {
-            // Do not collapse if the user is clicking a button, dropdown, or drag handle
-            if (event.target.closest('.dropdown, .dropdown-item, .btn, .chapter-drag-handle')) {
-                return;
-            }
-            this.classList.toggle('active');
-        });
-    });
-
-    {% if can_edit_content %}
-    const csrfToken = "{{ csrf_token }}";
-
-    // --- NEW: Logic for Chapter Reordering ---
-    const chapterList = document.getElementById('chapter-list');
-    if (chapterList) {
-        new Sortable(chapterList, {
-            animation: 150,
-            handle: '.chapter-drag-handle',
-            ghostClass: 'sortable-ghost',
-            onEnd: function(evt) {
-                const chapterOrder = Array.from(chapterList.children).map(ch => ch.dataset.id);
-                fetch("{% url 'update_chapter_order' course.id %}", {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-                    body: JSON.stringify({ new_order: chapterOrder })
-                }).then(response => {
-                    if (!response.ok) alert('Error: Could not save the new chapter order.');
-                });
-            }
-        });
-    }
-
-    // --- EXISTING: Logic for Content Item Reordering ---
-    document.querySelectorAll('.sortable-content-tbody').forEach(tbody => {
-        new Sortable(tbody, {
-            animation: 150,
-            handle: '.drag-handle',
-            ghostClass: 'sortable-ghost',
-            onEnd: function(evt) {
-                const allItems = document.querySelectorAll('tr[data-id]');
-                const newOrder = Array.from(allItems).map(item => ({
-                    id: item.dataset.id,
-                    type: item.dataset.type
-                }));
-                
-                fetch("{% url 'update_content_order' course_id=course.id %}", {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-                    body: JSON.stringify({ new_order: newOrder })
-                }).then(response => {
-                    if (!response.ok) alert('Error: Could not save the new content order.');
-                });
-            }
-        });
-    });
-    {% endif %}
-});
-</script>
+{% include "labtech/partials/course_builder_edit_panel.html" %}
 {% endblock %}

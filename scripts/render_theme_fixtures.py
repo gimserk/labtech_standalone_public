@@ -17,7 +17,7 @@ django.setup()
 from django.core.management import call_command
 from django.test import Client
 from django.urls import reverse
-from app.models import (CodingActivity, Flashcard, FlashcardDeck, Quiz, Conversation, Lab,
+from app.models import (CodingActivity, Flashcard, FlashcardDeck, Quiz, Conversation, Lab, TextPage, CyberCityESP32, CourseResource,
                         Message, SupportTicket, HotspotActivity, Label,
                         DragAndDropActivity, DragAndDropLabel, CyberCity, CyberCityBuilding)
 from app.pbq_test_helpers import PBQFixture
@@ -37,6 +37,10 @@ def main():
         fixture.teacher.save()
         fixture.course.is_active = True
         fixture.course.save()
+        lesson = TextPage.objects.create(
+            course=fixture.course, chapter=fixture.chapter,
+            title="Safety overview", content="<p>Review the lab rules.</p>"
+        )
         deck = FlashcardDeck.objects.create(
             course=fixture.course, chapter=fixture.chapter, title="Networking review"
         )
@@ -47,6 +51,18 @@ def main():
             description="<p>Print a greeting.</p>", starter_code='print("Hello")'
         )
         lab = Lab.objects.create(course=fixture.course, chapter=fixture.chapter, title='Persistent practice', clone_type='full')
+        CourseResource.objects.create(
+            course=fixture.course, title="Security Study Guide",
+            category=CourseResource.CATEGORY_SYLLABUS,
+            file="course_resources/theme-study-guide.pdf", visible_to_students=True,
+            uploaded_by=fixture.teacher,
+        )
+        CourseResource.objects.create(
+            course=fixture.course, title="Wireshark Slides",
+            category=CourseResource.CATEGORY_SLIDE_DECK,
+            file="course_resources/theme-packets.pptx", visible_to_students=True,
+            uploaded_by=fixture.teacher,
+        )
         conversation = Conversation.objects.create(course=fixture.course, subject="Lab questions")
         conversation.participants.add(fixture.teacher, fixture.student)
         Message.objects.create(conversation=conversation, author=fixture.student, content="<p>Please review my lab.</p>")
@@ -60,6 +76,10 @@ def main():
         DragAndDropLabel.objects.create(activity=drag, text="Switch")
         city = CyberCity.objects.create(name="Training city", is_public=True)
         building = CyberCityBuilding.objects.create(cybercity=city, name="Hospital")
+        esp = CyberCityESP32.objects.create(
+            building=building, name="Wall Display",
+            mac_address="AA:BB:CC:22:44:77"
+        )
         client = Client()
         client.force_login(fixture.teacher)
         c, a = fixture.course.pk, fixture.activity.pk
@@ -71,6 +91,7 @@ def main():
             ("labtech_manage_proxmox_servers_list", []),
             ("labtech_add_proxmox_server", []), ("course_catalog", []),
             ("instructor_my_courses", []), ("labtech_manage_course_content", [c]),
+            ("ai_improve_course_content", [c, "textpage", lesson.pk]),
             ("labtech_add_lab", [c]), ("labtech_edit_lab", [c, lab.pk]),
             ("labtech_edit_course", [c]), ("bulk_update_content_dates", [c]),
             ("course_detail", [c]), ("instructor_gradebook", [c]),
@@ -83,6 +104,8 @@ def main():
             ("take_drag_and_drop_activity", [c, drag.pk]), ("labtech_manage_drag_and_drop", [c, drag.pk]),
             ("cybercity_dashboard", []), ("cybercity_add", []),
             ("cybercity_detail", [city.pk]), ("cybercity_building_detail", [city.pk, building.pk]),
+            ("cybercity_esp32_detail", [city.pk, building.pk, esp.pk]),
+            ("cybercity_soc_dashboard", [city.pk]),
             ("cybercity_visualizer", [city.pk]), ("student_cybercity_visualizer", [city.pk]),
             ("pbq_edit", [c, a]), ("pbq_manage", [c, a]), ("pbq_preview", [c, a]),
         ]
@@ -92,6 +115,11 @@ def main():
             if response.status_code != 200:
                 raise AssertionError(f"{name}: HTTP {response.status_code}")
             pages[name] = response.content.decode()
+        # Verify both staff workspaces in the browser's existing four-theme matrix.
+        instructor_response = client.get(reverse("home"), {"view_as": "instructor"})
+        if instructor_response.status_code != 200:
+            raise AssertionError(f"home_instructor: HTTP {instructor_response.status_code}")
+        pages["home_instructor"] = instructor_response.content.decode()
         # Exercise all shared Bootstrap status roles, even if the sample records
         # don't happen to use a particular status on the real pages above.
         from django.template import engines

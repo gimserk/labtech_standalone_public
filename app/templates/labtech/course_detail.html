@@ -5,10 +5,13 @@
 
 {% block labtech_extra_head %}
 <link rel="stylesheet" href="{% static 'labtech/css/audio-player.css' %}">
+<link rel="stylesheet" href="{% static 'labtech/css/course-curriculum.css' %}">
+<link rel="stylesheet" href="{% static 'labtech/css/course-resources-modal.css' %}">
+<script src="{% static 'labtech/js/course-resources-modal.js' %}" defer></script>
 <script src="{% static 'labtech/js/audio-player.js' %}" defer></script>
 <style>
     :root {
-        --panel-width: 320px; /* Width of the slide-out panel */
+        --panel-width: 352px; /* Room for hierarchy, icons, and long lesson titles */
         --navbar-height: 70px; /* Height of the top navbar from generic_base.html */
     }
     body {
@@ -52,10 +55,10 @@
     .panel-toggle-btn {
         position: absolute;
         top: 50%;
-        right: -30px;
+        right: -42px;
         transform: translateY(-50%);
-        width: 30px;
-        height: 60px;
+        width: 42px;
+        height: 64px;
         background-color: var(--navbar-bg);
         color: var(--lt-nav-text);
         border: 1px solid var(--lt-nav-border);
@@ -63,6 +66,8 @@
         border-radius: 0 5px 5px 0;
         cursor: pointer;
         font-size: 1.5em;
+        display: grid;
+        place-items: center;
     }
     @media (min-width: 992px) {
         body.panel-is-open {
@@ -70,81 +75,8 @@
         }
     }
     
-    /* --- DARK THEME FOR CURRICULUM ACCORDION --- */
-    .course-sidebar .chapter-accordion .chapter-header {
-        background-color: transparent;
-        padding: 12px 20px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        cursor: pointer;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .course-sidebar .chapter-accordion .chapter-header h3 {
-        color: var(--lt-nav-text);
-        font-size: 1.1em;
-        flex-grow: 1;
-    }
-    .course-sidebar .chapter-accordion .chapter-header:hover,
-    .course-sidebar .chapter-accordion .chapter-header.open {
-        background-color: var(--lt-nav-hover);
-    }
-    .course-sidebar .chapter-accordion .chapter-body {
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        display: none;
-        background-color: var(--navbar-bg);
-    }
-    .course-sidebar .chapter-accordion .chapter-body.open {
-        display: block;
-    }
+    /* Chapter and lesson hierarchy lives in course-curriculum.css. */
 
-    /* Dark theme for content items */
-    .course-sidebar .content-list { list-style: none; padding: 0; margin: 0; }
-    .course-sidebar .content-item a {
-        color: var(--lt-nav-text);
-        display: flex;
-        align-items: center;
-        width: 100%;
-        padding: 10px 20px 10px 30px;
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    .course-sidebar .chapter-body ul > li:first-child a {
-        border-top: none;
-    }
-    .course-sidebar .content-item a:hover {
-        background-color: var(--lt-nav-hover);
-        color: var(--lt-nav-text);
-    }
-    .course-sidebar .content-item .content-details h4 {
-        font-size: 0.9rem;
-        font-weight: 500;
-        color: inherit;
-    }
-    .course-sidebar .content-item .due-date {
-        color: var(--lt-nav-text);
-        font-size: 0.8em;
-        margin-top: 2px;
-    }
-    .course-sidebar .content-item.completed {
-        background-color: rgba(40, 167, 69, 0.3);
-    }
-    .course-sidebar .content-item.completed a {
-        color: var(--lt-nav-text);
-    }
-    .course-sidebar .content-item.completed .content-details h4 {
-        text-decoration: line-through;
-    }
-    .course-sidebar .content-item.completed .content-icon::before {
-        content: '✓';
-        color: var(--lt-nav-success);
-        font-weight: bold;
-    }
-    .course-sidebar .content-item.completed.active .content-icon::before { color: inherit; }
-    .course-sidebar .content-item.active a {
-        background-color: var(--lt-primary);
-        color: var(--lt-on-accent);
-    }
-    
     .progress-info { margin-bottom: 20px; }
     .progress-text {
         font-size: 0.9em;
@@ -231,15 +163,20 @@
         <h1>{{ course.title }}</h1>
     </div>
 
-    <aside class="course-sidebar" id="course-curriculum-panel">
-        <button id="panel-toggle-btn" class="panel-toggle-btn" title="Toggle Curriculum Panel" aria-label="Toggle Curriculum Panel">&rsaquo;</button>
+    <aside class="course-sidebar" id="course-curriculum-panel" aria-label="Course navigation">
+        <button type="button" id="panel-toggle-btn" class="panel-toggle-btn"
+                title="Open course navigation" aria-label="Open course navigation"
+                aria-controls="course-curriculum-panel" aria-expanded="false">
+            <span class="panel-toggle-glyph" aria-hidden="true">&rsaquo;</span>
+        </button>
         <div class="sidebar-content-wrapper">
             <div class="progress-info">
                 <div class="progress-text">
-                    <span>Progress</span>
+                    <span>Course progress</span>
                     <span id="progress-percentage-display">{{ completion_percentage }}%</span>
                 </div>
-                <div class="progress-container">
+                <div class="progress-container" role="progressbar" aria-label="Course progress"
+                     aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ completion_percentage }}">
                     <div class="progress-bar" style="width: {{ completion_percentage }}%;"></div>
                 </div>
             </div>
@@ -250,52 +187,95 @@
                 </a>
             </div>
             {% endif %}
-            <h3>Course Curriculum</h3>
-            <div class="chapter-accordion">
+            <div class="sidebar-section-heading">
+                <h2 id="course-curriculum-heading">Course curriculum</h2>
+                <p>Choose a chapter to view its materials.</p>
+            </div>
+            <nav class="chapter-accordion" aria-labelledby="course-curriculum-heading">
                 {% for chapter_data in structured_content %}
-                    <div class="chapter-header" data-chapter-id="{{ chapter_data.chapter.id }}">
-                        <h3>{% if chapter_data.chapter %}{{ chapter_data.chapter.title }}{% else %}Uncategorized Content{% endif %}</h3>
-                        <div class="header-icons">
-                            <span class="toggle-icon"></span>
-                        </div>
-                    </div>
-                    <div class="chapter-body">
+                <section class="chapter-section">
+                    <button type="button" class="chapter-header"
+                            data-chapter-id="{{ chapter_data.chapter.id|default:'other' }}"
+                            aria-expanded="false" aria-controls="chapter-materials-{{ forloop.counter }}">
+                        <span class="chapter-labels">
+                            <span class="chapter-number">
+                                {% if chapter_data.chapter %}Chapter {{ forloop.counter|stringformat:"02d" }}{% else %}Additional materials{% endif %}
+                            </span>
+                            <span class="chapter-title">
+                                {% if chapter_data.chapter %}{{ chapter_data.chapter.title }}{% else %}Uncategorized Content{% endif %}
+                            </span>
+                        </span>
+                        <span class="chapter-meta">
+                            <span class="chapter-count">{{ chapter_data.items|length }} item{{ chapter_data.items|length|pluralize }}</span>
+                            <i class="fas fa-chevron-down chapter-chevron" aria-hidden="true"></i>
+                        </span>
+                    </button>
+                    <div class="chapter-body" id="chapter-materials-{{ forloop.counter }}" hidden>
                         <ul class="content-list">
-							{% for item in chapter_data.items %}
-								<li class="content-item {% if not item.is_available %}locked{% endif %} {% if item.is_completed %}completed{% endif %} {% if focused_content and focused_content.id == item.id and focused_content|class_name|lower == item|class_name|lower %}active{% endif %}">
-									<a href="{% url 'course_detail' course_id=course.id %}?content={{ item|class_name|lower }}&id={{ item.id }}">
-										<div class="content-icon">
-											{% if not item.is_completed and item.is_available %}
-												{% if item|class_name == 'TextPage' %}📖
-												{% elif item|class_name == 'Video' %}▶️
-												{% elif item|class_name == 'Audio' %}🎧
-												{% elif item|class_name == 'Quiz' %}❓
-												{% elif item|class_name == 'PBQActivity' %}<span role="img" aria-label="Performance-based question">🧩</span>
-												{% elif item|class_name == 'Lab' %}🔬
-												{% elif item|class_name == 'HotspotActivity' %}📍
-												{% elif item|class_name == 'DragAndDropActivity' %}🤏 
-												{% elif item|class_name == 'CodingActivity' %}💻
-                                                {% elif item|class_name == 'ScenarioActivity' %}💬
-                                                {% elif item|class_name == 'FlashcardDeck' %}🗂️
-                                                {% elif item|class_name == 'TeamScenario' %}🚩
-                                                {% elif item|class_name == 'FileSubmissionActivity' %}📁
+                            {% for item in chapter_data.items %}
+                            <li class="content-item{% if not item.is_available %} locked{% endif %}{% if item.is_completed %} completed{% endif %}{% if focused_content and focused_content.id == item.id and focused_content|class_name|lower == item|class_name|lower %} active{% endif %}">
+                                <a href="{% url 'course_detail' course_id=course.id %}?content={{ item|class_name|lower }}&amp;id={{ item.id }}"
+                                   {% if focused_content and focused_content.id == item.id and focused_content|class_name|lower == item|class_name|lower %}aria-current="page"{% endif %}>
+                                    <span class="content-icon" aria-hidden="true">
+                                        {% if item|class_name == 'TextPage' %}📖
+                                        {% elif item|class_name == 'Video' %}▶️
+                                        {% elif item|class_name == 'Audio' %}🎧
+                                        {% elif item|class_name == 'Quiz' %}❓
+                                        {% elif item|class_name == 'PBQActivity' %}🧩
+                                        {% elif item|class_name == 'Lab' %}🔬
+                                        {% elif item|class_name == 'HotspotActivity' %}📍
+                                        {% elif item|class_name == 'DragAndDropActivity' %}🤏
+                                        {% elif item|class_name == 'CodingActivity' %}💻
+                                        {% elif item|class_name == 'ScenarioActivity' %}💬
+                                        {% elif item|class_name == 'FlashcardDeck' %}🗂️
+                                        {% elif item|class_name == 'TeamScenario' %}🚩
+                                        {% elif item|class_name == 'FileSubmissionActivity' %}📁
+                                        {% endif %}
+                                    </span>
+                                    <span class="content-details">
+                                        <span class="content-title">{{ item.title }}</span>
+                                        <span class="content-meta">
+                                            <span class="content-type">
+                                                {% if item|class_name == 'TextPage' %}Reading
+                                                {% elif item|class_name == 'Video' %}Video
+                                                {% elif item|class_name == 'Audio' %}Audio
+                                                {% elif item|class_name == 'Quiz' %}Quiz
+                                                {% elif item|class_name == 'PBQActivity' %}PBQ
+                                                {% elif item|class_name == 'Lab' %}Lab
+                                                {% elif item|class_name == 'HotspotActivity' %}Hotspot
+                                                {% elif item|class_name == 'DragAndDropActivity' %}Drag and Drop
+                                                {% elif item|class_name == 'CodingActivity' %}Coding
+                                                {% elif item|class_name == 'ScenarioActivity' %}Scenario
+                                                {% elif item|class_name == 'FlashcardDeck' %}Flashcards
+                                                {% elif item|class_name == 'TeamScenario' %}Team Scenario
+                                                {% elif item|class_name == 'FileSubmissionActivity' %}File Submission
                                                 {% endif %}
-											{% endif %}
-										</div>
-										<div class="content-details">
-											<h4>{{ item.title }}</h4>
-											{% with effective_due_date=item.due_date|default:item.course.due_date %}
-												{% if effective_due_date %}<div class="due-date">Due: {{ effective_due_date|date:"M d, P" }}</div>{% endif %}
-											{% endwith %}
-										</div>
-									</a>
-								</li>
-							{% endfor %}
+                                            </span>
+                                            {% with effective_due_date=item.due_date|default:item.course.due_date %}
+                                                {% if effective_due_date %}<span class="due-date">Due {{ effective_due_date|date:"M d, P" }}</span>{% endif %}
+                                            {% endwith %}
+                                        </span>
+                                    </span>
+                                    <span class="item-status{% if item.is_completed %} is-complete{% elif not item.is_available %} is-locked{% endif %}">
+                                        {% if item.is_completed %}
+                                            <i class="fas fa-check-circle" aria-hidden="true"></i><span class="visually-hidden">Completed</span>
+                                        {% elif not item.is_available %}
+                                            <i class="fas fa-lock" aria-hidden="true"></i><span class="visually-hidden">Locked</span>
+                                        {% else %}
+                                            <i class="fas fa-angle-right" aria-hidden="true"></i>
+                                        {% endif %}
+                                    </span>
+                                </a>
+                            </li>
+                            {% empty %}
+                            <li class="empty-chapter">No materials in this chapter yet.</li>
+                            {% endfor %}
                         </ul>
                     </div>
+                </section>
                 {% endfor %}
-            </div>
-            
+            </nav>
+
             <div class="sidebar-action-area">
                 <a href="{% url 'course_forum' course_id=course.id %}" class="btn btn-outline-light w-100">
                     <i class="fas fa-comments"></i> Discussion Forum
@@ -348,24 +328,90 @@
     {% endif %}
 
     {% if resources_by_category %}
-    <div class="modal fade" id="resourcesModal" tabindex="-1" aria-labelledby="resourcesModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
+    <div class="modal fade course-resources-modal" id="resourcesModal" tabindex="-1"
+         aria-labelledby="resourcesModalLabel" aria-describedby="resourcesModalDescription" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="resourcesModalLabel">Course Resources</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <div class="course-resources-title">
+                        <span class="course-resources-title-icon" aria-hidden="true"><i class="fas fa-folder-open"></i></span>
+                        <div>
+                            <h2 class="modal-title" id="resourcesModalLabel">Class Resources</h2>
+                            <p class="course-resources-subtitle" id="resourcesModalDescription">
+                                Files and handouts for {{ course.title }} · {{ resources_by_category|length }} categor{{ resources_by_category|length|pluralize:"y,ies" }}
+                            </p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close class resources"></button>
                 </div>
                 <div class="modal-body">
-                    {% for category_name, resources in resources_by_category.items %}
-                        <h4 class="resource-category-title">{{ category_name }}</h4>
-                        <ul class="resource-list">
-                            {% for resource in resources %}
-                                <li class="resource-list-item">
-                                    <a href="{{ resource.file.url }}" target="_blank" download>📄 {{ resource.title }}</a>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% endfor %}
+                    <div class="course-resources-toolbar">
+                        <div>
+                            <label for="courseResourceSearch">Search resources</label>
+                            <input type="search" class="form-control" id="courseResourceSearch"
+                                   placeholder="Find a file, handout, or slide deck" autocomplete="off">
+                        </div>
+                        <div>
+                            <label for="courseResourceCategory">Category</label>
+                            <select class="form-select" id="courseResourceCategory">
+                                <option value="">All categories</option>
+                                {% for category_name, resources in resources_by_category.items %}
+                                <option value="{{ category_name }}">{{ category_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="course-resources-result-bar">
+                        <p class="course-resources-count" id="courseResourceResultCount" role="status" aria-live="polite"></p>
+                        <button type="button" class="btn btn-sm btn-outline-secondary course-resources-reset"
+                                id="courseResourceClear" hidden>Clear filters</button>
+                    </div>
+
+                    <div id="courseResourceGroups">
+                        {% for category_name, resources in resources_by_category.items %}
+                        <section class="course-resource-section" data-resource-section data-resource-category="{{ category_name }}"
+                                 aria-labelledby="course-resource-category-{{ forloop.counter }}">
+                            <div class="course-resource-section-title">
+                                <h3 id="course-resource-category-{{ forloop.counter }}">{{ category_name }}</h3>
+                                <span class="course-resource-section-count" data-resource-section-count>
+                                    {{ resources|length }} file{{ resources|length|pluralize }}
+                                </span>
+                            </div>
+                            <div class="course-resource-grid">
+                                {% for resource in resources %}
+                                <a href="{{ resource.file.url }}" target="_blank" rel="noopener noreferrer" download
+                                   class="course-resource-link" data-resource-card data-filename="{{ resource.file.name }}"
+                                   data-resource-search="{{ resource.title }} {{ resource.file.name }} {{ category_name }}"
+                                   aria-label="Download {{ resource.title }}">
+                                    <span class="course-resource-icon" aria-hidden="true">
+                                        <i class="fas fa-file-alt" data-resource-icon></i>
+                                    </span>
+                                    <span class="course-resource-details">
+                                        <span class="course-resource-name">{{ resource.title }}</span>
+                                        <span class="course-resource-meta">
+                                            <span data-resource-file-type>File</span>
+                                            <span aria-hidden="true">·</span>
+                                            <span>Added {{ resource.uploaded_at|date:"M j, Y" }}</span>
+                                        </span>
+                                    </span>
+                                    <span class="course-resource-download" aria-hidden="true">
+                                        <i class="fas fa-download"></i><span>Download</span>
+                                    </span>
+                                </a>
+                                {% endfor %}
+                            </div>
+                        </section>
+                        {% endfor %}
+                    </div>
+                    <div id="courseResourceNoResults" class="course-resources-empty" role="status" hidden>
+                        <i class="fas fa-search fa-lg mb-3" aria-hidden="true"></i>
+                        <p class="fw-semibold mb-1">No matching resources</p>
+                        <p class="small mb-0">Try another search term or clear the category filter.</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <p>Only resources shared with students appear here.</p>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Done</button>
                 </div>
             </div>
         </div>
@@ -376,17 +422,29 @@
 {% block labtech_extra_body %}
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // --- PANEL TOGGLE SCRIPT ---
+        // --- COURSE PANEL CONTROLS ---
         const panel = document.getElementById('course-curriculum-panel');
         const toggleBtn = document.getElementById('panel-toggle-btn');
+        function setPanelOpen(open) {
+            if (!panel || !toggleBtn) return;
+            panel.classList.toggle('is-open', open);
+            document.body.classList.toggle('panel-is-open', open);
+            toggleBtn.setAttribute('aria-expanded', String(open));
+            const label = open ? 'Close course navigation' : 'Open course navigation';
+            toggleBtn.setAttribute('aria-label', label);
+            toggleBtn.setAttribute('title', label);
+            toggleBtn.querySelector('.panel-toggle-glyph').textContent = open ? '‹' : '›';
+        }
         if (panel && toggleBtn) {
-            function togglePanel() {
-                panel.classList.toggle('is-open');
-                document.body.classList.toggle('panel-is-open');
-                toggleBtn.innerHTML = panel.classList.contains('is-open') ? '&rsaquo;' : '&lsaquo;';
-            }
-            toggleBtn.addEventListener('click', togglePanel);
-            if (window.innerWidth >= 992) { togglePanel(); }
+            toggleBtn.addEventListener('click', () => setPanelOpen(!panel.classList.contains('is-open')));
+            setPanelOpen(window.innerWidth >= 992);
+            // Keep the main content unobstructed when dismissing the mobile overlay.
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && window.innerWidth < 992 && panel.classList.contains('is-open')) {
+                    setPanelOpen(false);
+                    toggleBtn.focus();
+                }
+            });
         }
         {% if announcements %}
             const announcementsModalElement = document.getElementById('announcementsModal');
@@ -400,46 +458,59 @@
                 }
             }
         {% endif %}
-        // --- ACCORDION & DEFAULT OPEN SCRIPTS ---
-        const accordionHeaders = document.querySelectorAll('.chapter-accordion .chapter-header');
+        // --- ACCESSIBLE CHAPTER ACCORDION ---
+        const accordionHeaders = Array.from(document.querySelectorAll('.chapter-accordion .chapter-header'));
+        function setChapterExpanded(header, expanded) {
+            if (!header) return;
+            const body = document.getElementById(header.getAttribute('aria-controls'));
+            if (!body) return;
+            header.setAttribute('aria-expanded', String(expanded));
+            header.classList.toggle('open', expanded);
+            body.hidden = !expanded;
+        }
         accordionHeaders.forEach(header => {
-            header.addEventListener('click', function() {
-                this.classList.toggle('open');
-                this.nextElementSibling.classList.toggle('open');
+            header.addEventListener('click', () => {
+                setChapterExpanded(header, header.getAttribute('aria-expanded') !== 'true');
             });
         });
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('content')) {
-            const activeLink = document.querySelector(`a[href*="${window.location.search}"]`);
-            if (activeLink) {
-                const chapterBody = activeLink.closest('.chapter-body');
-                if (chapterBody) {
-                    chapterBody.classList.add('open');
-                    chapterBody.previousElementSibling.classList.add('open');
-                }
+
+        const activeItem = panel ? panel.querySelector('.content-item.active') : null;
+        let initialHeader = activeItem ? activeItem.closest('.chapter-body').previousElementSibling : null;
+        if (!initialHeader) {
+            const firstIncompleteId = '{{ first_incomplete_chapter_id|default:"" }}';
+            if (firstIncompleteId) {
+                initialHeader = accordionHeaders.find(header => header.dataset.chapterId === firstIncompleteId);
             }
-        } else {
-            const defaultOpenChapterId = {{ first_incomplete_chapter_id|default:'null' }};
-            if (defaultOpenChapterId) {
-                const headerToOpen = document.querySelector(`.chapter-header[data-chapter-id="${defaultOpenChapterId}"]`);
-                if(headerToOpen) {
-                    headerToOpen.classList.add('open');
-                    headerToOpen.nextElementSibling.classList.add('open');
-                }
-            }
+        }
+        // If all chapters are finished (or the course is empty), still open the first.
+        if (!initialHeader) initialHeader = accordionHeaders[0];
+        if (initialHeader) setChapterExpanded(initialHeader, true);
+
+        // When a lesson is selected, bring it into view inside a long sidebar.
+        if (activeItem && panel && window.innerWidth >= 992) {
+            requestAnimationFrame(() => {
+                const scroller = panel.querySelector('.sidebar-content-wrapper');
+                if (!scroller) return;
+                const itemBounds = activeItem.getBoundingClientRect();
+                const scrollBounds = scroller.getBoundingClientRect();
+                if (itemBounds.bottom > scrollBounds.bottom) scroller.scrollTop += itemBounds.bottom - scrollBounds.bottom + 12;
+                if (itemBounds.top < scrollBounds.top) scroller.scrollTop -= scrollBounds.top - itemBounds.top + 12;
+            });
         }
 
         // --- PROGRESS BAR & MARK COMPLETE LOGIC ---
         const completedCountElement = document.getElementById('progress-counter-display');
-        let completedCount = completedCountElement ? parseInt(completedCountElement.textContent.split(' ')[0]) : 0;
+        let completedCount = {{ completed_count }};
         const totalItems = {{ total_items }};
-        const progressBar = document.querySelector('.progress-bar');
+        const progressBar = document.querySelector('.course-sidebar .progress-bar');
+        const progressMeter = document.querySelector('.course-sidebar .progress-container');
         const progressPercentageDisplay = document.getElementById('progress-percentage-display');
         
         function updateCourseProgress() {
             if (totalItems > 0 && progressBar) {
                 const percentage = Math.round((completedCount / totalItems) * 100);
                 progressBar.style.width = percentage + '%';
+                if (progressMeter) progressMeter.setAttribute('aria-valuenow', String(percentage));
                 if(progressPercentageDisplay) progressPercentageDisplay.textContent = percentage + '%';
                 if(completedCountElement) completedCountElement.textContent = `${completedCount} of ${totalItems} items completed`;
             }
@@ -462,15 +533,16 @@
                         button.innerHTML = '✓ Completed';
                         button.classList.remove('btn-success');
                         button.classList.add('btn-outline-success');
-                        const activeLink = document.querySelector(`a[href*="${window.location.search}"]`);
-                        if (activeLink) {
-                            const listItem = activeLink.closest('.content-item');
-                            if(listItem && !listItem.classList.contains('completed')) {
-                                listItem.classList.add('completed');
-                                listItem.querySelector('.content-icon').innerHTML = '';
-                                completedCount++;
-                                updateCourseProgress();
+                        const currentItem = panel ? panel.querySelector('.content-item.active') : null;
+                        if (currentItem && !currentItem.classList.contains('completed')) {
+                            currentItem.classList.add('completed');
+                            const indicator = currentItem.querySelector('.item-status');
+                            if (indicator) {
+                                indicator.className = 'item-status is-complete';
+                                indicator.innerHTML = '<i class="fas fa-check-circle" aria-hidden="true"></i><span class="visually-hidden">Completed</span>';
                             }
+                            completedCount++;
+                            updateCourseProgress();
                         }
                     } else {
                         alert(data.message || 'An error occurred.');

@@ -4,12 +4,6 @@
 
 {% block labtech_content %}
 <div class="container-fluid mt-4">
-    <div class="mb-4">
-        <a href="{% url 'labtech_manage_course_content' course_id=course.id %}" class="text-decoration-none text-secondary">
-            <i class="fas fa-arrow-left"></i> Back to Content Manager
-        </a>
-    </div>
-
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold mb-0">Grade Submissions: {{ activity.title }}</h2>
         <span class="badge bg-primary fs-6">Max Score: {{ activity.max_score }}</span>

@@ -1,62 +1,52 @@
 {% extends "labtech/generic_base.html" %}
 {% load static %}
 
-{% block labtech_title %}Dashboard{% endblock %}
+{% block labtech_title %}Dashboard - LabTech{% endblock %}
 
 {% block labtech_extra_head %}
-<style>
-    .view-as-switcher {
-        padding: 0.75rem 1.25rem;
-        margin-bottom: 1.5rem;
-        background-color: var(--lt-surface-muted);
-        border: 1px solid var(--lt-border);
-        border-radius: .375rem;
-        font-size: 0.95rem;
-    }
-</style>
+<link rel="stylesheet" href="{% static 'labtech/css/staff-workspace.css' %}">
+<script defer src="{% static 'labtech/js/staff-workspace.js' %}"></script>
 {% endblock %}
 
 {% block labtech_content %}
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h2">Dashboard</h1>
+<header class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+    <div>
+        <h1 class="h2 mb-1">
+            {% if dashboard_to_render == 'superuser' %}Site administration
+            {% elif dashboard_to_render == 'instructor' %}Teaching dashboard
+            {% else %}My dashboard{% endif %}
+        </h1>
+        <p class="text-muted mb-0">
+            {% if dashboard_to_render == 'superuser' %}Monitor LabTech and open the right administration tool.
+            {% elif dashboard_to_render == 'instructor' %}See your courses, learners, and teaching tools in one place.
+            {% else %}Continue learning and track your course progress.{% endif %}
+        </p>
     </div>
+</header>
 
-    {# --- 🔄 VIEW AS SWITCHER --- #}
-    {% if active_roles|length > 1 %}
-    <div class="view-as-switcher">
-        <strong>View Dashboard As:</strong>
-        
-        {% if 'superuser' in active_roles %}
-        <a href="{% url 'home' %}" class="{% if dashboard_to_render == 'superuser' %}fw-bold text-decoration-none{% endif %}">
-            Site Admin
-        </a>
-        {% endif %}
-        
-        {% if 'instructor' in active_roles %}
-        {% if 'superuser' in active_roles %}|{% endif %}
-        <a href="{% url 'home' %}?view_as=instructor" class="ms-2 {% if dashboard_to_render == 'instructor' %}fw-bold text-decoration-none{% endif %}">
-            Instructor
-        </a>
-        {% endif %}
-
-        {% if 'student' in active_roles %}
-        {% if 'superuser' in active_roles or 'instructor' in active_roles %}|{% endif %}
-        <a href="{% url 'home' %}?view_as=student" class="ms-2 {% if dashboard_to_render == 'student' %}fw-bold text-decoration-none{% endif %}">
-            Student
-        </a>
-        {% endif %}
-    </div>
+{% if active_roles|length > 1 %}
+<nav class="staff-role-switcher" aria-label="Switch dashboard role">
+    <span class="switcher-label">Workspace:</span>
+    {% if 'superuser' in active_roles %}
+    <a href="{% url 'home' %}?view_as=superuser"
+       {% if dashboard_to_render == 'superuser' %}aria-current="page"{% endif %}>Site admin</a>
     {% endif %}
-
-    {# --- INCLUDE THE CORRECT DASHBOARD PARTIAL --- #}
-    {% if dashboard_to_render == 'superuser' %}
-        {% include "labtech/partials/superuser_dashboard.html" %}
-    {% elif dashboard_to_render == 'instructor' %}
-        {# You will need to create/update this file for your instructor content #}
-        {% include "labtech/partials/instructor_dashboard.html" %}
-    {% else %}
-        {# You will need to create/update this file for your student content #}
-        {% include "labtech/partials/student_dashboard.html" %}
+    {% if 'instructor' in active_roles %}
+    <a href="{% url 'home' %}?view_as=instructor"
+       {% if dashboard_to_render == 'instructor' %}aria-current="page"{% endif %}>Instructor</a>
     {% endif %}
+    {% if 'student' in active_roles %}
+    <a href="{% url 'home' %}?view_as=student"
+       {% if dashboard_to_render == 'student' %}aria-current="page"{% endif %}>Student</a>
+    {% endif %}
+</nav>
+{% endif %}
 
+{% if dashboard_to_render == 'superuser' %}
+    {% include "labtech/partials/superuser_dashboard.html" %}
+{% elif dashboard_to_render == 'instructor' %}
+    {% include "labtech/partials/instructor_dashboard.html" %}
+{% else %}
+    {% include "labtech/partials/student_dashboard.html" %}
+{% endif %}
 {% endblock %}

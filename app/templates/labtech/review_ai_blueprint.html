@@ -1,6 +1,6 @@
 {% extends "labtech/generic_base.html" %}
 
-{% block title %}Review AI Course Blueprint{% endblock %}
+{% block labtech_title %}Review AI Course Blueprint{% endblock %}
 
 {% block labtech_content %}
 <div class="container mt-4">
@@ -17,6 +17,20 @@
                     <label class="form-label"><strong>Course Title:</strong></label>
                     <input type="text" class="form-control" name="course_title" value="{{ blueprint.course_title }}">
                 </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold" for="course-description">Course description</label>
+                    <textarea class="form-control" id="course-description" name="course_description" rows="3">{{ blueprint.description }}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold" for="outcomes">Learning outcomes (one per line)</label>
+                    <textarea class="form-control" id="outcomes" name="learning_outcomes" rows="5">{% for outcome in blueprint.learning_outcomes %}{% if outcome.statement %}{{ outcome.statement }}{% else %}{{ outcome }}{% endif %}{% if not forloop.last %}
+{% endif %}{% endfor %}</textarea>
+                    <div class="form-text">Outcomes will be associated with generated chapter activities.</div>
+                </div>
+                {% if job.source_book %}
+                <p class="small text-body-secondary">Reference book attached: <strong>{{ job.source_book_name }}</strong> (private instructor source)</p>
+                {% endif %}
+                <p class="small text-body-secondary">Change activity types below if needed. All assessment keys, technical content, generated diagrams, and VM templates require instructor review before students can access the course.</p>
                 <hr>
 
                 {% for chapter in blueprint.chapters %}
@@ -34,7 +48,11 @@
                                 </div>
                                 <div class="col-md-2">
                                     <label class="form-label">Type:</label>
-                                    <input type="text" class="form-control" value="{{ lesson.type }}" readonly>
+                                    <select class="form-select" name="lesson_{{ forloop.parentloop.counter }}_{{ forloop.counter }}_type" aria-label="Activity type for {{ lesson.lesson_title }}">
+                                        {% for kind in lesson_types %}
+                                        <option value="{{ kind }}" {% if lesson.type == kind %}selected{% endif %}>{{ kind }}</option>
+                                        {% endfor %}
+                                    </select>
                                 </div>
                                 <div class="col-md-5">
                                     <label class="form-label">Objective/Feedback:</label>
@@ -52,7 +70,7 @@
         <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
             <a href="{% url 'instructor_my_courses' %}" class="btn btn-secondary">Save for Later</a>
             <button type="submit" class="btn btn-primary">
-                <i class="fas fa-cogs me-2"></i>Save and Generate Content
+                <i class="fas fa-cogs me-2"></i>Generate Complete Draft Course
             </button>
         </div>
     </form>

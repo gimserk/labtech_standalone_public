@@ -54,15 +54,6 @@
 {% block labtech_content %}
 {% lab_check_context lab_session lab as check_context %}
 <div class="container-fluid">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'home' %}">Dashboard</a></li>
-            <li class="breadcrumb-item"><a href="{% url 'my_courses' %}">My Courses</a></li>
-            <li class="breadcrumb-item"><a href="{% url 'course_detail' course_id=course.id %}">{{ course.title }}</a></li>
-            <li class="breadcrumb-item active" aria-current="page">{{ lab.title }}</li>
-        </ol>
-    </nav>
-
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h1>{{ lab.title }}</h1>
         <div>

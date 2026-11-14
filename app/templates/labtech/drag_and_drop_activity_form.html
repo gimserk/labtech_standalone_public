@@ -12,20 +12,6 @@
     <div class="row">
         <div class="col-lg-10 offset-lg-1">
             
-            {% if breadcrumbs %}
-                <nav aria-label="breadcrumb" class="mb-4">
-                    <ol class="breadcrumb">
-                        {% for crumb in breadcrumbs %}
-                            {% if not forloop.last %}
-                                <li class="breadcrumb-item"><a href="{{ crumb.url }}">{{ crumb.name }}</a></li>
-                            {% else %}
-                                <li class="breadcrumb-item active" aria-current="page">{{ crumb.name }}</li>
-                            {% endif %}
-                        {% endfor %}
-                    </ol>
-                </nav>
-            {% endif %}
-
             <h2>{{ title }}</h2>
             <p class="text-muted">Use this form to define the main details of your drag and drop activity. You will add labels and define the drop zones on the next screen.</p>
             <hr>

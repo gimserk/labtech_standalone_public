@@ -1,0 +1,48 @@
+name: Resumable Quiz and Question Navigation
+
+on:
+  pull_request:
+    paths:
+      - 'app/models.py'
+      - 'app/migrations/0071_quiz_draft_and_navigation_options.py'
+      - 'app/forms.py'
+      - 'app/views.py'
+      - 'app/quiz_progress.py'
+      - 'app/test_quiz_progress.py'
+      - 'app/templatetags/quiz_progress_tags.py'
+      - 'app/templates/labtech/take_quiz.html'
+      - 'app/templates/labtech/quiz_form.html'
+      - 'app/templates/labtech/quiz_draft_changed.html'
+      - 'app/templates/labtech/partials/_course_quiz_start.html'
+      - 'app/templates/labtech/partials/course_main_content.html'
+      - '.github/workflows/quiz-progress-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'app/quiz_progress.py'
+      - 'app/test_quiz_progress.py'
+      - 'app/templates/labtech/take_quiz.html'
+      - 'app/templates/labtech/quiz_form.html'
+
+permissions:
+  contents: read
+
+jobs:
+  resumable-quizzes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: System dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config default-libmysqlclient-dev libldap2-dev libsasl2-dev libssl-dev libxml2-dev libxslt1-dev libjpeg-dev zlib1g-dev libffi-dev
+      - name: Install application
+        run: python -m pip install -r requirements.txt
+      - name: Syntax check
+        run: |
+          python -m py_compile app/models.py app/forms.py app/views.py app/quiz_progress.py app/test_quiz_progress.py app/templatetags/quiz_progress_tags.py
+      - name: Run quiz and course regressions
+        run: python manage.py test app.test_quiz_progress app.test_course_builder app.test_course_curriculum_navigation app.test_gradebook_scoring --settings=app.test_settings -v 2

@@ -4,12 +4,6 @@
 
 {% block labtech_content %}
 <div class="container mt-4 mb-5">
-    <div class="mb-4">
-        <a href="{% url 'course_detail' course_id=activity.course.id %}" class="text-decoration-none text-secondary">
-            <i class="fas fa-arrow-left" aria-hidden="true"></i> Back to {{ activity.course.title }}
-        </a>
-    </div>
-
     <h2 class="fw-bold mb-4">{{ activity.title }}</h2>
     <div class="row g-4">
         <div class="col-lg-8">

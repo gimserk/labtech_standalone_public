@@ -103,6 +103,7 @@
     </style>
     {% block labtech_extra_head %}{% endblock %}
     <link rel="stylesheet" href="{% static 'labtech/css/appearance.css' %}">
+    <link rel="stylesheet" href="{% static 'labtech/css/activity-navigation.css' %}">
     <script defer src="{% static 'labtech/js/appearance.js' %}"></script>
 </head>
 <body>
@@ -117,7 +118,11 @@
 {% endif %}
 
 <main id="main-content">
-    {% if breadcrumbs %}
+    {% load activity_navigation %}
+    {% activity_navigation as activity_nav %}
+    {% if activity_nav %}
+      {% include 'labtech/partials/activity_navigation.html' %}
+    {% elif breadcrumbs %}
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb bg-light p-2 rounded">
             {% for crumb in breadcrumbs %}

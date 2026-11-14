@@ -1,0 +1,122 @@
+<section class="card shadow-sm mb-4" aria-labelledby="builderReadinessTitle">
+  <div class="card-body p-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+      <div>
+        <h3 class="h5 mb-1" id="builderReadinessTitle">Course readiness</h3>
+        <p class="small text-body-secondary mb-0">Automatic checks for missing lesson content, assessments, rubric visibility, learning outcomes and lab setup.</p>
+      </div>
+      <div class="d-flex gap-3" aria-label="Readiness totals">
+        <div><strong>{{ readiness.percentage }}%</strong><div class="small text-body-secondary">Ready</div></div>
+        <div><strong>{{ readiness.ready }}/{{ readiness.total }}</strong><div class="small text-body-secondary">Activities</div></div>
+        <div><strong>{{ readiness.needs_review }}</strong><div class="small text-body-secondary">Need review</div></div>
+      </div>
+    </div>
+    <div class="progress mt-3" role="progressbar" aria-label="Ready activities"
+         aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ readiness.percentage }}">
+      <div class="progress-bar {% if readiness.fully_ready %}bg-success{% endif %}" style="width: {{ readiness.percentage }}%"></div>
+    </div>
+    <div class="d-flex flex-wrap gap-3 small mt-2">
+      <span><strong>{{ readiness.blockers }}</strong> incomplete-content issues</span>
+      <span><strong>{{ readiness.warnings }}</strong> review warnings</span>
+      {% if readiness.fully_ready %}<span class="text-success">All automatic checks passed</span>{% endif %}
+    </div>
+    {% if readiness.issues %}
+    <details class="mt-3">
+      <summary class="fw-semibold">View readiness issues and jump to activities</summary>
+      <ul class="list-group mt-2">
+        {% for issue in readiness.issues %}
+        <li class="list-group-item d-flex flex-wrap justify-content-between align-items-start gap-2">
+          <span>
+            <span class="fw-semibold">{% if issue.severity == 'blocker' %}Incomplete{% else %}Review{% endif %}:</span> {{ issue.message }}
+            <small class="d-block text-body-secondary">{{ issue.title }}{% if issue.chapter %} · {{ issue.chapter }}{% endif %}</small>
+          </span>
+          {% if issue.type %}
+          <a href="#builder-{{ issue.type }}-{{ issue.id }}" class="btn btn-sm btn-outline-primary builder-issue-link">Go to activity</a>
+          {% elif issue.title == 'Gradebook' %}
+          <a class="btn btn-sm btn-outline-primary" href="{% url 'gradebook_setup' course.id %}">Gradebook</a>
+          {% elif issue.title == 'Course outcomes' %}
+          <a class="btn btn-sm btn-outline-primary" href="{% url 'course_learning_outcomes' course.id %}">Learning outcomes</a>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </details>
+    {% endif %}
+  </div>
+</section>
+
+<section class="card mb-3" aria-label="Find course activities">
+  <div class="card-body p-3">
+    <div class="row g-2">
+      <div class="col-md-5">
+        <label class="form-label" for="builderSearch">Find activities</label>
+        <input type="search" id="builderSearch" class="form-control" placeholder="Search title or chapter">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label" for="builderTypeFilter">Activity type</label>
+        <select id="builderTypeFilter" class="form-select"><option value="">All types</option>
+          {% for type,label in builder_types.items %}<option value="{{ type }}">{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label" for="builderStatusFilter">Readiness</label>
+        <select id="builderStatusFilter" class="form-select">
+          <option value="">All statuses</option>
+          <option value="ready">Ready</option>
+          <option value="review">Needs review</option>
+          <option value="blocked">Incomplete</option>
+        </select>
+      </div>
+    </div>
+    <p class="small text-body-secondary mt-2 mb-0" id="builderVisibleCount" aria-live="polite"></p>
+  </div>
+</section>
+
+{% if can_edit_content %}
+<section class="card mb-3" aria-label="Bulk activity actions">
+  <div class="card-body p-3">
+    <div class="d-flex flex-wrap gap-2 align-items-end">
+      <div>
+        <label class="form-label" for="builderBulkAction">Bulk action</label>
+        <select class="form-select" id="builderBulkAction">
+          <option value="">Choose action</option>
+          <option value="publish">Publish selected quizzes, PBQs or labs</option>
+          <option value="unpublish">Unpublish selected quizzes, PBQs or labs</option>
+          <option value="move_chapter">Move to chapter</option>
+          <option value="set_dates">Change availability dates</option>
+          <option value="include_grade">Include in gradebook</option>
+          <option value="exclude_grade">Exclude from gradebook</option>
+          <option value="set_points">Set gradebook points</option>
+        </select>
+      </div>
+      <div id="builderBulkChapterWrap" hidden>
+        <label class="form-label" for="builderBulkChapter">Destination chapter</label>
+        <select class="form-select" id="builderBulkChapter">
+          <option value="">Unassigned</option>
+          {% for ch in chapters %}<option value="{{ ch.pk }}">{{ ch.title }}</option>{% endfor %}
+        </select>
+      </div>
+      <div id="builderBulkPointsWrap" hidden>
+        <label class="form-label" for="builderBulkPoints">Points</label>
+        <input class="form-control" id="builderBulkPoints" type="number" min="0" max="9999999.99" step="0.01">
+      </div>
+      <div id="builderBulkDatesWrap" class="d-flex flex-wrap gap-2" hidden>
+        <label class="small"><input type="checkbox" id="builderSetStart"> Change start
+          <input id="builderBulkStart" class="form-control" type="datetime-local"></label>
+        <label class="small"><input type="checkbox" id="builderSetDue"> Change due
+          <input id="builderBulkDue" class="form-control" type="datetime-local"></label>
+        <label class="small"><input type="checkbox" id="builderSetEnd"> Change end
+          <input id="builderBulkEnd" class="form-control" type="datetime-local"></label>
+      </div>
+      <button class="btn btn-primary" type="button" id="builderBulkApply">Apply to selected</button>
+      <span class="small text-body-secondary" id="builderSelectionCount" aria-live="polite">0 selected</span>
+    </div>
+    <div class="mt-2">
+      <label class="small" for="builderSelectVisible">
+        <input type="checkbox" class="form-check-input me-1" id="builderSelectVisible"> Select all currently visible activities
+      </label>
+    </div>
+  </div>
+</section>
+{% endif %}
+<div id="builderStatus" aria-live="polite" role="status" class="small mb-3"></div>

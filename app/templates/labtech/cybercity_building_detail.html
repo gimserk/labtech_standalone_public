@@ -51,22 +51,6 @@
     .card-body {
         padding: 15px;
     }
-    .btn {
-        padding: 6px 12px;
-        border: none;
-        border-radius: 5px;
-        text-decoration: none;
-        font-size: 0.85rem;
-        cursor: pointer;
-        margin-left: 5px;
-    }
-    .btn-primary { background-color: var(--lt-primary); color: var(--lt-on-accent); }
-    .btn-secondary { background-color: var(--lt-secondary); color: var(--lt-on-accent); }
-    .btn-success { background-color: var(--lt-success); color: var(--lt-on-accent); }
-    .btn-danger { background-color: var(--lt-danger); color: var(--lt-on-accent); }
-    .btn-warning { background-color: var(--lt-warning); color: var(--lt-on-warning); }
-    .btn-info { background-color: var(--lt-primary); color: var(--lt-on-accent); }
-    
     .list-item {
         display: flex;
         justify-content: space-between;
@@ -142,33 +126,88 @@
         opacity: 1;
     }
 </style>
+<link rel="stylesheet" href="{% static 'labtech/css/cybercity-operator.css' %}">
+<script defer src="{% static 'labtech/js/cybercity-operator.js' %}"></script>
+<style>
+.cybercity-ui .grid-container { display:block; }
+.cybercity-ui .grid-container > .card { margin-bottom:1.2rem; }
+.cybercity-ui .card-header { gap:.6rem; flex-wrap:wrap; }
+.cybercity-ui .list-item { flex-wrap:wrap; gap:.65rem; }
+.cybercity-ui .cc-machine-row .cc-machine-actions .btn { margin:0; }
+.cybercity-ui .cc-machine-row .cc-secondary-actions { margin:0; }
+.cybercity-ui .cc-machine-row .cc-secondary-actions .cc-action-group { justify-content:flex-start; }
+.cybercity-ui .cc-machine-row .cc-secondary-actions form { display:inline-block; }
+.cybercity-ui .cc-machine-row .cc-machine-actions form { margin:0; }
+.cybercity-ui .pin-status-table { min-width:510px; }
+.cybercity-ui .pin-status-table th { background:var(--lt-surface-muted); }
+.cybercity-ui .cc-pin-info { display:block; max-width:340px; font-size:.82rem; overflow-wrap:anywhere; }
+.cybercity-ui .cc-pin-info summary { cursor:pointer; font-weight:650; color:var(--lt-primary); }
+.cybercity-ui .cc-monitor-row { min-width:0; }
+</style>
 {% endblock %}
 
 {% block labtech_content %}
-<div class="breadcrumb-nav">
-    <a href="{% url 'cybercity_dashboard' %}">CyberCity Dashboard</a> &raquo;
-    <a href="{% url 'cybercity_detail' city.id %}">{{ city.name }}</a> &raquo;
-    <span>{{ building.name }}</span>
-</div>
+<div class="cybercity-ui">
+<nav class="cc-breadcrumbs" aria-label="Breadcrumb">
+    <a href="{% url 'cybercity_dashboard' %}">CyberCity</a><span aria-hidden="true">/</span>
+    <a href="{% url 'cybercity_detail' city.id %}">{{ city.name }}</a><span aria-hidden="true">/</span>
+    <span aria-current="page">{{ building.name }}</span>
+</nav>
 
-<div class="page-header">
-    <h1>{{ building.name }}</h1>
-    <p>{{ building.description|default:"No description available." }}</p>
+<header class="cc-header">
     <div>
-        <a href="{% url 'cybercity_building_edit' city.id building.id %}" class="btn btn-secondary">Edit Building</a>
-        <a href="{% url 'cybercity_building_delete' city.id building.id %}" class="btn btn-danger">Delete Building</a>
+        <h1>{{ building.name }}</h1>
+        <p>{{ building.description|default:"No description available." }}</p>
     </div>
+    <div class="cc-header-actions">
+        <a href="{% url 'cybercity_building_edit' city.id building.id %}" class="btn btn-outline-primary">Edit building</a>
+        <details class="cc-secondary-actions">
+            <summary>Building actions</summary>
+            <div class="cc-action-group">
+                <a href="{% url 'cybercity_building_delete' city.id building.id %}" class="btn btn-outline-danger btn-sm">Delete building</a>
+            </div>
+        </details>
+    </div>
+</header>
+<nav class="cc-section-nav" aria-label="Building sections">
+    <span>Jump to</span>
+    <a href="#cc-machines">Machines</a>
+    <a href="#cc-pins">Pin status</a>
+    <a href="#cc-monitors">Machine monitors</a>
+    <a href="#cc-attacks">ESP attacks</a>
+    <a href="#cc-devices">ESP32 devices</a>
+</nav>
+<div class="cc-metrics" role="group" aria-label="Building inventory">
+    <div class="cc-metric"><strong>{{ machines|length }}</strong><span>Building machines</span></div>
+    <div class="cc-metric"><strong>{{ attack_rows|length }}</strong><span>ESP attack configurations</span></div>
+    <div class="cc-metric"><strong>{{ esp32s|length }}</strong><span>ESP32 devices</span></div>
 </div>
 
 <div class="grid-container">
-    <div class="card">
+    <section class="card" id="cc-machines" data-cc-filter>
         <div class="card-header">
             <h3>Machines</h3>
             <a href="{% url 'cybercity_machine_add' city.id building.id %}" class="btn btn-primary">Add Machine</a>
         </div>
         <div class="card-body">
+            <div class="cc-tools">
+                <div class="cc-search-field">
+                    <label for="cc-machine-search">Find a machine</label>
+                    <input id="cc-machine-search" data-cc-search type="search" class="form-control" placeholder="Search machine, template or status">
+                </div>
+                <div class="cc-filter-field">
+                    <label for="cc-machine-state">Status</label>
+                    <select id="cc-machine-state" class="form-select" data-cc-status>
+                        <option value="all">All statuses</option><option value="running">Running</option>
+                        <option value="stopped">Stopped</option><option value="error">Error</option>
+                        <option value="provisioning">Provisioning</option><option value="resetting">Resetting</option>
+                        <option value="reset_queued">Reset queued</option>
+                    </select>
+                </div>
+                <span data-cc-count class="cc-result-count" role="status" aria-live="polite"></span>
+            </div>
             {% for machine in machines %}
-                <div class="list-item">
+                <div class="list-item cc-machine-row" data-cc-item data-cc-category="{{ machine.status }}" data-cc-search-text="{{ machine.name }} {{ machine.status }} {{ machine.proxmox_template.name|default:'' }}">
                     <div>
                         <strong>{{ machine.name }}</strong><br>
                         <small class="text-muted">Template: {{ machine.proxmox_template.name|default:"N/A" }}</small>
@@ -176,7 +215,7 @@
                             <br><small>In use by: {{ machine.active_user.username }}</small>
                         {% endif %}
                     </div>
-                    <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="cc-machine-actions">
                         <span class="status-badge status-{{ machine.status }}">{{ machine.status }}</span>
                         {% if machine.reset_started_at and machine.status == "reset_queued" or machine.reset_started_at and machine.status == "resetting" %}<small>Since {{ machine.reset_started_at|date:"M d H:i" }}</small>{% endif %}
                         {% if machine.status == 'reset_queued' or machine.status == 'resetting' or machine.status == 'error' and machine.reset_error %}
@@ -201,6 +240,9 @@
                                 <button type="submit" formaction="{% url 'cybercity_machine_action' city.id building.id machine.id 'start' %}" class="btn btn-success">Start</button>
                             {% endif %}
                         </form>
+                        <details class="cc-secondary-actions">
+                            <summary>Snapshots, reset &amp; delete</summary>
+                            <div class="cc-action-group">
                         {% if machine.proxmox_vmid and machine.status == 'running' or machine.proxmox_vmid and machine.status == 'stopped' %}
                             <form method="post" action="{% url 'cybercity_machine_action' city.id building.id machine.id 'backup' %}" style="margin: 0;">
                                 {% csrf_token %}
@@ -219,6 +261,9 @@
                             </form>
                         {% endif %}
                         
+                        {% if machine.status != 'provisioning' %}<a href="{% url 'cybercity_machine_delete' city.id building.id machine.id %}" class="btn btn-outline-danger btn-sm">Delete machine</a>{% endif %}
+                            </div>
+                        </details>
                         {% if machine.status == 'running' %}
                             <a href="{% url 'cybercity_machine_guacamole_sso_redirect' machine_id=machine.id %}" class="btn btn-primary" target="_blank" rel="noopener noreferrer">Console</a>
                         {% else %}
@@ -227,24 +272,24 @@
                         
                         <a href="{% url 'manage_machine_monitors' city.id building.id machine.id %}" class="btn btn-info">Configure Monitors</a>
                         
-                        <a href="{% url 'cybercity_machine_edit' city.id building.id machine.id %}" class="btn btn-secondary">Edit</a>
-                        {% if machine.status != 'provisioning' %}<a href="{% url 'cybercity_machine_delete' city.id building.id machine.id %}" class="btn btn-danger">Delete</a>{% endif %}
+                        <a href="{% url 'cybercity_machine_edit' city.id building.id machine.id %}" class="btn btn-outline-secondary">Edit</a>
                     </div>
                 </div>
             {% empty %}
                 <p>No machines configured.</p>
             {% endfor %}
+            <p class="cc-empty-results" data-cc-no-results hidden>No machines match this search or status filter.</p>
         </div>
-    </div>
+    </section>
     
-    <div class="card">
+    <section class="card" id="cc-pins">
         <div class="card-header">
             <h3>Pin & Attack Status</h3>
             <span id="pin-status-indicator" class="status-badge status-stopped">Loading...</span>
         </div>
         <div class="card-body">
             <p class="small text-muted">Pin status comes from the persistent MQTT listener's last received report. A recorded value may be stale; run the `listen_cybercity_status --forever` listener on the server to ingest reports and acknowledgments. A published command is not proof of execution.</p>
-            <table class="pin-status-table">
+            <div class="cc-responsive-table"><table class="pin-status-table">
                 <thead>
                     <tr>
                         <th>Pin</th>
@@ -261,26 +306,26 @@
                             <td id="pin-{{ pin.id }}-status">{{ pin.last_status|default:"N/A" }}</td>
                             <td id="pin-{{ pin.id }}-command">{{ pin.last_command|default:"N/A" }}</td>
                             <td>
-                                <div class="tooltip-container">
-                                    <span class="btn btn-secondary btn-sm" style="cursor: default;">Info</span>
-                                    <span class="tooltip-text">
+                                <details class="cc-pin-info">
+                                    <summary>MQTT topics</summary>
+                                    <div class="small">
                                         <b>Base Topic (from Building):</b><br>{{ building.mqtt_base_topic }}<br>
                                         <b>Pin Sub-Topic:</b><br>{{ pin.mqtt_subtopic }}<br>
                                         <hr>
                                         <b>Full Command Topic:</b><br>{{ building.mqtt_base_topic }}{{ pin.mqtt_subtopic }}/command<br>
                                         <b>Full Status Topic:</b><br>{{ building.mqtt_base_topic }}{{ pin.mqtt_subtopic }}/status
-                                    </span>
-                                </div>
+                                    </div>
+                                </details>
                             </td>
                         </tr>
                         {% endfor %}
                     {% endfor %}
                 </tbody>
-            </table>
+            </table></div>
         </div>
-    </div>
+    </section>
 
-    <div class="card">
+    <section class="card" id="cc-monitors">
         <div class="card-header"><h3>Machine Monitors — Automatic QEMU Guest Agent Checks</h3></div>
         <div class="card-body">
             <p class="text-muted">Configure checks on existing building VMs; no agent.py installation is required.
@@ -332,9 +377,9 @@
             </div>
             {% empty %}<p>No building machines have been created.</p>{% endfor %}
         </div>
-    </div>
+    </section>
 
-    <div class="card">
+    <section class="card" id="cc-attacks">
         <div class="card-header">
             <h3>ESP Attacks</h3>
             <a href="{% url 'cybercity_attack_monitor_add' city.id building.id %}" class="btn btn-primary">Add ESP Attack</a>
@@ -362,9 +407,9 @@
                     {% else %}<div class="text-muted small">No matching commands queued yet.</div>{% endif %}
                 </div>
                 <div>
-                    <div class="tooltip-container" style="display: inline-block;">
-                        <span class="btn btn-info btn-sm" style="cursor: default;">Details</span>
-                        <span class="tooltip-text">
+                    <details class="cc-pin-info">
+                        <summary>Command details</summary>
+                        <div class="small">
                             <b>Publishes to Topic:</b><br>
                             {% if monitor.target_pin %}
                                 {{ building.mqtt_base_topic }}{{ monitor.target_pin.mqtt_subtopic }}/command
@@ -374,8 +419,8 @@
                             <hr>
                             <b>With Command (Payload):</b><br>
                             {{ monitor.attack_command }}
-                        </span>
-                    </div>
+                        </div>
+                    </details>
                     <button type="button" class="btn btn-danger btn-sm trigger-attack-btn"
                         data-url="{% url 'cybercity_trigger_attack' city.id building.id monitor.id %}"
                         {% if not row.linked or not row.pin %}disabled title="Link a building Machine Monitor and select an ESP32 pin first"{% endif %}>Queue Test</button>
@@ -388,9 +433,9 @@
                 <p>No ESP Attacks configured.</p>
             {% endfor %}
         </div>
-    </div>
+    </section>
 
-    <div class="card">
+    <section class="card" id="cc-devices">
         <div class="card-header">
             <h3>ESP32 Devices</h3>
             <a href="{% url 'cybercity_esp32_add' city.id building.id %}" class="btn btn-primary">Add ESP32</a>
@@ -401,7 +446,8 @@
             </div>
             <small id="esp32-health-refresh-status" role="status" aria-live="polite">Health values refresh every 30 seconds while this tab is visible.</small>
         </div>
-    </div>
+    </section>
+</div>
 </div>
 {% endblock %}
 

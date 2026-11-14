@@ -1,4 +1,4 @@
-{% load static course_extras student_rubrics %}
+{% load static course_extras student_rubrics quiz_progress_tags %}
 
 {% if not focused_content and learning_outcomes %}
 <section class="card mb-4 shadow-sm" aria-labelledby="learning-outcomes-title">
@@ -46,7 +46,13 @@
                 {% if is_instructor %}<a href="{% url 'pbq_preview' course.id focused_content.id %}" class="btn btn-primary">Preview PBQ</a>{% else %}<a href="{% url 'pbq_take' course.id focused_content.id %}" class="btn btn-primary">Open PBQ</a>{% endif %}
             {% elif model_name == 'quiz' %}
                 <p>{{ focused_content.description|linebreaks }}</p>
-                <a href="{% url 'take_quiz' course_id=course.id quiz_id=focused_content.id %}" class="btn btn-primary">Take Quiz</a>
+                {% quiz_has_draft focused_content user as quiz_in_progress %}
+                <p class="small text-body-secondary">
+                  {% if focused_content.display_mode == 'one' %}One question at a time{% else %}All questions on one page{% endif %}
+                  {% if focused_content.display_mode == 'one' and not focused_content.allow_backtracking %} · Forward-only navigation{% endif %}
+                </p>
+                {% if quiz_in_progress %}<p class="text-success">Your quiz progress has been saved.</p>{% endif %}
+                <a href="{% url 'take_quiz' course_id=course.id quiz_id=focused_content.id %}" class="btn btn-primary">{% if quiz_in_progress %}Resume Quiz{% else %}Take Quiz{% endif %}</a>
             {% elif model_name == 'lab' %}
                 <p>{{ focused_content.description|linebreaks }}</p>
                 <a href="{% url 'view_lab' course_id=course.id lab_id=focused_content.id %}" class="btn btn-primary">Start Lab</a>

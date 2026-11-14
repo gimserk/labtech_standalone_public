@@ -1,6 +1,6 @@
 {% extends "labtech/generic_base.html" %}
 
-{% block title %}AI Course Generation Jobs{% endblock %}
+{% block labtech_title %}AI Course Generation Jobs{% endblock %}
 
 {% block labtech_content %}
 <div class="container mt-4">
@@ -27,7 +27,21 @@
                     <tbody>
                         {% for job in jobs %}
                         <tr>
-                            <td>{{ job.initial_prompt|truncatewords:15 }}</td>
+                            <td>
+                                {{ job.initial_prompt|truncatewords:15 }}
+                                {% if job.source_book %}
+                                <div class="small text-body-secondary mt-1"><i class="fas fa-book me-1" aria-hidden="true"></i>{{ job.source_book_name }} (private)</div>
+                                {% endif %}
+                                {% if job.status == 'FAILED' and job.error_message %}
+                                <div class="small text-danger mt-1" role="alert">{{ job.error_message|truncatechars:300 }}</div>
+                                {% endif %}
+                                {% if job.status == 'COMPLETED' and job.reviewed_blueprint.generation_notes %}
+                                <details class="small mt-1">
+                                    <summary>Instructor setup and quality checks</summary>
+                                    <ul class="mt-2">{% for note in job.reviewed_blueprint.generation_notes %}<li>{{ note }}</li>{% endfor %}</ul>
+                                </details>
+                                {% endif %}
+                            </td>
                             <td>
                                 {% if job.status == 'PENDING_REVIEW' %}
                                     <span class="badge bg-warning text-dark">{{ job.get_status_display }}</span>

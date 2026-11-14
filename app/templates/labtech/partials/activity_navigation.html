@@ -1,0 +1,28 @@
+{# Shared instructor/student activity navigation; populated by activity_navigation tag. #}
+<div class="labtech-activity-navigation container-fluid px-3 pt-3 pb-2" data-activity-navigation data-mode="{{ activity_nav.mode }}">
+  <nav aria-label="Activity breadcrumb">
+    <ol class="breadcrumb mb-2 flex-wrap">
+      {% for crumb in activity_nav.crumbs %}
+        {% if crumb.url and not forloop.last %}
+          <li class="breadcrumb-item"><a href="{{ crumb.url }}">{{ crumb.label }}</a></li>
+        {% else %}
+          <li class="breadcrumb-item active" aria-current="page">{{ crumb.label }}</li>
+        {% endif %}
+      {% endfor %}
+    </ol>
+  </nav>
+  <div class="d-flex flex-wrap align-items-center gap-2">
+    <a class="btn btn-sm btn-outline-secondary" href="{{ activity_nav.back_url }}" data-activity-back>
+      <i class="fas fa-arrow-left me-1" aria-hidden="true"></i>
+      Back to {{ activity_nav.back_label }}
+    </a>
+    {% if activity_nav.mode == 'instructor' %}
+      <span class="small text-body-secondary">Instructor editing</span>
+    {% else %}
+      <span class="small text-body-secondary">Student activity</span>
+    {% endif %}
+    {% if activity_nav.save_notice %}
+      <span class="small text-body-secondary">Save your work before leaving this page.</span>
+    {% endif %}
+  </div>
+</div>

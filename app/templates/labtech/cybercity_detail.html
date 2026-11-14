@@ -5,29 +5,6 @@
 
 {% block labtech_extra_head %}
 <style>
-    /* Main Layout & Theme */
-    .btn {
-        padding: 6px 14px;
-        border: none;
-        border-radius: 5px;
-        text-decoration: none;
-        font-size: 0.9rem;
-        cursor: pointer;
-        transition: background-color 0.2s, box-shadow 0.2s;
-        margin-right: 8px;
-        display: inline-block;
-        font-weight: 500;
-    }
-    .btn:hover {
-        box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-    }
-    .btn-primary { background-color: var(--lt-primary); color: var(--lt-on-accent); }
-    .btn-secondary { background-color: var(--lt-secondary); color: var(--lt-on-accent); }
-    .btn-danger { background-color: var(--lt-danger); color: var(--lt-on-accent); }
-    .btn-info { background-color: var(--lt-primary); color: var(--lt-on-accent); }
-    .btn-success { background-color: var(--lt-success); color: var(--lt-on-accent); }
-    .btn-warning { background-color: var(--lt-warning); color: var(--lt-on-warning); }
-
     /* Page Header */
     .city-header {
         background-color: var(--lt-surface);
@@ -152,46 +129,87 @@
         border: 0;
     }
 </style>
+<link rel="stylesheet" href="{% static 'labtech/css/cybercity-operator.css' %}">
+<script defer src="{% static 'labtech/js/cybercity-operator.js' %}"></script>
+<style>
+.cybercity-ui .main-grid { display:block; }
+.cybercity-ui .main-content-area, .cybercity-ui .sidebar-area { grid-column:auto; }
+.cybercity-ui .buildings-section { margin-bottom:1.2rem; }
+.cybercity-ui .city-header { margin:0; }
+.cybercity-ui .cc-building-card .card-body { padding:0; }
+.cybercity-ui .cc-building-card .card-body hr { margin:.7rem 0; }
+.cybercity-ui .cc-building-card .btn { margin:0; }
+.cybercity-ui .cc-building-list .card { margin-bottom:0; }
+.cybercity-ui .cc-service-item .btn { margin-right:0; }
+.cybercity-ui .cc-service-item .cc-service-advanced { width:100%; }
+.cybercity-ui .cc-service-item .cc-secondary-actions { margin-top:.4rem; }
+.cybercity-ui .video-grid { grid-template-columns: repeat(auto-fit,minmax(min(100%,350px),1fr)); }
+.cybercity-ui .cc-city-actions { margin-top:.85rem; }
+</style>
 {% endblock %}
 
 {% block labtech_content %}
-<div class="breadcrumb-nav">
-    <a href="{% url 'cybercity_dashboard' %}">CyberCity Dashboard</a> »
-    <span>{{ city.name }}</span>
-</div>
+<div class="cybercity-ui">
+<nav class="cc-breadcrumbs" aria-label="Breadcrumb">
+    <a href="{% url 'cybercity_dashboard' %}">CyberCity</a> <span aria-hidden="true">/</span>
+    <span aria-current="page">{{ city.name }}</span>
+</nav>
 
-<div class="city-header">
-    <h1>{{ city.name }}</h1>
-    <p>{{ city.description|default:"This city has no description." }}</p>
+<header class="cc-header">
     <div>
-        <a href="{% url 'cybercity_edit' city.id %}" class="btn btn-secondary">Edit Settings</a>
-        <a href="{% url 'cybercity_esp32_basic_firmware' city.id %}" class="btn btn-primary">Download Basic ESP32 Firmware</a>
-        <a href="{% url 'cybercity_visualizer' city.id %}" class="btn btn-info">Visualizer</a>
-        <a href="{% url 'cybercity_soc_dashboard' city.id %}" class="btn btn-primary">Security Operations Center</a>
-        <a href="{% url 'cybercity_soc_wallboard' city.id %}" class="btn btn-outline-primary">Open Classroom Wallboard</a>
-        <a href="{% url 'cybercity_delete' city.id %}" class="btn btn-danger" onclick="return confirm('Are you sure you want to permanently delete this city and all its assets? This cannot be undone.')">Delete City</a>
+        <h1>{{ city.name }}</h1>
+        <p>{{ city.description|default:"This city has no description." }}</p>
+        <div class="cc-action-group cc-city-actions">
+            <a href="{% url 'cybercity_visualizer' city.id %}" class="btn btn-primary">City visualizer</a>
+            <a href="{% url 'cybercity_soc_dashboard' city.id %}" class="btn btn-outline-primary">Security Operations Center</a>
+            <a href="{% url 'cybercity_soc_wallboard' city.id %}" class="btn btn-outline-secondary">Classroom wallboard</a>
+        </div>
     </div>
+    <details class="cc-secondary-actions">
+        <summary>City settings &amp; maintenance</summary>
+        <div class="cc-action-group">
+            <a href="{% url 'cybercity_edit' city.id %}" class="btn btn-outline-secondary btn-sm">Edit settings</a>
+            <a href="{% url 'cybercity_esp32_basic_firmware' city.id %}" class="btn btn-outline-secondary btn-sm">Download basic ESP32 firmware</a>
+            <a href="{% url 'cybercity_delete' city.id %}" class="btn btn-outline-danger btn-sm" onclick="return confirm('Are you sure you want to permanently delete this city and all its assets? This cannot be undone.')">Delete city</a>
+        </div>
+    </details>
+</header>
+<nav class="cc-section-nav" aria-label="CyberCity sections">
+    <span>Jump to</span>
+    <a href="#cc-buildings">Buildings</a>
+    <a href="#cc-services">City services</a>
+    <a href="#cc-feeds">Live feeds</a>
+</nav>
+<div class="cc-metrics" role="group" aria-label="City assets at a glance">
+    <div class="cc-metric"><strong>{{ buildings|length }}</strong><span>Buildings</span></div>
+    <div class="cc-metric"><strong>{{ city_services|length }}</strong><span>Infrastructure services</span></div>
+    <div class="cc-metric"><strong>{{ video_feeds|length }}</strong><span>Active live feeds</span></div>
 </div>
 
 <div class="main-grid">
     <div class="main-content-area">
-        <div class="buildings-section">
+        <section class="buildings-section" id="cc-buildings" data-cc-filter>
             <div class="section-header">
                 <h2>Buildings</h2>
                 <a href="{% url 'cybercity_building_add' city.id %}" class="btn btn-primary">Add Building</a>
             </div>
-            <div class="building-list">
+            <div class="cc-tools">
+                <div class="cc-search-field"><label for="cc-building-search">Find a building</label>
+                    <input id="cc-building-search" data-cc-search type="search" class="form-control" placeholder="Search building name or description"></div>
+                <span class="cc-result-count" data-cc-count role="status" aria-live="polite"></span>
+            </div>
+            <div class="building-list cc-building-list">
                 {% for building in buildings %}
-                <div class="card">
+                <div class="card cc-building-card" data-cc-item data-cc-search-text="{{ building.name }} {{ building.description|default:'' }}">
                     <div class="card-body">
                         <h3 class="h5">{{ building.name }}</h3>
                         <p class="text-muted">{{ building.description|truncatewords:30 }}</p>
                         <hr>
-                        <p>
-                            <strong>Machines:</strong> {{ building.machines.count }} |
-                            <strong>Monitors:</strong> {{ building.attack_monitors.count }} |
-                            <strong>ESP32s:</strong> {{ building.esp32s.count }}
-                        </p>
+                        <div class="cc-building-stats">
+                            <span><strong>Machines:</strong> {{ building.machines.count }}</span>
+                            <span><strong>ESP attacks:</strong> {{ building.attack_monitors.count }}</span>
+                            <span><strong>ESP32 devices:</strong> {{ building.esp32s.count }}</span>
+                        </div>
                         <a href="{% url 'cybercity_building_detail' city.id building.id %}" class="btn btn-secondary btn-sm">Manage Building</a>
                         <a href="{% url 'cybercity_building_edit' city.id building.id %}" class="btn btn-info btn-sm">Edit Building</a>
                     </div>
@@ -200,21 +218,22 @@
                 <div class="alert alert-info">There are no buildings in this city yet.</div>
                 {% endfor %}
             </div>
-        </div>
+            <p class="cc-empty-results mt-2" data-cc-no-results hidden>No buildings match this search.</p>
+        </section>
     </div>
 
     <div class="sidebar-area">
-        <div class="card">
+        <section class="card" id="cc-services">
             <div class="card-header"><h3>City Services</h3></div>
             <div class="list-group list-group-flush">
-                <div class="list-group-item">
+                <div class="list-group-item cc-service-item">
                     <strong>MQTT Broker Connectivity</strong><br>
                     <span id="broker-status-badge" class="status-badge">Checking...</span>
                     <small id="broker-status-message" class="text-muted ms-2"></small>
                     <p class="text-muted small mb-0">This checks broker connectivity, not whether the Control VM exists.</p>
                 </div>
                 {% for service in city_services %}
-                <div class="list-group-item">
+                <div class="list-group-item cc-service-item">
                     <strong>{{ service.label }}</strong>
                     <span class="status-badge status-{{ service.status|lower }}">{{ service.status|capfirst }}</span>
                     {% if service.vmid %}<small class="text-muted">VMID {{ service.vmid }}</small>{% endif %}
@@ -248,6 +267,8 @@
                             </form>
                             {% endif %}
                             {% if service.vmid %}
+                            <details class="cc-secondary-actions"><summary>Snapshots &amp; advanced VM actions</summary>
+                            <div class="cc-action-group">
                             <form method="post" action="{% url 'cybercity_utility_action' city.id service.role 'backup' %}">
                                 {% csrf_token %}<button type="submit" class="btn btn-secondary btn-sm">Backup Snapshot</button>
                             </form>
@@ -266,6 +287,8 @@
                                 {% csrf_token %}<input type="hidden" name="confirmation" value="DELETE">
                                 <button type="submit" class="btn btn-danger btn-sm">Delete VM</button>
                             </form>
+                            </div>
+                            </details>
                             {% endif %}
                         {% else %}
                             <span class="text-muted small">Operation in progress; inspect before attempting recovery.</span>
@@ -274,9 +297,9 @@
                 </div>
                 {% endfor %}
             </div>
-        </div>
+        </section>
 
-        <div class="video-feeds-section">
+        <div class="video-feeds-section" id="cc-feeds">
             <div class="card">
                 <div class="card-header">
                     <h3>Live Feeds</h3>
@@ -309,6 +332,7 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 {% endblock %}
 

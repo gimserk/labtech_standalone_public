@@ -1,0 +1,55 @@
+{% if can_edit_content %}
+<div class="offcanvas offcanvas-end builder-sidebar" tabindex="-1" id="builderEditPanel" aria-labelledby="builderEditTitle">
+  <div class="offcanvas-header">
+    <h2 class="h5 offcanvas-title" id="builderEditTitle">Quick edit activity</h2>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close quick editor"></button>
+  </div>
+  <div class="offcanvas-body">
+    <p class="small text-body-secondary">Edit common fields here, or open the full editor for questions, evidence, rubrics, and technical instructions.</p>
+    <form id="builderEditForm" method="post">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label" for="builderEditName">Title</label>
+        <input class="form-control" id="builderEditName" name="title" maxlength="255" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label" for="builderEditChapter">Chapter</label>
+        <select class="form-select" id="builderEditChapter" name="chapter_id">
+          <option value="">Unassigned</option>
+          {% for chapter in chapters %}<option value="{{ chapter.id }}">{{ chapter.title }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label" for="builderEditStart">Available from</label>
+        <input type="datetime-local" id="builderEditStart" name="available_from" class="form-control">
+      </div>
+      <div class="mb-3">
+        <label class="form-label" for="builderEditDue">Due</label>
+        <input type="datetime-local" id="builderEditDue" name="due_date" class="form-control">
+      </div>
+      <div class="mb-3">
+        <label class="form-label" for="builderEditEnd">Available until</label>
+        <input type="datetime-local" id="builderEditEnd" name="available_until" class="form-control">
+      </div>
+      <div id="builderPublishWrap" class="form-check mb-3">
+        <input type="checkbox" id="builderEditPublish" class="form-check-input">
+        <label class="form-check-label" for="builderEditPublish">Published to students</label>
+      </div>
+      <div id="builderGradeWrap" class="mb-3">
+        <div class="form-check mb-2">
+          <input type="checkbox" id="builderEditIncluded" class="form-check-input">
+          <label class="form-check-label" for="builderEditIncluded">Include in gradebook</label>
+        </div>
+        <label class="form-label" for="builderEditPoints">Gradebook points</label>
+        <input type="number" min="0" step=".01" max="9999999.99" class="form-control" id="builderEditPoints">
+        <p class="form-text">For weighted courses, use Gradebook Setup to change which activities count.</p>
+      </div>
+      <div id="builderEditError" role="alert" aria-live="assertive" class="text-danger small mb-3" hidden></div>
+      <div class="d-flex flex-wrap gap-2">
+        <button class="btn btn-primary" type="submit" id="builderEditSave">Save changes</button>
+        <a href="#" class="btn btn-outline-secondary" id="builderFullEditor">Open full editor</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}

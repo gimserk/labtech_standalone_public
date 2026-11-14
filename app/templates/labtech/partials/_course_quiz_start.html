@@ -1,3 +1,5 @@
+{% load quiz_progress_tags %}
+{% quiz_has_draft content user as has_draft %}
 <div class="content-body">
     {{ content.description|safe }}
     <hr>
@@ -7,5 +9,7 @@
     {% else %}
         <p>You have unlimited attempts.</p>
     {% endif %}
-    <a href="{% url 'take_quiz' course.id content.id %}" class="btn btn-primary btn-lg mt-3">Start Quiz</a>
+    <p class="small text-body-secondary mb-1">{% if content.display_mode == 'one' %}One question at a time{% else %}All questions on one page{% endif %}{% if content.display_mode == 'one' and not content.allow_backtracking %} · Forward-only navigation{% endif %}</p>
+    {% if has_draft %}<p class="text-success mb-1">You have saved quiz progress. Resume where you left off.</p>{% endif %}
+    <a href="{% url 'take_quiz' course.id content.id %}" class="btn btn-primary btn-lg mt-3">{% if has_draft %}Resume Quiz{% else %}Start Quiz{% endif %}</a>
 </div>
